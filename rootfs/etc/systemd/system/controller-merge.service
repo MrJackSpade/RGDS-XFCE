@@ -1,0 +1,15 @@
+[Unit]
+Description=Merge controller inputs
+After=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/evsieve \
+  --input /dev/input/by-path/platform-adc-joystick-event-joystick grab \
+  --input /dev/input/by-path/platform-gpio-keys-control-event-joystick grab \
+  --output name="Combined Controller"
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

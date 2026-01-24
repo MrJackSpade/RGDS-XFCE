@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Context OSK
+Comment=Virtual Keyboard
+Exec=/usr/local/bin/context-osk
+Icon=input-keyboard
+Terminal=false
+Categories=Utility;Accessibility;
+X-XFCE-Source=file:///usr/local/share/applications/context-osk.desktop

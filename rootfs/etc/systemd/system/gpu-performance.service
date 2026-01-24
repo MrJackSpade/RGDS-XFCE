@@ -1,0 +1,11 @@
+[Unit]
+Description=Set GPU to performance governor
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c "echo performance > /sys/class/devfreq/fde60000.gpu/governor"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

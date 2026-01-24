@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Master System [PicoDrive]
+Comment=Sega Master System Emulator
+Exec=/usr/local/games/picodrive/picodrive
+Icon=picodrive
+Terminal=false
+Type=Application
+Categories=X-Sega;

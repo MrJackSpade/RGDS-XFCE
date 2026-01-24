@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=QJoyPad
+GenericName=Joypad to Keyboard/Mouse Mapper
+Exec=qjoypad
+Icon=qjoypad
+Type=Application
+Terminal=false
+Categories=Qt;Game;
+Comment=Maps joypad button and stick events to keyboard and mouse events.
+X-XFCE-Source=file:///usr/share/applications/qjoypad.desktop

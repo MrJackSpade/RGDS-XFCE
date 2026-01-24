@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=PlayStation [PCSX]
+Comment=Sony PlayStation Emulator
+Exec=/usr/local/bin/pcsx
+Icon=pcsx
+Terminal=false
+Type=Application
+Categories=X-Sony;

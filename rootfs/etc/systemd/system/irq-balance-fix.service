@@ -1,0 +1,11 @@
+[Unit]
+Description=Distribute IRQs across CPUs for better performance
+After=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c "echo 1 > /proc/irq/69/smp_affinity_list; echo 2 > /proc/irq/71/smp_affinity_list; echo 2 > /proc/irq/29/smp_affinity_list; echo 3 > /proc/irq/79/smp_affinity_list"
+
+[Install]
+WantedBy=multi-user.target

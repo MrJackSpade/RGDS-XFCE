@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=SNES [Snes9x]
+Comment=SNES Emulator
+Exec=/usr/local/games/snes9x/snes9x-gtk
+Icon=snes9x
+Terminal=false
+Type=Application
+Categories=X-Nintendo;

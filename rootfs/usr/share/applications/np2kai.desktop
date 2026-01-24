@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Neko Project II Kai
+Comment=PC-98 Emulator
+Exec=/usr/local/bin/xnp21kai
+Icon=np2kai
+Terminal=false
+Type=Application
+Categories=X-PC;

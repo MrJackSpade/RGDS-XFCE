@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=DOSBox-X Mount
+Exec=/home/trixie/.local/bin/dosbox-mount.sh %f
+Type=Application
+MimeType=application/x-hdi;application/x-fdi;
+NoDisplay=true
+

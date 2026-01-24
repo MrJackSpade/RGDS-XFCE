@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=NES [FCEUX]
+Comment=NES Emulator
+Exec=/usr/local/games/fceux/fceux
+Icon=fceux
+Terminal=false
+Type=Application
+Categories=X-Nintendo;

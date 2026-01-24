@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=32X [PicoDrive]
+Comment=Sega 32X Emulator
+Exec=/usr/local/games/picodrive/picodrive
+Icon=picodrive
+Terminal=false
+Type=Application
+Categories=X-Sega;

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Arcade [FBNeo]
+Comment=Arcade Emulator
+Exec=/usr/local/games/fbneo/fbneo
+Icon=fbneo
+Terminal=false
+Type=Application
+Categories=X-Arcade;

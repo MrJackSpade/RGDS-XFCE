@@ -1,0 +1,15 @@
+[Unit]
+Description=KMS VNC Server
+After=graphical.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/local/bin/kmsvnc -d /dev/dri/card0
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target

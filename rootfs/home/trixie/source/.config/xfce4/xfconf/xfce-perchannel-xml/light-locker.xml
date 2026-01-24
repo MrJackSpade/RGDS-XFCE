@@ -1,0 +1,7 @@
+<?xml version="1.1" encoding="UTF-8"?>
+
+<channel name="light-locker" version="1.0">
+  <property name="lock-on-suspend" type="bool" value="false"/>
+  <property name="lock-on-lid" type="bool" value="false"/>
+  <property name="lock-after-screensaver" type="uint" value="0"/>
+</channel>

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Capcom CPS [FBNeo]
+Comment=Capcom CPS Emulator
+Exec=/usr/local/games/fbneo/fbneo
+Icon=fbneo
+Terminal=false
+Type=Application
+Categories=X-Capcom;

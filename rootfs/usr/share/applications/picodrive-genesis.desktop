@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Genesis [PicoDrive]
+Comment=Sega Genesis Emulator
+Exec=/usr/local/games/picodrive/picodrive
+Icon=picodrive
+Terminal=false
+Type=Application
+Categories=X-Sega;

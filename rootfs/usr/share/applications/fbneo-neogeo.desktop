@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Neo Geo [FBNeo]
+Comment=Neo Geo Emulator
+Exec=/usr/local/games/fbneo/fbneo
+Icon=fbneo
+Terminal=false
+Type=Application
+Categories=X-SNK;

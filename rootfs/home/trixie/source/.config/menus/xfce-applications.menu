@@ -1,0 +1,246 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+  "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+
+<Menu>
+    <Name>Xfce</Name>
+
+    <DefaultAppDirs/>
+    <DefaultDirectoryDirs/>
+
+    <Include>
+        <Category>X-Xfce-Toplevel</Category>
+    </Include>
+
+    <Layout>
+        <Filename>xfce4-run.desktop</Filename>
+        <Separator/>
+        <Filename>xfce4-terminal-emulator.desktop</Filename>
+        <Filename>xfce4-file-manager.desktop</Filename>
+        <Filename>xfce4-mail-reader.desktop</Filename>
+        <Filename>xfce4-web-browser.desktop</Filename>
+        <Separator/>
+        <Menuname>Settings</Menuname>
+        <Separator/>
+        <Menuname>Accessories</Menuname>
+        <Menuname>Development</Menuname>
+        <Menuname>Education</Menuname>
+        <Menuname>Games</Menuname>
+        <Menuname>Graphics</Menuname>
+        <Menuname>Multimedia</Menuname>
+        <Menuname>Network</Menuname>
+        <Menuname>Office</Menuname>
+        <Menuname>Science</Menuname>
+        <Menuname>System</Menuname>
+        <Menuname>Other</Menuname>
+        <Separator/>
+        <Filename>xfce4-about.desktop</Filename>
+        <Filename>xfce4-session-logout.desktop</Filename>
+    </Layout>
+
+    <Menu>
+        <Name>Settings</Name>
+        <Directory>xfce-settings.directory</Directory>
+        <Include>
+            <Category>Settings</Category>
+        </Include>
+        <Layout>
+            <Filename>xfce-settings-manager.desktop</Filename>
+            <Separator/>
+            <Merge type="all"/>
+        </Layout>
+        <Menu>
+            <Name>Screensavers</Name>
+            <Directory>xfce-screensavers.directory</Directory>
+            <Include>
+                <Category>Screensaver</Category>
+            </Include>
+        </Menu>
+    </Menu>
+
+    <Menu>
+        <Name>Accessories</Name>
+        <Directory>xfce-accessories.directory</Directory>
+        <Include>
+            <Or>
+                <Category>Accessibility</Category>
+                <Category>Core</Category>
+                <Category>Legacy</Category>
+                <Category>Utility</Category>
+            </Or>
+        </Include>
+        <Exclude>
+            <Or>
+                <Filename>xfce4-file-manager.desktop</Filename>
+                <Filename>xfce4-terminal-emulator.desktop</Filename>
+                <Filename>xfce4-about.desktop</Filename>
+                <Filename>xfce4-run.desktop</Filename>
+            </Or>
+        </Exclude>
+    </Menu>
+
+    <Menu>
+        <Name>Education</Name>
+        <Directory>xfce-education.directory</Directory>
+        <Include>
+            <Category>Education</Category>
+        </Include>
+    </Menu>
+
+    <Menu>
+        <Name>Games</Name>
+        <Directory>xfce-games.directory</Directory>
+        <Include>
+            <Category>Game</Category>
+        </Include>
+
+        <Menu>
+            <Name>Nintendo</Name>
+            <Directory>nintendo.directory</Directory>
+            <Include>
+                <Category>X-Nintendo</Category>
+            </Include>
+        </Menu>
+
+        <Menu>
+            <Name>Sega</Name>
+            <Directory>sega.directory</Directory>
+            <Include>
+                <Category>X-Sega</Category>
+            </Include>
+        </Menu>
+
+        <Menu>
+            <Name>SNK</Name>
+            <Directory>snk.directory</Directory>
+            <Include>
+                <Category>X-SNK</Category>
+            </Include>
+        </Menu>
+
+        <Menu>
+            <Name>Capcom</Name>
+            <Directory>capcom.directory</Directory>
+            <Include>
+                <Category>X-Capcom</Category>
+            </Include>
+        </Menu>
+
+        <Menu>
+            <Name>Sammy</Name>
+            <Directory>sammy.directory</Directory>
+            <Include>
+                <Category>X-Sammy</Category>
+            </Include>
+        </Menu>
+
+        <Menu>
+            <Name>Arcade</Name>
+            <Directory>arcade.directory</Directory>
+            <Include>
+                <Category>X-Arcade</Category>
+            </Include>
+        </Menu>
+
+        <Menu>
+            <Name>Sony</Name>
+            <Directory>sony.directory</Directory>
+            <Include>
+                <Category>X-Sony</Category>
+            </Include>
+        </Menu>
+
+        <Menu>
+            <Name>PC</Name>
+            <Directory>pc.directory</Directory>
+            <Include>
+                <Category>X-PC</Category>
+            </Include>
+        </Menu>
+
+        <Layout>
+            <Menuname>Nintendo</Menuname>
+            <Menuname>Sega</Menuname>
+            <Menuname>SNK</Menuname>
+            <Menuname>Capcom</Menuname>
+            <Menuname>Sammy</Menuname>
+            <Menuname>Arcade</Menuname>
+            <Menuname>Sony</Menuname>
+            <Menuname>PC</Menuname>
+            <Merge type="menus"/>
+            <Merge type="files"/>
+        </Layout>
+    </Menu>
+
+    <Menu>
+        <Name>Graphics</Name>
+        <Directory>xfce-graphics.directory</Directory>
+        <Include>
+            <Category>Graphics</Category>
+        </Include>
+    </Menu>
+
+    <Menu>
+        <Name>Multimedia</Name>
+        <Directory>xfce-multimedia.directory</Directory>
+        <Include>
+            <Category>Audio</Category>
+            <Category>Video</Category>
+            <Category>AudioVideo</Category>
+        </Include>
+    </Menu>
+
+    <Menu>
+        <Name>Network</Name>
+        <Directory>xfce-network.directory</Directory>
+        <Include>
+            <Category>Network</Category>
+        </Include>
+        <Exclude>
+            <Or>
+                <Filename>xfce4-mail-reader.desktop</Filename>
+                <Filename>xfce4-web-browser.desktop</Filename>
+            </Or>
+        </Exclude>
+    </Menu>
+
+    <Menu>
+        <Name>Office</Name>
+        <Directory>xfce-office.directory</Directory>
+        <Include>
+            <Category>Office</Category>
+        </Include>
+    </Menu>
+
+    <Menu>
+        <Name>Science</Name>
+        <Directory>xfce-science.directory</Directory>
+        <Include>
+            <Category>Science</Category>
+        </Include>
+    </Menu>
+
+    <Menu>
+        <Name>System</Name>
+        <Directory>xfce-system.directory</Directory>
+        <Include>
+            <Category>System</Category>
+        </Include>
+        <Exclude>
+            <Or>
+                <Filename>xfce4-session-logout.desktop</Filename>
+            </Or>
+        </Exclude>
+    </Menu>
+
+    <Menu>
+        <Name>Other</Name>
+        <Directory>xfce-other.directory</Directory>
+        <OnlyUnallocated/>
+        <Include>
+            <All/>
+        </Include>
+    </Menu>
+
+    <DefaultMergeDirs/>
+
+</Menu>

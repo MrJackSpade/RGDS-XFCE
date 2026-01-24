@@ -1,0 +1,12 @@
+[Unit]
+Description=Context Sensitive Virtual Keyboard (Context-OSK)
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/local/bin/context-osk
+Restart=always
+RestartSec=3
+Environment=DISPLAY=:0
+
+[Install]
+WantedBy=default.target

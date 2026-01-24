@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Atomiswave [Flycast]
+Comment=Atomiswave Arcade Emulator
+Exec=/usr/local/games/flycast/flycast
+Icon=flycast
+Terminal=false
+Type=Application
+Categories=X-Sammy;

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Sega CD [PicoDrive]
+Comment=Sega CD Emulator
+Exec=/usr/local/games/picodrive/picodrive
+Icon=picodrive
+Terminal=false
+Type=Application
+Categories=X-Sega;

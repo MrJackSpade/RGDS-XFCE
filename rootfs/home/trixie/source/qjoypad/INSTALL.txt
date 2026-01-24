@@ -1,0 +1,8 @@
+For a quick install, just follow these steps:
+
+git clone https://github.com/panzi/qjoypad
+mkdir qjoypad/build
+cd qjoypad/build
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+make -j`nproc`
+make install
