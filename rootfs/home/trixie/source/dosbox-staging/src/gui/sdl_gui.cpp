@@ -753,6 +753,14 @@ static void enter_fullscreen()
 
 	// We need to disable transparency in fullscreen on macOS
 	SDL_SetWindowOpacity(sdl.window, 100);
+
+	GFX_SetMouseCapture(true);
+
+	// Enforce exclusive grab of input devices
+	DirectInput_SetMouseGrab(true);
+	
+	// Hide the cursor
+	GFX_SetMouseVisibility(false);
 }
 
 static void exit_fullscreen()
@@ -798,6 +806,16 @@ static void exit_fullscreen()
 
 	// We need to disable transparency in fullscreen on macOS
 	set_window_transparency();
+
+	// We need to disable transparency in fullscreen on macOS
+	set_window_transparency();
+
+	// Release exclusive grab
+	DirectInput_SetMouseGrab(false);
+	
+	// SDL/OS cursor might need to be shown/unlocked
+	GFX_SetMouseVisibility(true);
+	GFX_SetMouseCapture(false);
 
 	set_window_decorations();
 }
@@ -1092,6 +1110,10 @@ static void focus_input()
 	// If not, raise-and-focus to prevent stranding the window
 	SDL_RaiseWindow(sdl.window);
 	SDL_SetWindowInputFocus(sdl.window);
+
+	// Re-apply grab if we regained focus in fullscreen
+	DirectInput_SetMouseGrab(true);
+	GFX_SetMouseVisibility(false);
 }
 
 static void toggle_fullscreen()
@@ -1955,9 +1977,16 @@ void GFX_InitAndStartGui()
 
 	TITLEBAR_ReadConfig();
 
-	if (sdl.is_fullscreen &&
-	    sdl.fullscreen.mode == FullscreenMode::ForcedBorderless) {
-		enter_fullscreen();
+	if (sdl.is_fullscreen) {
+		if (sdl.fullscreen.mode == FullscreenMode::ForcedBorderless) {
+			enter_fullscreen();
+		} else {
+			// Standard fullscreen mode (window created as fullscreen by SDL)
+			// effectively bypasses enter_fullscreen(), so we must manually
+			// enforce the input grab.
+			DirectInput_SetMouseGrab(true);
+			GFX_SetMouseVisibility(false);
+		}
 	}
 
 	RENDER_Init();

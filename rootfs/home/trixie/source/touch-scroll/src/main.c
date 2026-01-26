@@ -18,6 +18,7 @@
 #include "gesture_engine.h"
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include "touch_ipc.h"
 #include "debug.h" // Include debug support
@@ -40,6 +41,10 @@ static int create_ipc_server_socket(void) {
         close(fd);
         return -1;
     }
+
+    // Allow permissions for user-level clients (context-osk)
+    chmod(TOUCH_IPC_SOCKET_PATH, 0666);
+
     
     if (listen(fd, 2) < 0) {
         close(fd);
