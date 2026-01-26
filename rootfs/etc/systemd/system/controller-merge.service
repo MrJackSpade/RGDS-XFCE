@@ -7,6 +7,7 @@ Type=simple
 ExecStart=/usr/local/bin/evsieve \
   --input /dev/input/by-path/platform-adc-joystick-event-joystick grab \
   --input /dev/input/by-path/platform-gpio-keys-control-event-joystick grab \
+  --input /dev/input/by-path/platform-adc-keys-home-event grab \
   --output name="Combined Controller"
 Restart=always
 RestartSec=3

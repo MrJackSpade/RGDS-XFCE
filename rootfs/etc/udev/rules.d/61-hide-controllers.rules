@@ -1,2 +1,3 @@
 SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="adc-joystick", ENV{ID_INPUT}="", ENV{ID_INPUT_JOYSTICK}="", ENV{ID_INPUT_KEY}="", TAG-="uaccess", MODE="0600", GROUP="root"
 SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="gpio-keys-control", ENV{ID_INPUT}="", ENV{ID_INPUT_JOYSTICK}="", ENV{ID_INPUT_KEY}="", TAG-="uaccess", MODE="0600", GROUP="root"
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="adc-keys-home", ENV{ID_INPUT}="", ENV{ID_INPUT_JOYSTICK}="", ENV{ID_INPUT_KEY}="", TAG-="uaccess", MODE="0600", GROUP="root"
