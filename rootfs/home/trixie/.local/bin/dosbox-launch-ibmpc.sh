@@ -1,7 +1,7 @@
 #!/bin/bash
 CONF="$HOME/.config/dosbox-x/ibmpc.conf"
 
-dosbox-x --conf "$CONF" -set machine=svga_s3 &
+dosbox -conf "$CONF" -set machine=svga_s3 &
 
 PID=$!
 sleep 2
