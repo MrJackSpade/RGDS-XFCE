@@ -29,11 +29,36 @@
 static SDL_Scancode LinuxKeyToSDLScancode(int code) {
 	if (code >= KEY_1 && code <= KEY_9) return static_cast<SDL_Scancode>(SDL_SCANCODE_1 + (code - KEY_1));
 	if (code == KEY_0) return SDL_SCANCODE_0;
-	if (code >= KEY_Q && code <= KEY_P) return static_cast<SDL_Scancode>(SDL_SCANCODE_Q + (code - KEY_Q));
-	if (code >= KEY_A && code <= KEY_L) return static_cast<SDL_Scancode>(SDL_SCANCODE_A + (code - KEY_A));
-	if (code >= KEY_Z && code <= KEY_M) return static_cast<SDL_Scancode>(SDL_SCANCODE_Z + (code - KEY_Z));
-	
 	switch (code) {
+		case KEY_Q: return SDL_SCANCODE_Q;
+		case KEY_W: return SDL_SCANCODE_W;
+		case KEY_E: return SDL_SCANCODE_E;
+		case KEY_R: return SDL_SCANCODE_R;
+		case KEY_T: return SDL_SCANCODE_T;
+		case KEY_Y: return SDL_SCANCODE_Y;
+		case KEY_U: return SDL_SCANCODE_U;
+		case KEY_I: return SDL_SCANCODE_I;
+		case KEY_O: return SDL_SCANCODE_O;
+		case KEY_P: return SDL_SCANCODE_P;
+
+		case KEY_A: return SDL_SCANCODE_A;
+		case KEY_S: return SDL_SCANCODE_S;
+		case KEY_D: return SDL_SCANCODE_D;
+		case KEY_F: return SDL_SCANCODE_F;
+		case KEY_G: return SDL_SCANCODE_G;
+		case KEY_H: return SDL_SCANCODE_H;
+		case KEY_J: return SDL_SCANCODE_J;
+		case KEY_K: return SDL_SCANCODE_K;
+		case KEY_L: return SDL_SCANCODE_L;
+
+		case KEY_Z: return SDL_SCANCODE_Z;
+		case KEY_X: return SDL_SCANCODE_X;
+		case KEY_C: return SDL_SCANCODE_C;
+		case KEY_V: return SDL_SCANCODE_V;
+		case KEY_B: return SDL_SCANCODE_B;
+		case KEY_N: return SDL_SCANCODE_N;
+		case KEY_M: return SDL_SCANCODE_M;
+
 		case KEY_ESC: return SDL_SCANCODE_ESCAPE;
 		case KEY_MINUS: return SDL_SCANCODE_MINUS;
 		case KEY_EQUAL: return SDL_SCANCODE_EQUALS;

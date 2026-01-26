@@ -29,4 +29,19 @@ void gesture_engine_process(int dev_idx, struct input_event *ev);
  */
 void gesture_engine_tick(void);
 
+/**
+ * @brief Register a region for touch interception.
+ */
+void gesture_engine_register_region(int region_id, int screen_idx, int x, int y, int w, int h, int client_fd);
+
+/**
+ * @brief Unregister a region.
+ */
+void gesture_engine_unregister_region(int region_id);
+
+/**
+ * @brief Handle client disconnection (cleanup regions).
+ */
+void gesture_engine_client_disconnect(int client_fd);
+
 #endif

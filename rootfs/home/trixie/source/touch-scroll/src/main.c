@@ -16,7 +16,39 @@
 #include "touch_device.h"
 #include "virtual_mouse.h"
 #include "gesture_engine.h"
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <fcntl.h>
+#include "touch_ipc.h"
 #include "debug.h" // Include debug support
+
+static int ipc_server_fd = -1;
+#define MAX_IPC_CLIENTS 4
+static int ipc_clients[MAX_IPC_CLIENTS];
+
+static int create_ipc_server_socket(void) {
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) return -1;
+    
+    unlink(TOUCH_IPC_SOCKET_PATH);
+    
+    struct sockaddr_un addr = {0};
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, TOUCH_IPC_SOCKET_PATH, sizeof(addr.sun_path) - 1);
+    
+    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        close(fd);
+        return -1;
+    }
+    
+    if (listen(fd, 2) < 0) {
+        close(fd);
+        return -1;
+    }
+    
+    fcntl(fd, F_SETFL, O_NONBLOCK);
+    return fd;
+}
 
 static volatile int keep_running = 1;
 
@@ -99,20 +131,59 @@ int main(int argc, char *argv[]) {
     
     fprintf(stderr, "Touch Mouse Interface Ready.\n");
     
+    // Initialize IPC server
+    for (int i = 0; i < MAX_IPC_CLIENTS; i++) ipc_clients[i] = -1;
+    ipc_server_fd = create_ipc_server_socket();
+    if (ipc_server_fd < 0) {
+        fprintf(stderr, "Failed to create IPC server socket (continuing anyway)\n");
+    } else {
+        fprintf(stderr, "IPC Server listening on %s\n", TOUCH_IPC_SOCKET_PATH);
+    }
+    
     int num_devices = touch_device_get_count();
-    struct pollfd *pfds = calloc(num_devices, sizeof(struct pollfd));
+    // pfds size: devices + server + clients
+    int max_pfds = num_devices + 1 + MAX_IPC_CLIENTS;
+    struct pollfd *pfds = calloc(max_pfds, sizeof(struct pollfd));
     
     // Main Event Loop
     while (keep_running) {
-        // Populate poll file descriptors for all active touch devices
+        // Populate poll file descriptors
+        int pfd_idx = 0;
+        
+        // 1. Touch Devices
         for (int i = 0; i < num_devices; i++) {
             struct touch_device *td = touch_device_get(i);
-            pfds[i].fd = td->fd;
-            pfds[i].events = POLLIN;
+            pfds[pfd_idx].fd = td->fd;
+            pfds[pfd_idx].events = POLLIN;
+            pfds[pfd_idx].revents = 0;
+            pfd_idx++;
+        }
+        
+        // 2. IPC Server Socket
+        int server_pfd_idx = -1;
+        if (ipc_server_fd >= 0) {
+            pfds[pfd_idx].fd = ipc_server_fd;
+            pfds[pfd_idx].events = POLLIN;
+            pfds[pfd_idx].revents = 0;
+            server_pfd_idx = pfd_idx;
+            pfd_idx++;
+        }
+        
+        // 3. Connected Clients
+        int client_pfd_indices[MAX_IPC_CLIENTS];
+        for (int i = 0; i < MAX_IPC_CLIENTS; i++) {
+            client_pfd_indices[i] = -1;
+            if (ipc_clients[i] >= 0) {
+                pfds[pfd_idx].fd = ipc_clients[i];
+                pfds[pfd_idx].events = POLLIN;
+                pfds[pfd_idx].revents = 0;
+                client_pfd_indices[i] = pfd_idx;
+                pfd_idx++;
+            }
         }
         
         // Wait for events with a timeout (10ms tick)
-        int ret = poll(pfds, num_devices, 10); 
+        int ret = poll(pfds, pfd_idx, 10); 
         
         if (ret < 0) {
             if (errno == EINTR) continue; // Interrupted by signal, continue loop
@@ -121,6 +192,61 @@ int main(int argc, char *argv[]) {
         
         // Perform periodic tasks (e.g., checking for long-press timeouts)
         gesture_engine_tick();
+        
+        // Check Server Socket for new connections
+        if (server_pfd_idx >= 0 && (pfds[server_pfd_idx].revents & POLLIN)) {
+            int new_fd = accept(ipc_server_fd, NULL, NULL);
+            if (new_fd >= 0) {
+                fcntl(new_fd, F_SETFL, O_NONBLOCK);
+                int added = 0;
+                for (int i = 0; i < MAX_IPC_CLIENTS; i++) {
+                    if (ipc_clients[i] == -1) {
+                        ipc_clients[i] = new_fd;
+                        added = 1;
+                        fprintf(stderr, "IPC Client connected (fd %d)\n", new_fd);
+                        break;
+                    }
+                }
+                if (!added) {
+                    close(new_fd); // Too many clients
+                }
+            }
+        }
+
+        // Check Clients for data
+        for (int i = 0; i < MAX_IPC_CLIENTS; i++) {
+            int pidx = client_pfd_indices[i];
+            if (pidx >= 0 && (pfds[pidx].revents & (POLLIN | POLLHUP | POLLERR))) {
+                if (pfds[pidx].revents & POLLIN) {
+                    TouchIpcMsgHeader header;
+                    int fd = ipc_clients[i];
+                    ssize_t n = recv(fd, &header, sizeof(header), MSG_PEEK);
+                    if (n > 0) {
+                        if (header.type == TOUCH_IPC_MSG_REGISTER_REGION) {
+                            TouchIpcRegisterMsg msg;
+                            recv(fd, &msg, sizeof(msg), 0);
+                            gesture_engine_register_region(msg.region_id, msg.screen_index, msg.x, msg.y, msg.width, msg.height, fd);
+                        } else {
+                            // Consume unknown or other messages
+                             char buf[128];
+                             recv(fd, buf, sizeof(buf), 0);
+                        }
+                    } else {
+                        // Disconnect (0 or error)
+                        gesture_engine_client_disconnect(ipc_clients[i]);
+                        close(ipc_clients[i]);
+                        ipc_clients[i] = -1;
+                        fprintf(stderr, "IPC Client disconnected\n");
+                    }
+                } else {
+                    // HUP or ERR
+                    gesture_engine_client_disconnect(ipc_clients[i]);
+                    close(ipc_clients[i]);
+                    ipc_clients[i] = -1;
+                    fprintf(stderr, "IPC Client disconnected (HUP/ERR)\n");
+                }
+            }
+        }
         
         // Process any pending input events
         for (int i = 0; i < num_devices; i++) {

@@ -1,6 +1,6 @@
 CXX = g++
-CXXFLAGS = -Wall -O2 `pkg-config --cflags x11 cairo xrandr xtst`
-LDFLAGS = `pkg-config --libs x11 cairo xrandr xtst`
+CXXFLAGS = -Wall -O2 `pkg-config --cflags x11 cairo xrandr`
+LDFLAGS = `pkg-config --libs x11 cairo xrandr`
 
 SRC_DIR = src
 OBJ_DIR = obj

@@ -1,14 +1,18 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
-#include <X11/extensions/XTest.h>
 #include <cairo/cairo.h>
 #include <cairo/cairo-xlib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <fcntl.h>
+#include "touch_ipc.h"
 #include "Theme.h"
+#include "UInput.h"
 
 // Globals
 Display* dis;
@@ -19,6 +23,19 @@ Theme current_theme;
 Button* pressed_button = nullptr; // Track which button is currently held
 int drag_start_y = 0;
 bool is_dragging = false;
+
+int touch_proxy_fd = -1; // Socket to touch-scroll
+UInput uinput_dev;
+
+int x_error_handler(Display* display, XErrorEvent* error) {
+    if (error->error_code == BadWindow) {
+        return 0;
+    }
+    char msg[80];
+    XGetErrorText(display, error->error_code, msg, sizeof(msg));
+    fprintf(stderr, "X Error: %s\n", msg);
+    return 0;
+}
 
 void create_window() {
     dis = XOpenDisplay(NULL);
@@ -130,7 +147,162 @@ Button* hit_test(int x, int y) {
     }
     return nullptr;
 }
+// --- Input Handling Helpers ---
 
+void handle_input_down(int x, int y) {
+    drag_start_y = y;
+    is_dragging = true;
+
+    pressed_button = hit_test(x, y);
+    if (pressed_button) {
+        if (pressed_button->toggle) {
+            // Toggle logic
+            pressed_button->is_pressed = !pressed_button->is_pressed;
+            if (pressed_button->keycode > 0) {
+                // Convert X11 keycode to Linux input keycode
+                int linux_code = pressed_button->keycode - 8;
+                if (linux_code >= 0) {
+                    uinput_dev.send_key(linux_code, pressed_button->is_pressed);
+                }
+            }
+        } else {
+            // Normal button input
+            pressed_button->is_pressed = true;
+            if (pressed_button->keycode > 0) {
+                 int linux_code = pressed_button->keycode - 8;
+                 if (linux_code >= 0) {
+                     uinput_dev.send_key(linux_code, true);
+                 }
+            }
+        }
+        render();
+    }
+}
+
+void handle_input_up(int x, int y) {
+    (void)x; (void)y;
+    is_dragging = false;
+
+    if (pressed_button) {
+        if (!pressed_button->toggle) {
+             // Release normal button
+             pressed_button->is_pressed = false;
+             if (pressed_button->keycode > 0) {
+                  int linux_code = pressed_button->keycode - 8;
+                  if (linux_code >= 0) {
+                      uinput_dev.send_key(linux_code, false);
+                  }
+             }
+             
+             // Release any OTHER active toggle buttons (Latching behavior)
+             bool render_needed = false;
+             for (auto& btn : current_theme.buttons) {
+                 if (btn.toggle && btn.is_pressed && &btn != pressed_button) {
+                     btn.is_pressed = false;
+                     if (btn.keycode > 0) {
+                         int linux_code = btn.keycode - 8;
+                         if (linux_code >= 0) {
+                            uinput_dev.send_key(linux_code, false);
+                         }
+                     }
+                     render_needed = true;
+                 }
+             }
+             if (render_needed) render(); // Optimized: Only render if we changed something
+        }
+        // For toggle buttons, we do nothing on release
+        pressed_button = nullptr;
+        render();
+    }
+}
+
+void handle_input_move(int x, int y) {
+    if (is_dragging) {
+         int delta_y = y - drag_start_y;
+         // Threshold: 50 pixels down
+         if (delta_y > 50) {
+             // Exit!
+             if (pressed_button && !pressed_button->toggle && pressed_button->is_pressed) {
+                 if (pressed_button->keycode > 0) {
+                     int linux_code = pressed_button->keycode - 8;
+                     if (linux_code >= 0) {
+                         uinput_dev.send_key(linux_code, false);
+                     }
+                 }
+             }
+             exit(0);
+         }
+    }
+}
+
+// --- IPC Client ---
+
+void register_window_region() {
+    if (touch_proxy_fd < 0) return;
+    
+    // Determine current window geometry
+    XWindowAttributes attrs;
+    XGetWindowAttributes(dis, win, &attrs);
+    
+    // Logic for screen index based on Y position
+    // If y >= 480, it's screen 0 (Bottom/DSI-1)
+    // If y < 480, it's screen 1 (Top/DSI-2)
+    int screen_idx = (attrs.y >= 480) ? 0 : 1;
+    
+    TouchIpcRegisterMsg msg;
+    msg.type = TOUCH_IPC_MSG_REGISTER_REGION;
+    msg.region_id = 1;
+    msg.screen_index = screen_idx;
+    msg.x = attrs.x;
+    msg.y = attrs.y;
+    msg.width = attrs.width;
+    msg.height = attrs.height;
+    
+    send(touch_proxy_fd, &msg, sizeof(msg), 0);
+    printf("Registered region: ID 1, Screen %d, [%d, %d] %dx%d\n", screen_idx, attrs.x, attrs.y, attrs.width, attrs.height);
+}
+
+void connect_touch_proxy() {
+    touch_proxy_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (touch_proxy_fd < 0) {
+        perror("Socket creation failed");
+        return;
+    }
+    
+    struct sockaddr_un addr = {0};
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, TOUCH_IPC_SOCKET_PATH, sizeof(addr.sun_path) - 1);
+    
+    if (connect(touch_proxy_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        perror("Connect failed (touch-scroll not running?)");
+        close(touch_proxy_fd);
+        touch_proxy_fd = -1;
+        return;
+    }
+    
+    fcntl(touch_proxy_fd, F_SETFL, O_NONBLOCK);
+    printf("Connected to touch-scroll proxy.\n");
+    register_window_region();
+}
+
+void process_touch_events() {
+    if (touch_proxy_fd < 0) return;
+    
+    TouchIpcEventMsg msg;
+    while (recv(touch_proxy_fd, &msg, sizeof(msg), 0) == sizeof(msg)) {
+        switch (msg.type) {
+            case TOUCH_IPC_MSG_TOUCH_DOWN:
+                handle_input_down(msg.x, msg.y); // Relative Coords
+                break;
+            case TOUCH_IPC_MSG_TOUCH_UP:
+                handle_input_up(msg.x, msg.y); // Relative Coords
+                break;
+            case TOUCH_IPC_MSG_TOUCH_MOVE:
+                handle_input_move(msg.x, msg.y); // Relative Coords
+                break;
+        }
+    }
+}
 
 // Context Monitor
 Window last_active_window = None;
@@ -215,6 +387,7 @@ void check_context() {
                 if (win_h <= 0) win_h = 200; 
                 int win_y = screen_height - win_h;
                 XMoveResizeWindow(dis, win, 0, win_y, screen_width, win_h);
+                register_window_region(); // Re-register with new coordinates
             } else {
                  printf("Theme not found, sticking to current or default.\n");
             }
@@ -224,6 +397,7 @@ void check_context() {
 }
 
 int main(int argc, char** argv) {
+    XSetErrorHandler(x_error_handler);
     // Load default theme initially
     // Try explicit path first, then relative
     const char* home = getenv("HOME");
@@ -238,6 +412,12 @@ int main(int argc, char** argv) {
     }
 
     create_window();
+    connect_touch_proxy(); // Connect and register
+    
+    if (!uinput_dev.init()) {
+        fprintf(stderr, "Failed to initialize uinput device. Check permissions on /dev/uinput.\n");
+        // We can continue running, but input won't work.
+    }
 
     XEvent event;
     while (1) {
@@ -247,80 +427,18 @@ int main(int argc, char** argv) {
                 render();
             } 
             else if (event.type == ButtonPress) {
-                drag_start_y = event.xbutton.y;
-                is_dragging = true;
-
-                pressed_button = hit_test(event.xbutton.x, event.xbutton.y);
-                if (pressed_button) {
-                    if (pressed_button->toggle) {
-                        // Toggle logic
-                        pressed_button->is_pressed = !pressed_button->is_pressed;
-                        if (pressed_button->keycode > 0) {
-                            XTestFakeKeyEvent(dis, pressed_button->keycode, pressed_button->is_pressed, 0);
-                            XFlush(dis);
-                        }
-                    } else {
-                        // Normal button input
-                        pressed_button->is_pressed = true;
-                        if (pressed_button->keycode > 0) {
-                             XTestFakeKeyEvent(dis, pressed_button->keycode, True, 0);
-                             XFlush(dis);
-                        }
-                    }
-                    render();
-                }
+                handle_input_down(event.xbutton.x, event.xbutton.y);
             }
             else if (event.type == MotionNotify) {
-                if (is_dragging) {
-                     int delta_y = event.xmotion.y - drag_start_y;
-                     // Threshold: 50 pixels down
-                     if (delta_y > 50) {
-                         // Exit!
-                         // Release any pressed keys to avoid stuck keys
-                         if (pressed_button && !pressed_button->toggle && pressed_button->is_pressed) {
-                             if (pressed_button->keycode > 0) {
-                                 XTestFakeKeyEvent(dis, pressed_button->keycode, False, 0);
-                                 XFlush(dis);
-                             }
-                         }
-                         exit(0);
-                     }
-                }
+                handle_input_move(event.xmotion.x, event.xmotion.y);
             }
             else if (event.type == ButtonRelease) {
-                is_dragging = false;
-
-                if (pressed_button) {
-                    if (!pressed_button->toggle) {
-                         // Release normal button
-                         pressed_button->is_pressed = false;
-                         if (pressed_button->keycode > 0) {
-                              XTestFakeKeyEvent(dis, pressed_button->keycode, False, 0);
-                              XFlush(dis);
-                         }
-                         
-                         // Release any OTHER active toggle buttons (Latching behavior)
-                         // "Stay held until a new key is clicked" -> New key click happened now (this release)
-                         bool render_needed = false;
-                         for (auto& btn : current_theme.buttons) {
-                             if (btn.toggle && btn.is_pressed && &btn != pressed_button) {
-                                 btn.is_pressed = false;
-                                 if (btn.keycode > 0) {
-                                     XTestFakeKeyEvent(dis, btn.keycode, False, 0);
-                                 }
-                                 render_needed = true;
-                             }
-                         }
-                         if (render_needed) XFlush(dis);
-                    }
-                    // For toggle buttons, we do nothing on release
-                    pressed_button = nullptr;
-                    render();
-                }
+                handle_input_up(event.xbutton.x, event.xbutton.y);
             }
         } else {
+            process_touch_events(); // Check for IPC events
             check_context();
-            usleep(100000); // 100ms poll
+            usleep(10000); // Reduce sleep to 10ms for better responsiveness
         }
     }
     return 0;

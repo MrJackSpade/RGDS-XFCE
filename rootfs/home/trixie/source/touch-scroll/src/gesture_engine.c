@@ -19,6 +19,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string.h>
+#include <sys/socket.h>
+#include "touch_ipc.h"
+
+#define MAX_REGISTERED_REGIONS 4
+
+typedef struct {
+    int active;
+    int region_id;
+    int screen_index;
+    int x, y, width, height;
+    int client_fd;
+} RegisteredRegion;
+
+static RegisteredRegion registered_regions[MAX_REGISTERED_REGIONS];
+static int g_intercept_active_region = -1; // Index in registered_regions array, or -1 if none
+
 
 static struct gesture_state g_state = {0};
 
@@ -135,6 +152,26 @@ static void handle_touch_down(int x, int y) {
  */
 static void handle_touch_up(void) {
     if (g_state.fingers_count == 0) {
+        // If we were intercepting, end it
+        if (g_intercept_active_region != -1) {
+            if (registered_regions[g_intercept_active_region].active) {
+                TouchIpcEventMsg msg = {
+                    .type = TOUCH_IPC_MSG_TOUCH_UP,
+                    .region_id = registered_regions[g_intercept_active_region].region_id,
+                    .touch_id = 0,
+                    .x = 0, // Last known? Or 0
+                    .y = 0,
+                    .abs_x = 0,
+                    .abs_y = 0
+                };
+                send(registered_regions[g_intercept_active_region].client_fd, &msg, sizeof(msg), MSG_NOSIGNAL);
+            }
+            g_intercept_active_region = -1;
+            DEBUG_LOG("Intercept Region Ended\n");
+            g_state.state = GESTURE_STATE_IDLE; // Ensure state is idle
+            return;
+        }
+
         // All fingers lifted
         if (g_state.state == GESTURE_STATE_TOUCH_START) {
             // Finger down then up quickly without moving much -> CLICK
@@ -286,6 +323,57 @@ void gesture_engine_process(int dev_idx, struct input_event *ev) {
                 int screen_x, screen_y;
                 transform_coords(found_dev, tx, ty, &screen_x, &screen_y);
 
+                // --- INTERCEPT CHECK START ---
+                if (g_intercept_active_region != -1) {
+                    // Already intercepting, continue sending MOVE
+                    if (registered_regions[g_intercept_active_region].active) {
+                        RegisteredRegion *r = &registered_regions[g_intercept_active_region];
+                        TouchIpcEventMsg msg = {
+                            .type = TOUCH_IPC_MSG_TOUCH_MOVE,
+                            .region_id = r->region_id,
+                            .touch_id = 0, // simplified
+                            .x = screen_x - r->x,
+                            .y = screen_y - r->y,
+                            .abs_x = screen_x,
+                            .abs_y = screen_y
+                        };
+                        send(r->client_fd, &msg, sizeof(msg), MSG_NOSIGNAL);
+                    }
+                    return; // Skip normal processing
+                }
+                
+                // Not currently intercepting, check if we should start
+                if (g_state.state == GESTURE_STATE_IDLE || g_state.state == GESTURE_STATE_CLICK_WAIT) { 
+                    for (int i = 0; i < MAX_REGISTERED_REGIONS; i++) {
+                        if (!registered_regions[i].active) continue;
+                        if (registered_regions[i].screen_index != found_dev) continue;
+                        
+                        // Hit test
+                        if (screen_x >= registered_regions[i].x && 
+                            screen_x < registered_regions[i].x + registered_regions[i].width &&
+                            screen_y >= registered_regions[i].y && 
+                            screen_y < registered_regions[i].y + registered_regions[i].height) {
+                            
+                            // Start Intercept
+                            g_intercept_active_region = i;
+                            DEBUG_LOG("Intercept Region Started (ID: %d)\n", registered_regions[i].region_id);
+                            
+                            TouchIpcEventMsg msg = {
+                                .type = TOUCH_IPC_MSG_TOUCH_DOWN,
+                                .region_id = registered_regions[i].region_id,
+                                .touch_id = 0,
+                                .x = screen_x - registered_regions[i].x,
+                                .y = screen_y - registered_regions[i].y,
+                                .abs_x = screen_x,
+                                .abs_y = screen_y
+                            };
+                            send(registered_regions[i].client_fd, &msg, sizeof(msg), MSG_NOSIGNAL);
+                            return; // Skip normal processing
+                        }
+                    }
+                }
+                // --- INTERCEPT CHECK END ---
+
                 // Track active device for gesture state
                 if (g_state.state == GESTURE_STATE_IDLE) {
                     g_state.active_device = found_dev;
@@ -325,6 +413,64 @@ void gesture_engine_tick(void) {
             // we simply reset to IDLE.
             g_state.state = GESTURE_STATE_IDLE;
             DEBUG_LOG("State: CLICK_WAIT -> IDLE (Double Tap Timeout)\n");
+        }
+    }
+}
+
+void gesture_engine_register_region(int region_id, int screen_idx, int x, int y, int w, int h, int client_fd) {
+    // 1. Check if region already exists for this client (Update it)
+    for (int i = 0; i < MAX_REGISTERED_REGIONS; i++) {
+        if (registered_regions[i].active && 
+            registered_regions[i].region_id == region_id && 
+            registered_regions[i].client_fd == client_fd) {
+            
+            registered_regions[i].screen_index = screen_idx;
+            registered_regions[i].x = x;
+            registered_regions[i].y = y;
+            registered_regions[i].width = w;
+            registered_regions[i].height = h;
+            DEBUG_LOG("Updated region %d: Screen %d, [%d, %d] %dx%d\n", region_id, screen_idx, x, y, w, h);
+            return;
+        }
+    }
+
+    // 2. Find new slot
+    for (int i = 0; i < MAX_REGISTERED_REGIONS; i++) {
+        if (!registered_regions[i].active) {
+            registered_regions[i].active = 1;
+            registered_regions[i].region_id = region_id;
+            registered_regions[i].screen_index = screen_idx;
+            registered_regions[i].x = x;
+            registered_regions[i].y = y;
+            registered_regions[i].width = w;
+            registered_regions[i].height = h;
+            registered_regions[i].client_fd = client_fd;
+            DEBUG_LOG("Registered region %d: Screen %d, [%d, %d] %dx%d\n", region_id, screen_idx, x, y, w, h);
+            return;
+        }
+    }
+    DEBUG_LOG("Failed to register region: storage full\n");
+}
+
+void gesture_engine_unregister_region(int region_id) {
+    for (int i = 0; i < MAX_REGISTERED_REGIONS; i++) {
+        if (registered_regions[i].active && registered_regions[i].region_id == region_id) {
+            registered_regions[i].active = 0;
+            if (g_intercept_active_region == i) {
+                g_intercept_active_region = -1;
+            }
+            break;
+        }
+    }
+}
+
+void gesture_engine_client_disconnect(int client_fd) {
+    for (int i = 0; i < MAX_REGISTERED_REGIONS; i++) {
+        if (registered_regions[i].active && registered_regions[i].client_fd == client_fd) {
+            registered_regions[i].active = 0;
+            if (g_intercept_active_region == i) {
+                g_intercept_active_region = -1;
+            }
         }
     }
 }

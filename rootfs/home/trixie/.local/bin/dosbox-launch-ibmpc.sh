@@ -10,5 +10,6 @@ sleep 2
 WID=$(wmctrl -l -p | awk -v pid="$PID" '$3 == pid {print $1; exit}')
 
 if [ -n "$WID" ]; then
+    wmctrl -i -r "$WID" -e 0,0,0,-1,-1
     wmctrl -i -r "$WID" -b add,fullscreen,above
 fi
