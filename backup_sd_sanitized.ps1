@@ -12,9 +12,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Output paths
-$ImageFile = Join-Path $PSScriptRoot "$OutputName.img"
-$SanitizedFile = Join-Path $PSScriptRoot "$OutputName_sanitized.img"
-$ZipFile = Join-Path $PSScriptRoot "$OutputName.zip"
+$BackupDir = Join-Path $PSScriptRoot "backups"
+$ImageFile = Join-Path $BackupDir "$OutputName.img"
+$SanitizedFile = Join-Path $BackupDir "$OutputName_sanitized.img"
+$ZipFile = Join-Path $BackupDir "$OutputName.zip"
 
 # Check if SD device is specified
 if (-not $SDDevice) {

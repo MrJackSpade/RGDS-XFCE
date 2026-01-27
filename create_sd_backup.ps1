@@ -5,7 +5,19 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ImageFile = Join-Path $PSScriptRoot "$OutputName.img"
+# Self-elevation to ensuring admin privileges
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "Requesting admin privileges..." -ForegroundColor Yellow
+    $newProcess = Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -SDDevice '$SDDevice' -OutputName '$OutputName'" -Wait -PassThru
+    exit $newProcess.ExitCode
+}
+
+$BackupDir = Join-Path $PSScriptRoot "backups"
+if (-not (Test-Path $BackupDir)) {
+    New-Item -ItemType Directory -Path $BackupDir | Out-Null
+}
+
+$ImageFile = Join-Path $BackupDir "$OutputName.img"
 
 # Function to list available drives
 function Show-AvailableDrives {
@@ -36,6 +48,7 @@ Write-Host ""
 if (Test-Path $ImageFile) {
     $timestamp = Get-Date -Format "yyyyMMddHHmmss"
     $backupName = "$OutputName.$timestamp.img"
+    $backupPath = Join-Path $BackupDir $backupName
     Write-Host "File '$ImageFile' already exists. Renaming to '$backupName'..." -ForegroundColor Yellow
     Rename-Item -Path $ImageFile -NewName $backupName
 }
