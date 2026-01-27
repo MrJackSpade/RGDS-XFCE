@@ -10,6 +10,12 @@ void DirectInput_Init();
 // Polls all open devices for new events and injects them into the mapper.
 void DirectInput_Poll();
 
+// Grabs all mouse devices and hides cursor
+void DirectInput_Grab();
+
+// Releases all mouse devices and shows cursor
+void DirectInput_Release();
+
 // Closes all open devices.
 void DirectInput_Quit();
 

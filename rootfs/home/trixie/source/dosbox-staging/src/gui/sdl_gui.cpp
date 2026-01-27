@@ -754,13 +754,9 @@ static void enter_fullscreen()
 	// We need to disable transparency in fullscreen on macOS
 	SDL_SetWindowOpacity(sdl.window, 100);
 
-	GFX_SetMouseCapture(true);
+	DirectInput_Grab();
 
-	// Enforce exclusive grab of input devices
-	DirectInput_SetMouseGrab(true);
-	
-	// Hide the cursor
-	GFX_SetMouseVisibility(false);
+	GFX_SetMouseCapture(true);
 }
 
 static void exit_fullscreen()
@@ -807,14 +803,10 @@ static void exit_fullscreen()
 	// We need to disable transparency in fullscreen on macOS
 	set_window_transparency();
 
-	// We need to disable transparency in fullscreen on macOS
-	set_window_transparency();
-
 	// Release exclusive grab
-	DirectInput_SetMouseGrab(false);
+	DirectInput_Release();
 	
 	// SDL/OS cursor might need to be shown/unlocked
-	GFX_SetMouseVisibility(true);
 	GFX_SetMouseCapture(false);
 
 	set_window_decorations();
@@ -1098,9 +1090,9 @@ static void focus_input()
 {
 	assert(sdl.window);
 
-	// Ensure we have input focus when in fullscreen
-	if (!sdl.is_fullscreen) {
-		return;
+	// Ensure mouse grab is active if we are in fullscreen
+	if (sdl.is_fullscreen) {
+		DirectInput_Grab();
 	}
 	// Do we already have focus?
 	if (SDL_GetWindowFlags(sdl.window) & SDL_WINDOW_INPUT_FOCUS) {
@@ -1112,8 +1104,8 @@ static void focus_input()
 	SDL_SetWindowInputFocus(sdl.window);
 
 	// Re-apply grab if we regained focus in fullscreen
-	DirectInput_SetMouseGrab(true);
-	GFX_SetMouseVisibility(false);
+	// Re-apply grab if we regained focus in fullscreen
+	DirectInput_Grab();
 }
 
 static void toggle_fullscreen()
@@ -1984,8 +1976,7 @@ void GFX_InitAndStartGui()
 			// Standard fullscreen mode (window created as fullscreen by SDL)
 			// effectively bypasses enter_fullscreen(), so we must manually
 			// enforce the input grab.
-			DirectInput_SetMouseGrab(true);
-			GFX_SetMouseVisibility(false);
+			DirectInput_Grab();
 		}
 	}
 
@@ -2377,6 +2368,14 @@ static bool handle_sdl_windowevent(const SDL_Event& event)
 		check_and_handle_dpi_change(sdl.window, new_width);
 		update_viewport();
 		notify_new_mouse_screen_params();
+
+		// Check if the window is currently fullscreen and grab/release input accordingly
+		if (SDL_GetWindowFlags(sdl.window) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+			DirectInput_Grab();
+		} else {
+			DirectInput_Release();
+		}
+
 		return true;
 	}
 

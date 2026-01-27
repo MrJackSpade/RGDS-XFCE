@@ -406,6 +406,20 @@ void DirectInput_Poll() {
 	}
 }
 
+void DirectInput_Grab() {
+	for (int fd : mouse_fds) {
+		ioctl(fd, EVIOCGRAB, 1);
+	}
+	SDL_ShowCursor(SDL_DISABLE);
+}
+
+void DirectInput_Release() {
+	for (int fd : mouse_fds) {
+		ioctl(fd, EVIOCGRAB, 0);
+	}
+	SDL_ShowCursor(SDL_ENABLE);
+}
+
 
 
 void DirectInput_Quit() {
