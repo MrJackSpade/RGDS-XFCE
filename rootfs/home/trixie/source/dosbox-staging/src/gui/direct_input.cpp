@@ -187,38 +187,28 @@ static bool IsKeyboard(int fd, const char* name) {
 static bool IsMouse(int fd, const char* name) {
 	unsigned char keybit[KEY_MAX/8 + 1] = {0};
 	unsigned char relbit[REL_MAX/8 + 1] = {0};
-	
+
 	if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit) < 0) {
-		LOG_MSG("DirectInput DEBUG: [%s] Failed to get EV_KEY bits", name);
 		return false;
 	}
 	if (ioctl(fd, EVIOCGBIT(EV_REL, sizeof(relbit)), relbit) < 0) {
-		LOG_MSG("DirectInput DEBUG: [%s] Failed to get EV_REL bits", name);
-		return false; 
+		return false;
 	}
-	
+
 	bool has_rel_x = (relbit[REL_X/8] & (1<<(REL_X%8)));
 	bool has_rel_y = (relbit[REL_Y/8] & (1<<(REL_Y%8)));
-	bool has_btn_mouse = (keybit[BTN_MOUSE/8] & (1<<(BTN_MOUSE%8)));
-	
-	if (!has_rel_x || !has_rel_y) {
+
+	// Accept if device has EITHER REL_X or REL_Y (no BTN_MOUSE requirement)
+	if (!has_rel_x && !has_rel_y) {
 		return false;
 	}
-	if (!has_btn_mouse) {
-		return false;
-	}
-	
-	return true; 
+
+	return true;
 }
 
 void ScanDevices() {
 	DIR *dir = opendir("/dev/input");
 	if (!dir) {
-		// Only log error if it's the first time/critical, otherwise it might spam
-		// But opendir failing usually means system issues, so logging once is fine.
-		// For hotplug loop, repeating this error every 2s might be annoying if permissions change.
-		// defaulting to log.
-		// LOG_MSG("DirectInput: Failed to open /dev/input: %s", strerror(errno)); 
 		return;
 	}
 
@@ -228,56 +218,45 @@ void ScanDevices() {
 
 		char path[256];
 		snprintf(path, sizeof(path), "/dev/input/%s", dent->d_name);
-		
+
 		std::string path_str(path);
 
-		// Check if we already opened this device (thread-safe check usually requires lock 
-		// if open_device_paths is read/written by multiple threads, but here only 
-		// ScanDevices writes it. The main thread never touches open_device_paths.
-		// So we don't strictly need a lock for *accessing* open_device_paths 
-		// IF ScanDevices is the only one running. 
-		// However, DirectInput_Init calls ScanDevices synchronously before the thread starts.
-		// So there is no race on open_device_paths itself as long as Init happens-before Thread.
+		// Check if we already opened this device
 		if (open_device_paths.find(path_str) != open_device_paths.end()) {
 			continue;
 		}
 
 		int fd = open(path, O_RDONLY | O_NONBLOCK);
+		if (fd < 0) {
+			continue;
+		}
+
 		if (fd >= 0) {
 			char name[256] = "Unknown";
 			ioctl(fd, EVIOCGNAME(sizeof(name)), name);
-			
-			// Determine capability WITHOUT holding the global input lock 
+
+			// Determine capability WITHOUT holding the global input lock
 			// (ioctl can be slow)
+			// IMPORTANT: Check BOTH keyboard and mouse - a device can be both!
 			bool is_kbd = IsKeyboard(fd, name);
-			bool is_mouse = false;
-			if (!is_kbd) {
-				is_mouse = IsMouse(fd, name);
-			}
+			bool is_mouse = IsMouse(fd, name);
 
 			if (is_kbd || is_mouse) {
 				std::lock_guard<std::mutex> lock(input_mutex);
-				
+
 				// Re-check path in case of weird race (unlikely)
 				if (open_device_paths.find(path_str) == open_device_paths.end()) {
 					open_device_paths.insert(path_str);
-					
+
+					// A device can be BOTH keyboard and mouse (like QJoyPad)
+					// Add to both lists if applicable
 					if (is_kbd) {
 						keyboard_fds.push_back(fd);
 						LOG_MSG("DirectInput: Found KBD: %s (%s)", name, path);
-					} else if (is_mouse) {
+					}
+					if (is_mouse) {
 						mouse_fds.push_back(fd);
 						LOG_MSG("DirectInput: Found MOUSE: %s (%s)", name, path);
-						
-						// If we are currently supposedly grabbing mice, we should grab this new one too
-						// But we don't easily know the global "grab state" here without storing it.
-						// For now, new devices won't be grabbed automatically until toggled?
-						// Or we should store 'grab_enabled' global.
-						// The user prompt didn't strictly ask for auto-grab on hotplug but it's implied.
-						// Let's add a quick check if we should grab. 
-						// Actually, simplest is to let the user retoggle or store state.
-						// I'll leave auto-grab out for now to minimize complexity unless requested,
-						// as IsMouse check is enough for recognition.
 					}
 				} else {
 					close(fd); // Already added
@@ -285,8 +264,6 @@ void ScanDevices() {
 			} else {
 				close(fd);
 			}
-		} else {
-			// LOG_MSG("DirectInput: Failed to open %s: %s", path, strerror(errno));
 		}
 	}
 	closedir(dir);
@@ -295,7 +272,7 @@ void ScanDevices() {
 void DirectInput_Init() {
 	// Initial synchronous scan
 	ScanDevices();
-	
+
 	if (keyboard_fds.empty() && mouse_fds.empty()) {
 		LOG_MSG("DirectInput: CRITICAL - No devices found!");
 	}
@@ -309,6 +286,7 @@ void DirectInput_Init() {
 			ScanDevices();
 		}
 	});
+	LOG_MSG("MOUSE_DBG: DirectInput_Init: Background hotplug thread started");
 }
 
 // Externs from sdl_gui.cpp

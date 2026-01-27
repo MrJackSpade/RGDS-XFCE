@@ -24,10 +24,16 @@ struct Theme {
     // Parsed color values
     double r, g, b;
 
+    // Pattern matching
+    std::string window_title_pattern; 
+
     Theme();
     ~Theme();
     bool load(const std::string& path);
     void parse_color();
+    
+    // Static helper to peek at a theme file and return its window_title pattern
+    static std::string peek_match_pattern(const std::string& path);
 };
 
 #endif

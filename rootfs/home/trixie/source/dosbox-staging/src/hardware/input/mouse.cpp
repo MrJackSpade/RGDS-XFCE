@@ -125,10 +125,12 @@ static void update_cursor_visibility()
 	if (!state.is_window_active) {
 
 		// No change to cursor visibility
+		LOG_MSG("MOUSE_DBG: update_cursor_visibility: window not active, no change");
 
 	} else if (state.gui_has_taken_over) {
 
 		state.is_visible = true;
+		LOG_MSG("MOUSE_DBG: update_cursor_visibility: GUI has taken over, setting visible=true");
 
 	} else { // Window has focus, no GUI running
 
@@ -143,6 +145,12 @@ static void update_cursor_visibility()
 		state.is_visible = !(state.is_captured || state.is_seamless) ||
 		                   (state.is_seamless && state.cursor_is_outside) ||
 		                   state.vmm_wants_pointer;
+
+		if (state.is_visible != old_is_visible) {
+			LOG_MSG("MOUSE_DBG: update_cursor_visibility: visible changed %d->%d (captured=%d, seamless=%d, outside=%d, vmm=%d)",
+				old_is_visible, state.is_visible, state.is_captured, state.is_seamless,
+				state.cursor_is_outside, state.vmm_wants_pointer);
+		}
 	}
 
 
@@ -158,6 +166,13 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 		return;
 	}
 
+	// Log desktop environment detection once
+	static bool logged_desktop_env = false;
+	if (!logged_desktop_env) {
+		LOG_MSG("MOUSE_DBG: Mouse subsystem initialized with have_desktop_environment=%d", state.have_desktop_environment);
+		logged_desktop_env = true;
+	}
+
 	const bool is_config_on_start = (mouse_config.capture == MouseCapture::OnStart);
 	const bool is_config_on_click = (mouse_config.capture == MouseCapture::OnClick);
 	const bool is_config_no_mouse = (mouse_config.capture == MouseCapture::NoMouse);
@@ -166,21 +181,37 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 	const bool is_window_or_multi_display = !state.is_fullscreen ||
 		(state.is_multi_display && mouse_config.multi_display_aware);
 
+	LOG_MSG("MOUSE_DBG: update_state: START - config_mode=%d, is_fullscreen=%d, is_multi_disp=%d, is_win_or_multi=%d, win_active=%d, capture_req=%d, gui_taken=%d",
+		static_cast<int>(mouse_config.capture), state.is_fullscreen, state.is_multi_display,
+		is_window_or_multi_display, state.is_window_active, state.capture_was_requested,
+		state.gui_has_taken_over);
+
 	// If running for the first time, capture the mouse if this was configured
 	static bool first_time = true;
 	if (first_time && is_config_on_start) {
+		LOG_MSG("MOUSE_DBG: update_state: First time with OnStart config, setting capture_was_requested=true");
 		state.capture_was_requested = true;
 	}
 
 	// Virtual machine manager wants us to show mouse pointer if:
 	// - virtual machine guest addons are running and
 	// - they requested to show host mouse pointer
+	const auto old_vmm_wants_pointer = state.vmm_wants_pointer;
 	state.vmm_wants_pointer = mouse_shared.active_vmm &&
 	                          mouse_shared.vmm_wants_pointer;
+
+	if (state.vmm_wants_pointer != old_vmm_wants_pointer) {
+		LOG_MSG("MOUSE_DBG: update_state: vmm_wants_pointer changed %d->%d (active_vmm=%d, vmm_req=%d)",
+			old_vmm_wants_pointer, state.vmm_wants_pointer,
+			mouse_shared.active_vmm, mouse_shared.vmm_wants_pointer);
+	}
 
 	// Discard previous mouse capture request if:
 	// - virtual machine guest addons wants us to show the pointer
 	if (state.vmm_wants_pointer) {
+		if (state.capture_was_requested) {
+			LOG_MSG("MOUSE_DBG: update_state: Clearing capture_was_requested because vmm_wants_pointer=true");
+		}
 		state.capture_was_requested = false;
 	}
 
@@ -193,10 +224,18 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 	const bool is_seamless_config = (mouse_config.capture == MouseCapture::Seamless);
 	const bool is_seamless_driver = mouse_shared.active_vmm;
 
+	const auto old_is_seamless = state.is_seamless;
 	state.is_seamless = state.have_desktop_environment &&
 	                    (is_window_or_multi_display || state.vmm_wants_pointer) &&
 	                    !is_config_no_mouse &&
 	                    (is_seamless_driver || is_seamless_config);
+
+	if (state.is_seamless != old_is_seamless) {
+		LOG_MSG("MOUSE_DBG: update_state: is_seamless changed %d->%d (have_env=%d, win_or_multi=%d, vmm=%d, !no_mouse=%d, seamless_cfg=%d, seamless_drv=%d)",
+			old_is_seamless, state.is_seamless, state.have_desktop_environment,
+			is_window_or_multi_display, state.vmm_wants_pointer, !is_config_no_mouse,
+			is_seamless_config, is_seamless_driver);
+	}
 
 	// Due to ManyMouse API limitation, we are unable to support seamless
 	// integration if mapping is in effect
@@ -296,13 +335,23 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 		                           !state.is_window_active;
 	}
 
+	LOG_MSG("MOUSE_DBG: update_state: should_drop_events=%d (gui=%d, no_mouse=%d, seamless=%d, captured=%d, win_active=%d)",
+		state.should_drop_events, state.gui_has_taken_over, is_config_no_mouse,
+		state.is_seamless, state.is_captured, state.is_window_active);
+
 	// Use a hotkey to toggle mouse capture if:
 	// - we have a desktop environment, and
 	// - we are in windowed or multi-display mode, and
 	// - capture type is different than NoMouse
+	const auto old_should_toggle = state.should_toggle_on_hotkey;
 	state.should_toggle_on_hotkey = state.have_desktop_environment &&
 	                                is_window_or_multi_display &&
 	                                !is_config_no_mouse;
+
+	if (state.should_toggle_on_hotkey != old_should_toggle) {
+		LOG_MSG("MOUSE_DBG: update_state: should_toggle_on_hotkey changed %d->%d",
+			old_should_toggle, state.should_toggle_on_hotkey);
+	}
 
 	// Use any mouse click to capture the mouse if:
 	// - we have a desktop environment, and
@@ -314,6 +363,7 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 	// - no GUI has taken over the mouse, and
 	// - capture type is different than NoMouse, and
 	// - capture on start/click was configured or mapping is in effect
+	const auto old_capture_on_click = state.should_capture_on_click;
 	state.should_capture_on_click = state.have_desktop_environment &&
 	                                is_window_or_multi_display &&
 	                                !state.vmm_wants_pointer &&
@@ -322,6 +372,11 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 	                                !state.gui_has_taken_over &&
 	                                !is_config_no_mouse &&
 	                                (is_config_on_start || is_config_on_click || is_mapping);
+
+	if (state.should_capture_on_click != old_capture_on_click) {
+		LOG_MSG("MOUSE_DBG: update_state: should_capture_on_click changed %d->%d",
+			old_capture_on_click, state.should_capture_on_click);
+	}
 
 	// Use a middle click to capture the mouse if:
 	// - we have a desktop environment, and
@@ -333,6 +388,7 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 	// - capture type is different than NoMouse, and
 	// - seamless mode is in effect, and
 	// - middle release was configured
+	const auto old_capture_on_middle = state.should_capture_on_middle;
 	state.should_capture_on_middle = state.have_desktop_environment &&
 	                                 is_window_or_multi_display &&
 	                                 !state.vmm_wants_pointer &&
@@ -342,15 +398,26 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 	                                 state.is_seamless &&
 	                                 mouse_config.middle_release;
 
+	if (state.should_capture_on_middle != old_capture_on_middle) {
+		LOG_MSG("MOUSE_DBG: update_state: should_capture_on_middle changed %d->%d",
+			old_capture_on_middle, state.should_capture_on_middle);
+	}
+
 	// Use a middle click to release the mouse if:
 	// - we have a desktop environment, and
 	// - we are in windowed or multi-display mode, and
 	// - mouse is captured, and
 	// - release by middle button was configured
+	const auto old_release_on_middle = state.should_release_on_middle;
 	state.should_release_on_middle = state.have_desktop_environment &&
 	                                 is_window_or_multi_display &&
 	                                 state.is_captured &&
 	                                 mouse_config.middle_release;
+
+	if (state.should_release_on_middle != old_release_on_middle) {
+		LOG_MSG("MOUSE_DBG: update_state: should_release_on_middle changed %d->%d",
+			old_release_on_middle, state.should_release_on_middle);
+	}
 
 	// Note: it would make sense to block capture/release on any mouse click
 	// while 'state.is_mapping_in_progress' - unfortunately this would lead
@@ -407,14 +474,28 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 
 static bool should_drop_move()
 {
-	return state.should_drop_events ||
-	       (state.cursor_is_outside && !state.is_seamless);
+	const bool drop = state.should_drop_events ||
+	                  (state.cursor_is_outside && !state.is_seamless);
+	if (drop) {
+		static int drop_counter = 0;
+		// Only log every 100th dropped event to avoid spam
+		if (++drop_counter % 100 == 0) {
+			LOG_MSG("MOUSE_DBG: should_drop_move: dropping move event (should_drop_events=%d, cursor_outside=%d, seamless=%d)",
+				state.should_drop_events, state.cursor_is_outside, state.is_seamless);
+		}
+	}
+	return drop;
 }
 
 static bool should_drop_press_or_wheel()
 {
-	return state.should_drop_events ||
-	       state.cursor_is_outside;
+	const bool drop = state.should_drop_events ||
+	                  state.cursor_is_outside;
+	if (drop) {
+		LOG_MSG("MOUSE_DBG: should_drop_press_or_wheel: dropping event (should_drop_events=%d, cursor_outside=%d)",
+			state.should_drop_events, state.cursor_is_outside);
+	}
+	return drop;
 }
 
 void MOUSE_UpdateGFX()
@@ -497,6 +578,10 @@ Bitu int74_ret_handler()
 
 void MOUSE_NewScreenParams(const MouseScreenParams &params)
 {
+	LOG_MSG("MOUSE_DBG: MOUSE_NewScreenParams: is_fullscreen=%d->%d, is_multi_display=%d->%d",
+		state.is_fullscreen, params.is_fullscreen,
+		state.is_multi_display, params.is_multi_display);
+
 	state.draw_rect = params.draw_rect;
 
 	// Protection against strange window sizes,
@@ -512,6 +597,7 @@ void MOUSE_NewScreenParams(const MouseScreenParams &params)
 	// If we are switching back from fullscreen,
 	// clear the user capture request
 	if (state.is_fullscreen && !params.is_fullscreen) {
+		LOG_MSG("MOUSE_DBG: MOUSE_NewScreenParams: Exiting fullscreen, clearing capture_was_requested");
 		state.capture_was_requested = false;
 	}
 
@@ -526,22 +612,32 @@ void MOUSE_NewScreenParams(const MouseScreenParams &params)
 
 void MOUSE_ToggleUserCapture(const bool pressed)
 {
+	LOG_MSG("MOUSE_DBG: MOUSE_ToggleUserCapture: pressed=%d, should_toggle=%d, vmm_wants=%d, current_capture_req=%d",
+		pressed, state.should_toggle_on_hotkey, state.vmm_wants_pointer,
+		state.capture_was_requested);
+
 	if (!pressed || !state.should_toggle_on_hotkey || state.vmm_wants_pointer) {
 		return;
 	}
 
 	state.capture_was_requested = !state.capture_was_requested;
+	LOG_MSG("MOUSE_DBG: MOUSE_ToggleUserCapture: Toggling capture_was_requested to %d",
+		state.capture_was_requested);
 	MOUSE_UpdateGFX();
 }
 
 void MOUSE_NotifyTakeOver(const bool gui_has_taken_over)
 {
+	LOG_MSG("MOUSE_DBG: MOUSE_NotifyTakeOver: gui_has_taken_over=%d->%d",
+		state.gui_has_taken_over, gui_has_taken_over);
 	state.gui_has_taken_over = gui_has_taken_over;
 	MOUSE_UpdateGFX();
 }
 
 void MOUSE_NotifyWindowActive(const bool is_active)
 {
+	LOG_MSG("MOUSE_DBG: MOUSE_NotifyWindowActive: is_window_active=%d->%d",
+		state.is_window_active, is_active);
 	state.is_window_active = is_active;
 	MOUSE_UpdateGFX();
 }
@@ -564,6 +660,12 @@ void MOUSE_EventMoved(const float x_rel, const float y_rel,
                       const float x_abs, const float y_abs)
 {
 	// Event from GFX
+	static int move_counter = 0;
+	// Log every 200th event to avoid excessive spam, but always log first few
+	if (move_counter < 5 || (++move_counter % 200 == 0)) {
+		LOG_MSG("MOUSE_DBG: MOUSE_EventMoved: x_rel=%.1f, y_rel=%.1f, x_abs=%.1f, y_abs=%.1f, captured=%d, cursor_outside=%d",
+			x_rel, y_rel, x_abs, y_abs, state.is_captured, state.cursor_is_outside);
+	}
 
 	// Update cursor position and visibility
 	update_cursor_absolute_position(x_abs, y_abs);
@@ -626,6 +728,9 @@ void MOUSE_EventMoved(const float x_rel, const float y_rel,
 void MOUSE_EventButton(const MouseButtonId button_id, const bool pressed)
 {
 	// Event from GFX
+	LOG_MSG("MOUSE_DBG: MOUSE_EventButton: button=%d, pressed=%d, captured=%d, should_capture_on_click=%d, should_capture_on_middle=%d, should_release_on_middle=%d",
+		static_cast<int>(button_id), pressed, state.is_captured,
+		state.should_capture_on_click, state.should_capture_on_middle, state.should_release_on_middle);
 
 	// Never ignore any button releases - always pass them
 	// to concrete interfaces, they will decide whether to
@@ -633,6 +738,7 @@ void MOUSE_EventButton(const MouseButtonId button_id, const bool pressed)
 	if (pressed) {
 		// Handle mouse capture by button click
 		if (state.should_capture_on_click) {
+			LOG_MSG("MOUSE_DBG: MOUSE_EventButton: Capturing mouse on button click, setting capture_was_requested=true");
 			state.capture_was_requested = true;
 			MOUSE_UpdateGFX();
 			return;
@@ -642,11 +748,13 @@ void MOUSE_EventButton(const MouseButtonId button_id, const bool pressed)
 
 		// Handle mouse capture toggle by middle click
 		if (is_middle && state.should_capture_on_middle) {
+			LOG_MSG("MOUSE_DBG: MOUSE_EventButton: Capturing mouse on middle button, setting capture_was_requested=true");
 			state.capture_was_requested = true;
 			MOUSE_UpdateGFX();
 			return;
 		}
 		if (is_middle && state.should_release_on_middle) {
+			LOG_MSG("MOUSE_DBG: MOUSE_EventButton: Releasing mouse on middle button, setting capture_was_requested=false");
 			state.capture_was_requested = false;
 			MOUSE_UpdateGFX();
 			return;
@@ -654,8 +762,11 @@ void MOUSE_EventButton(const MouseButtonId button_id, const bool pressed)
 
 		// Drop unneeded events
 		if (should_drop_press_or_wheel()) {
+			LOG_MSG("MOUSE_DBG: MOUSE_EventButton: Dropping button press event (should_drop_press_or_wheel=true)");
 			return;
 		}
+	} else {
+		LOG_MSG("MOUSE_DBG: MOUSE_EventButton: Button release, passing to interfaces");
 	}
 
 	// Notify mouse interfaces

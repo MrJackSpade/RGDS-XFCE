@@ -140,9 +140,18 @@ bool GFX_HaveDesktopEnvironment()
 		                                   "DESKTOP_SESSION",
 		                                   "GDMSESSION"};
 
+		LOG_MSG("MOUSE_DBG: GFX_HaveDesktopEnvironment: Checking environment variables:");
+		for (const auto* var : EnvVars) {
+			const char* value = std::getenv(var);
+			LOG_MSG("MOUSE_DBG:   %s=%s", var, value ? value : "(not set)");
+		}
+
 		have_desktop_environment = std::any_of(std::begin(EnvVars),
 		                                       std::end(EnvVars),
 		                                       std::getenv);
+
+		LOG_MSG("MOUSE_DBG: GFX_HaveDesktopEnvironment: Result = %d (have desktop: %s)",
+			have_desktop_environment, have_desktop_environment ? "YES" : "NO");
 
 		already_checked = true;
 	}
@@ -260,6 +269,12 @@ static void configure_presentation_mode()
 
 void handle_mouse_motion(SDL_MouseMotionEvent* motion)
 {
+	static int sdl_motion_counter = 0;
+	// Log every 200th event to avoid spam
+	if (sdl_motion_counter < 3 || (++sdl_motion_counter % 200 == 0)) {
+		LOG_MSG("MOUSE_DBG: SDL mouse motion: xrel=%d, yrel=%d, x=%d, y=%d",
+			motion->xrel, motion->yrel, motion->x, motion->y);
+	}
 	MOUSE_EventMoved(static_cast<float>(motion->xrel),
 	                 static_cast<float>(motion->yrel),
 	                 static_cast<float>(motion->x),
@@ -275,6 +290,11 @@ void handle_mouse_wheel(SDL_MouseWheelEvent* wheel)
 
 void handle_mouse_button(SDL_MouseButtonEvent* button)
 {
+	assert(button);
+	const bool pressed = (button->state == SDL_PRESSED);
+	LOG_MSG("MOUSE_DBG: SDL mouse button: button=%d, pressed=%d, x=%d, y=%d",
+		button->button, pressed, button->x, button->y);
+
 	auto notify_button = [](const uint8_t button, const bool pressed) {
 		// clang-format off
 		switch (button) {
@@ -286,8 +306,7 @@ void handle_mouse_button(SDL_MouseButtonEvent* button)
 		}
 		// clang-format on
 	};
-	assert(button);
-	notify_button(button->button, button->state == SDL_PRESSED);
+	notify_button(button->button, pressed);
 }
 
 static void configure_renderer()
@@ -709,9 +728,11 @@ static void enter_fullscreen()
 {
 	assert(sdl.window);
 
+	LOG_MSG("MOUSE_DBG: enter_fullscreen() called - about to call DirectInput_Grab()");
 	sdl.is_fullscreen = true;
 
 	DirectInput_Grab();
+	LOG_MSG("MOUSE_DBG: enter_fullscreen() - DirectInput_Grab() returned");
 
 	if (sdl.fullscreen.mode == FullscreenMode::ForcedBorderless) {
 
@@ -761,9 +782,11 @@ static void exit_fullscreen()
 {
 	assert(sdl.window);
 
+	LOG_MSG("MOUSE_DBG: exit_fullscreen() called - about to call DirectInput_Release()");
 	sdl.is_fullscreen = false;
 
 	DirectInput_Release();
+	LOG_MSG("MOUSE_DBG: exit_fullscreen() - DirectInput_Release() returned");
 
 	if (sdl.fullscreen.mode == FullscreenMode::ForcedBorderless) {
 		// Restore the previous window state when exiting our "fake"
@@ -1610,6 +1633,7 @@ static void set_keyboard_capture()
 
 static void apply_active_settings()
 {
+	LOG_MSG("MOUSE_DBG: SDL apply_active_settings: Window gained focus");
 	MOUSE_NotifyWindowActive(true);
 
 	if (sdl.mute_when_inactive && !MIXER_IsManuallyMuted()) {
@@ -1623,6 +1647,7 @@ static void apply_active_settings()
 
 static void apply_inactive_settings()
 {
+	LOG_MSG("MOUSE_DBG: SDL apply_inactive_settings: Window lost focus");
 	MOUSE_NotifyWindowActive(false);
 
 	if (sdl.mute_when_inactive) {
@@ -2220,6 +2245,7 @@ static bool handle_sdl_windowevent(const SDL_Event& event)
 
 	case SDL_WINDOWEVENT_FOCUS_GAINED:
 		log_window_event("SDL: Window has gained keyboard focus");
+		LOG_MSG("MOUSE_DBG: SDL_WINDOWEVENT_FOCUS_GAINED - calling apply_active_settings");
 
 		apply_active_settings();
 		[[fallthrough]];
@@ -2240,10 +2266,43 @@ static bool handle_sdl_windowevent(const SDL_Event& event)
 			sdl.draw.callback(GFX_CallbackRedraw);
 		}
 		focus_input();
+
+		// Check for fullscreen state changes (handles external tools like wmctrl)
+		// SDL won't detect external fullscreen via window manager, so check dimensions
+		{
+			const auto window_flags = SDL_GetWindowFlags(sdl.window);
+			const bool sdl_knows_fullscreen = window_flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+			// Get window and display dimensions
+			int win_w = 0, win_h = 0;
+			SDL_GetWindowSize(sdl.window, &win_w, &win_h);
+
+			SDL_DisplayMode display_mode;
+			const int display_index = SDL_GetWindowDisplayIndex(sdl.window);
+			SDL_GetDesktopDisplayMode(display_index, &display_mode);
+
+			// Consider it fullscreen if SDL knows it's fullscreen OR dimensions match screen
+			const bool appears_fullscreen = sdl_knows_fullscreen ||
+			                                (win_w == display_mode.w && win_h == display_mode.h);
+
+			LOG_MSG("MOUSE_DBG: EXPOSED event - window_flags=0x%08x, sdl_knows_fs=%d, win=%dx%d, screen=%dx%d, appears_fs=%d, sdl.is_fullscreen=%d",
+			        window_flags, sdl_knows_fullscreen, win_w, win_h, display_mode.w, display_mode.h,
+			        appears_fullscreen, sdl.is_fullscreen);
+
+			if (appears_fullscreen) {
+				LOG_MSG("MOUSE_DBG: EXPOSED detected fullscreen - calling DirectInput_Grab()");
+				DirectInput_Grab();
+			} else {
+				LOG_MSG("MOUSE_DBG: EXPOSED detected windowed - calling DirectInput_Release()");
+				DirectInput_Release();
+			}
+		}
+
 		return true;
 
 	case SDL_WINDOWEVENT_FOCUS_LOST:
 		log_window_event("SDL: Window has lost keyboard focus");
+		LOG_MSG("MOUSE_DBG: SDL_WINDOWEVENT_FOCUS_LOST - calling apply_inactive_settings");
 
 		apply_inactive_settings();
 		GFX_LosingFocus();
@@ -2318,15 +2377,33 @@ static bool handle_sdl_windowevent(const SDL_Event& event)
 		// The window size has changed either as a result of an API call
 		// or through the system or user changing the window size.
 		const auto new_width  = event.window.data1;
+		const auto new_height = event.window.data2;
 
 		check_and_handle_dpi_change(sdl.window, new_width);
 		update_viewport();
 		notify_new_mouse_screen_params();
 
-		// Check if the window is currently fullscreen and grab/release input accordingly
-		if (SDL_GetWindowFlags(sdl.window) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+		// Check if window is fullscreen (SDL-managed or external like wmctrl)
+		const auto window_flags = SDL_GetWindowFlags(sdl.window);
+		const bool sdl_knows_fullscreen = window_flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+		SDL_DisplayMode display_mode;
+		const int display_index = SDL_GetWindowDisplayIndex(sdl.window);
+		SDL_GetDesktopDisplayMode(display_index, &display_mode);
+
+		// Consider it fullscreen if SDL knows it OR dimensions match screen
+		const bool appears_fullscreen = sdl_knows_fullscreen ||
+		                                (new_width == display_mode.w && new_height == display_mode.h);
+
+		LOG_MSG("MOUSE_DBG: SIZE_CHANGED - window_flags=0x%08x, sdl_knows_fs=%d, win=%dx%d, screen=%dx%d, appears_fs=%d, sdl.is_fullscreen=%d",
+		        window_flags, sdl_knows_fullscreen, new_width, new_height, display_mode.w, display_mode.h,
+		        appears_fullscreen, sdl.is_fullscreen);
+
+		if (appears_fullscreen) {
+			LOG_MSG("MOUSE_DBG: SIZE_CHANGED detected fullscreen - calling DirectInput_Grab()");
 			DirectInput_Grab();
 		} else {
+			LOG_MSG("MOUSE_DBG: SIZE_CHANGED detected windowed - calling DirectInput_Release()");
 			DirectInput_Release();
 		}
 
@@ -2335,6 +2412,7 @@ static bool handle_sdl_windowevent(const SDL_Event& event)
 
 	case SDL_WINDOWEVENT_MINIMIZED:
 		log_window_event("SDL: Window has been minimized");
+		LOG_MSG("MOUSE_DBG: SDL_WINDOWEVENT_MINIMIZED - calling apply_inactive_settings");
 
 		apply_inactive_settings();
 		return false;
@@ -2523,13 +2601,33 @@ bool GFX_PollAndHandleEvents()
 
 		case SDL_WINDOWEVENT: {
 			log_window_event("SDL: Window event %d", event.window.event);
-			if (handle_sdl_windowevent(event)) {
+			const bool handled = handle_sdl_windowevent(event);
+			LOG_MSG("MOUSE_DBG: WINDOWEVENT handler - event=%d, handled=%d", event.window.event, handled);
+			if (handled) {
 				continue;
 			}
-			// User requested logic: Ensure grab state matches fullscreen state
-			if (SDL_GetWindowFlags(sdl.window) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+			// Fallback: Ensure grab state matches fullscreen state for unhandled events
+			const auto window_flags = SDL_GetWindowFlags(sdl.window);
+			const bool sdl_knows_fullscreen = window_flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP);
+
+			int win_w = 0, win_h = 0;
+			SDL_GetWindowSize(sdl.window, &win_w, &win_h);
+
+			SDL_DisplayMode display_mode;
+			const int display_index = SDL_GetWindowDisplayIndex(sdl.window);
+			SDL_GetDesktopDisplayMode(display_index, &display_mode);
+
+			const bool appears_fullscreen = sdl_knows_fullscreen ||
+			                                (win_w == display_mode.w && win_h == display_mode.h);
+
+			LOG_MSG("MOUSE_DBG: WINDOWEVENT fallback - window_flags=0x%08x, sdl_knows_fs=%d, win=%dx%d, screen=%dx%d, appears_fs=%d",
+			        window_flags, sdl_knows_fullscreen, win_w, win_h, display_mode.w, display_mode.h, appears_fullscreen);
+
+			if (appears_fullscreen) {
+				LOG_MSG("MOUSE_DBG: WINDOWEVENT fallback detected fullscreen - calling DirectInput_Grab()");
 				DirectInput_Grab();
 			} else {
+				LOG_MSG("MOUSE_DBG: WINDOWEVENT fallback detected windowed - calling DirectInput_Release()");
 				DirectInput_Release();
 			}
 

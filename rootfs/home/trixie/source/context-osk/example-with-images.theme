@@ -1,0 +1,51 @@
+[General]
+height=80
+background_color=#2a2a2a
+window_title=*Example*
+
+; Example buttons with different image specification methods
+
+; Using a relative file path
+[Key_Shift_50]
+x=10
+y=10
+width=60
+height=60
+keycode=50
+toggle=true
+label=Shift
+; Uncomment and provide actual path:
+; image=icons/shift.png
+
+; Using a file:// URI
+[Key_Ctrl_37]
+x=80
+y=10
+width=60
+height=60
+keycode=37
+toggle=true
+label=Ctrl
+; Uncomment and provide actual path:
+; image=file:///home/user/.context-osk/icons/ctrl.png
+
+; Using base64 data URI (this is a minimal 1x1 red pixel as example)
+[Key_Alt_64]
+x=150
+y=10
+width=60
+height=60
+keycode=64
+toggle=true
+label=Alt
+; This is a tiny example - replace with real base64 image data:
+; image=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==
+
+; Without image - shows label text
+[Key_Space_65]
+x=220
+y=10
+width=120
+height=60
+keycode=65
+label=Space
