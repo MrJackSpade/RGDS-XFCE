@@ -753,10 +753,6 @@ static void enter_fullscreen()
 
 	// We need to disable transparency in fullscreen on macOS
 	SDL_SetWindowOpacity(sdl.window, 100);
-
-	DirectInput_Grab();
-
-	GFX_SetMouseCapture(true);
 }
 
 static void exit_fullscreen()
@@ -1090,10 +1086,6 @@ static void focus_input()
 {
 	assert(sdl.window);
 
-	// Ensure mouse grab is active if we are in fullscreen
-	if (sdl.is_fullscreen) {
-		DirectInput_Grab();
-	}
 	// Do we already have focus?
 	if (SDL_GetWindowFlags(sdl.window) & SDL_WINDOW_INPUT_FOCUS) {
 		return;
@@ -1102,10 +1094,6 @@ static void focus_input()
 	// If not, raise-and-focus to prevent stranding the window
 	SDL_RaiseWindow(sdl.window);
 	SDL_SetWindowInputFocus(sdl.window);
-
-	// Re-apply grab if we regained focus in fullscreen
-	// Re-apply grab if we regained focus in fullscreen
-	DirectInput_Grab();
 }
 
 static void toggle_fullscreen()
@@ -1969,17 +1957,6 @@ void GFX_InitAndStartGui()
 
 	TITLEBAR_ReadConfig();
 
-	if (sdl.is_fullscreen) {
-		if (sdl.fullscreen.mode == FullscreenMode::ForcedBorderless) {
-			enter_fullscreen();
-		} else {
-			// Standard fullscreen mode (window created as fullscreen by SDL)
-			// effectively bypasses enter_fullscreen(), so we must manually
-			// enforce the input grab.
-			DirectInput_Grab();
-		}
-	}
-
 	RENDER_Init();
 }
 
@@ -2568,9 +2545,15 @@ bool GFX_PollAndHandleEvents()
 			break;
 
 		case SDL_WINDOWEVENT: {
-			auto handling_finished = handle_sdl_windowevent(event);
-			if (handling_finished) {
+			log_window_event("SDL: Window event %d", event.window.event);
+			if (handle_sdl_windowevent(event)) {
 				continue;
+			}
+			// User requested logic: Ensure grab state matches fullscreen state
+			if (SDL_GetWindowFlags(sdl.window) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+				DirectInput_Grab();
+			} else {
+				DirectInput_Release();
 			}
 
 			if (sdl.pause_when_inactive) {
@@ -2588,11 +2571,6 @@ bool GFX_PollAndHandleEvents()
 		case SDL_QUIT: GFX_RequestExit(true); break;
 		default: MAPPER_CheckEvent(&event);
 		}
-	}
-
-	if (poll_delta > 20 || events_processed > 10) {
-		LOG_MSG("Input: Polling interval: %d ms, Processed events: %d",
-		        static_cast<int>(poll_delta), events_processed);
 	}
 
 	return !DOSBOX_IsShutdownRequested();

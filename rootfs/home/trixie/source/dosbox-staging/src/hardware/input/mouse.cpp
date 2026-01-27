@@ -228,6 +228,10 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 		// Override user configuration, for the GUI we want
 		// host OS mouse acceleration applied
 		state.is_raw_input = false;
+		
+		if (state.is_captured != old_is_captured) {
+			LOG_MSG("MOUSE_DBG: state.is_captured forced to false because GUI took over");
+		}
 
 	} else if (is_config_no_mouse) { // NoMouse is configured
 
@@ -239,6 +243,10 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 		// capture configuration change (for example to OnClick) could
 		// have caused the mouse cursor to suddenly disappear
 		state.capture_was_requested = false;
+		
+		if (state.is_captured != old_is_captured) {
+			LOG_MSG("MOUSE_DBG: state.is_captured changed to %d (NoMouse config). IsFsSingle=%d", state.is_captured, !is_window_or_multi_display);
+		}
 
 	} else if (state.is_window_active) { // window has focus, no GUI running
 
@@ -251,6 +259,16 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 		state.is_captured = !state.have_desktop_environment ||
 		                    (!is_window_or_multi_display && !state.vmm_wants_pointer) ||
 		                    state.capture_was_requested;
+		
+		if (state.is_captured != old_is_captured) {
+			LOG_MSG("MOUSE_DBG: state.is_captured changed to %d. Reason: active_win=%d, no_env=%d, (fs_single=%d && !vmm=%d), req=%d",
+				state.is_captured,
+				state.is_window_active,
+				!state.have_desktop_environment,
+				!is_window_or_multi_display,
+				!state.vmm_wants_pointer,
+				state.capture_was_requested);
+		}
 	}
 
 #if defined(WIN32)

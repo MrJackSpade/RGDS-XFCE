@@ -407,6 +407,7 @@ void DirectInput_Poll() {
 }
 
 void DirectInput_Grab() {
+	LOG_MSG("MOUSE_DBG: DirectInput_Grab called. Grabbing %zu mice.", mouse_fds.size());
 	for (int fd : mouse_fds) {
 		ioctl(fd, EVIOCGRAB, 1);
 	}
@@ -414,6 +415,7 @@ void DirectInput_Grab() {
 }
 
 void DirectInput_Release() {
+	LOG_MSG("MOUSE_DBG: DirectInput_Release called. Releasing %zu mice.", mouse_fds.size());
 	for (int fd : mouse_fds) {
 		ioctl(fd, EVIOCGRAB, 0);
 	}
