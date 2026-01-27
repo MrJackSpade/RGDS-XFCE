@@ -28,8 +28,6 @@ void GFX_LosingFocus();
 void GFX_CenterMouse();
 
 void GFX_SetMouseHint(const MouseHint requested_hint_id);
-void GFX_SetMouseCapture(const bool requested_capture);
-void GFX_SetMouseVisibility(const bool requested_visible);
 void GFX_SetMouseRawInput(const bool requested_raw_input);
 
 // Detects the presence of a desktop environment or window manager

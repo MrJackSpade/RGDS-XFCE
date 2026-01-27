@@ -327,9 +327,7 @@ void DirectInput_Poll() {
 		if (rd > 0) {
 			int count = rd / sizeof(struct input_event);
 			for (int i = 0; i < count; i++) {
-				// LOG RAW for debugging
-				// LOG_MSG("DirectInput KBD RAW: type=%d code=%d value=%d", ev[i].type, ev[i].code, ev[i].value);
-				
+
 				if (ev[i].type == EV_KEY) {
 					SDL_Scancode sc = LinuxKeyToSDLScancode(ev[i].code);
 					if (sc != SDL_SCANCODE_UNKNOWN) {
@@ -342,8 +340,6 @@ void DirectInput_Poll() {
 						sdl_ev.key.state = (ev[i].value == 0) ? SDL_RELEASED : SDL_PRESSED;
 						sdl_ev.key.repeat = (ev[i].value == 2) ? 1 : 0;
 						
-						LOG_MSG("DirectInput KBD: Scancode %d (linux %d) State %d Repeat %d", sc, ev[i].code, ev[i].value, sdl_ev.key.repeat);
-
 						MAPPER_CheckEvent(&sdl_ev);
 					} else {
 						LOG_MSG("DirectInput KBD: Unknown Key Code %d", ev[i].code);

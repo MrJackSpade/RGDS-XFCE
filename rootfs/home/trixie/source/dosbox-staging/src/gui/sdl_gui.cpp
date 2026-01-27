@@ -711,6 +711,8 @@ static void enter_fullscreen()
 
 	sdl.is_fullscreen = true;
 
+	DirectInput_Grab();
+
 	if (sdl.fullscreen.mode == FullscreenMode::ForcedBorderless) {
 
 		// "Emulate" SDL's built-in borderless fullscreen mode by
@@ -761,6 +763,8 @@ static void exit_fullscreen()
 
 	sdl.is_fullscreen = false;
 
+	DirectInput_Release();
+
 	if (sdl.fullscreen.mode == FullscreenMode::ForcedBorderless) {
 		// Restore the previous window state when exiting our "fake"
 		// borderless fullscreen mode.
@@ -798,12 +802,6 @@ static void exit_fullscreen()
 
 	// We need to disable transparency in fullscreen on macOS
 	set_window_transparency();
-
-	// Release exclusive grab
-	DirectInput_Release();
-	
-	// SDL/OS cursor might need to be shown/unlocked
-	GFX_SetMouseCapture(false);
 
 	set_window_decorations();
 }
@@ -1058,27 +1056,6 @@ void GFX_SetMouseRawInput(const bool requested_raw_input)
 
 		LOG_WARNING("SDL: Error %s raw mouse input",
 		            requested_raw_input ? "enabling" : "disabling");
-	}
-}
-
-void GFX_SetMouseCapture(const bool requested_capture)
-{
-	const auto param = requested_capture ? SDL_TRUE : SDL_FALSE;
-	if (SDL_SetRelativeMouseMode(param) != 0) {
-		SDL_ShowCursor(SDL_ENABLE);
-
-		E_Exit("SDL: Error %s relative mode",
-		       requested_capture ? "putting the mouse into"
-		                         : "taking the mouse out of");
-	}
-}
-
-void GFX_SetMouseVisibility(const bool requested_visible)
-{
-	const auto param = requested_visible ? SDL_ENABLE : SDL_DISABLE;
-	if (SDL_ShowCursor(param) < 0) {
-		E_Exit("SDL: Error making mouse cursor %s",
-		       requested_visible ? "visible" : "invisible");
 	}
 }
 

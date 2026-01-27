@@ -145,10 +145,7 @@ static void update_cursor_visibility()
 		                   state.vmm_wants_pointer;
 	}
 
-	// Apply calculated settings if changed or if this is the first run
-	if (first_time || old_is_visible != state.is_visible) {
-		GFX_SetMouseVisibility(state.is_visible);
-	}
+
 
 	// And take a note that this is no longer the first run
 	first_time = false;
@@ -391,10 +388,7 @@ static void update_state() // updates whole 'state' structure, except cursor vis
 		GFX_CenterMouse();
 	}
 
-	// Apply calculated settings if changed or if this is the first run
-	if (first_time || old_is_captured != state.is_captured) {
-		GFX_SetMouseCapture(state.is_captured);
-	}
+
 	if (first_time || old_is_raw_input != state.is_raw_input) {
 		GFX_SetMouseRawInput(state.is_raw_input);
 	}
