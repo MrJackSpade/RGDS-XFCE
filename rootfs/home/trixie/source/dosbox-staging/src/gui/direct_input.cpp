@@ -406,22 +406,7 @@ void DirectInput_Poll() {
 	}
 }
 
-void DirectInput_SetMouseGrab(bool grab) {
-	for (int fd : mouse_fds) {
-		char name[256] = "Unknown";
-		if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) < 0) {
-			// fallback if name fetch fails (though it shouldn't)
-		}
 
-		if (ioctl(fd, EVIOCGRAB, grab ? 1 : 0) == 0) {
-			LOG_MSG("DirectInput: %s mouse device '%s' (fd %d) - Success", 
-				grab ? "GRABBED" : "RELEASED", name, fd);
-		} else {
-			LOG_MSG("DirectInput: Failed to %s mouse device '%s' (fd %d): %s", 
-				grab ? "GRAB" : "RELEASE", name, fd, strerror(errno));
-		}
-	}
-}
 
 void DirectInput_Quit() {
 	hotplug_running = false;
