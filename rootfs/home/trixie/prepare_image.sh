@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script to prepare btrfs filesystem for imaging
+# Script to prepare ext4 filesystem for imaging
 # Must be run as root
 
 set -e
@@ -7,17 +7,17 @@ set -e
 echo "=== Filesystem Preparation Script ==="
 
 # 1. Clear temp and apt cache
-echo "[1/6] Clearing temp files and apt cache..."
+echo "[1/6] Clearing temp files, apt cache, and journal logs..."
 rm -rf /tmp/*
 rm -rf /var/tmp/*
+rm -rf /var/log/journal/* 2>/dev/null
 apt-get clean
 apt-get autoclean
 
-# 2. Defragment btrfs filesystem
-echo "[2/6] Defragmenting btrfs filesystem..."
-find / -xdev -type f -print0 2>/dev/null | while IFS= read -r -d '' file; do
-    btrfs filesystem defragment -v "$file" 2>/dev/null || true
-done
+# 2. Defragment ext4 filesystem
+echo "[2/6] Defragmenting ext4 filesystem..."
+
+/usr/sbin/e4defrag / || true
 
 # 3. Zero out swap file
 echo "[3/6] Zeroing out swap file..."
@@ -29,7 +29,6 @@ if [ -n "$SWAPFILE" ]; then
     rm "$SWAPFILE"
     # Disable compression for the new swap file
     touch "$SWAPFILE"
-    chattr +C "$SWAPFILE"
     dd if=/dev/zero of="$SWAPFILE" bs=1M count=$((SWAP_SIZE / 1024 / 1024)) status=progress
     chmod 600 "$SWAPFILE"
     mkswap "$SWAPFILE"
@@ -40,11 +39,10 @@ else
 fi
 
 # 4. Create zero-fill file to consume free space
-echo "[4/6] Creating zero-fill file (disabling btrfs compression)..."
+echo "[4/6] Creating zero-fill file..."
 ZEROFILL="/zerofill.tmp"
 touch "$ZEROFILL"
-# Disable compression on the file so zeros actually take up space
-chattr +C "$ZEROFILL"
+# chattr +C "$ZEROFILL" # Not needed for ext4
 echo "Filling disk with zeros until full..."
 dd if=/dev/zero of="$ZEROFILL" bs=1M status=progress || true
 # The dd will fail when disk is full, that's expected
