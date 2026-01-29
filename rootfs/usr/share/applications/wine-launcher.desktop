@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=Wine Launcher
+Name[de]=Wine Starter
+Name[es]=Lanzador de Wine
+Name[fr]=Lanceur Wine
+Comment=Run Windows applications with automatic backend selection
+Comment[de]=Windows-Anwendungen mit automatischer Backend-Auswahl starten
+Comment[es]=Ejecutar aplicaciones de Windows con seleccion automatica de backend
+Comment[fr]=Executer des applications Windows avec selection automatique du backend
+Exec=wine %f
+Terminal=false
+MimeType=application/x-ms-dos-executable;application/x-msi;application/x-ms-shortcut;application/x-bat;application/x-mswinurl;
+Icon=wine
+Categories=Utility;Emulator;
+StartupNotify=true
+NoDisplay=false

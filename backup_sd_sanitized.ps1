@@ -6,7 +6,8 @@
 
 param(
     [string]$SDDevice = "\\.\PhysicalDrive1",
-    [string]$OutputName = "sd_backup"
+    [string]$OutputName = "sd_backup",
+    [string]$Safety = "" # Optional filename for safety copy
 ) 
 
 $ErrorActionPreference = "Stop"
@@ -54,6 +55,14 @@ if (-not (Test-Path $ImageFile)) {
 
 $imageSize = (Get-Item $ImageFile).Length
 Write-Host "Image verified. Size: $([math]::Round($imageSize/1GB, 2)) GB"
+
+# Step 1b: Safety Copy (if requested)
+if ($Safety) {
+    $SafetyFile = Join-Path $BackupDir $Safety
+    Write-Host "`n[Safety Copy] Copying raw image to: $SafetyFile" -ForegroundColor Cyan
+    Copy-Item -Path $ImageFile -Destination $SafetyFile
+    Write-Host "Safety copy created." -ForegroundColor Green
+}
 
 # Step 2: Strip password from image (if script exists)
 $SanitizeScript = Join-Path $PSScriptRoot "sanitize_sd_image.ps1"
