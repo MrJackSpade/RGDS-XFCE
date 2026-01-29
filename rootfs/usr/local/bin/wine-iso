@@ -1,0 +1,200 @@
+#!/bin/bash
+# wine-iso: Mount/unmount ISO files as Wine CD-ROM drives
+
+set -e
+
+MOUNT_BASE="$HOME/mnt/wine-iso"
+WINE_DRIVES="$HOME/.wine/dosdevices"
+
+usage() {
+    cat << EOF
+Usage: wine-iso mount <drive> <iso-path>    Mount ISO to Wine drive
+       wine-iso unmount <drive>             Unmount drive
+       wine-iso swap <drive> <iso-path>     Swap disc - lazy unmount then mount
+       wine-iso list                        List mounted ISO drives
+       wine-iso unmount-all                 Unmount all ISO drives
+
+Examples:
+    wine-iso mount d "/path/to/game.iso"
+    wine-iso swap d "/path/to/disc2.iso"
+    wine-iso unmount d
+    wine-iso list
+
+Drive letters are case-insensitive.
+EOF
+    exit 1
+}
+
+ensure_dirs() {
+    mkdir -p "$MOUNT_BASE"
+    mkdir -p "$WINE_DRIVES"
+}
+
+to_lower() {
+    echo "$1" | tr "[:upper:]" "[:lower:]"
+}
+
+mount_iso() {
+    local drive=$(to_lower "$1")
+    local iso_path="$2"
+    local mount_point="$MOUNT_BASE/$drive"
+    local wine_link="$WINE_DRIVES/${drive}:"
+
+    if [[ ! -f "$iso_path" ]]; then
+        echo "Error: ISO file not found: $iso_path"
+        exit 1
+    fi
+
+    if mountpoint -q "$mount_point" 2>/dev/null; then
+        echo "Error: Drive $drive: is already mounted"
+        echo "Use: wine-iso swap $drive <iso>"
+        exit 1
+    fi
+
+    ensure_dirs
+    mkdir -p "$mount_point"
+
+    echo "Mounting: $iso_path"
+    fuseiso -o ro,umask=0222 "$iso_path" "$mount_point"
+
+    rm -f "$wine_link"
+    ln -s "$mount_point" "$wine_link"
+
+    local regfile=$(mktemp --suffix=.reg)
+    cat > "$regfile" << EOF
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\Software\Wine\Drives]
+"${drive}:"="cdrom"
+EOF
+    wine regedit "$regfile" 2>/dev/null
+    rm -f "$regfile"
+
+    echo "Mounted as ${drive^^}: in Wine"
+    echo "Contents:"
+    ls "$mount_point" | head -10
+    local count=$(ls "$mount_point" | wc -l)
+    [[ $count -gt 10 ]] && echo "... and $((count - 10)) more files"
+}
+
+swap_iso() {
+    local drive=$(to_lower "$1")
+    local iso_path="$2"
+    local mount_point="$MOUNT_BASE/$drive"
+    local wine_link="$WINE_DRIVES/${drive}:"
+
+    if [[ ! -f "$iso_path" ]]; then
+        echo "Error: ISO file not found: $iso_path"
+        exit 1
+    fi
+
+    ensure_dirs
+
+    if mountpoint -q "$mount_point" 2>/dev/null; then
+        echo "Lazy unmounting current disc..."
+        fusermount -uz "$mount_point" 2>/dev/null || true
+        sleep 0.5
+    fi
+
+    rmdir "$mount_point" 2>/dev/null || true
+    mkdir -p "$mount_point"
+
+    echo "Mounting: $iso_path"
+    fuseiso -o ro,umask=0222 "$iso_path" "$mount_point"
+
+    rm -f "$wine_link"
+    ln -s "$mount_point" "$wine_link"
+
+    echo "Swapped ${drive^^}: in Wine"
+    echo "Contents:"
+    ls "$mount_point" | head -10
+    local count=$(ls "$mount_point" | wc -l)
+    [[ $count -gt 10 ]] && echo "... and $((count - 10)) more files"
+}
+
+unmount_iso() {
+    local drive=$(to_lower "$1")
+    local mount_point="$MOUNT_BASE/$drive"
+    local wine_link="$WINE_DRIVES/${drive}:"
+
+    if ! mountpoint -q "$mount_point" 2>/dev/null; then
+        echo "Drive $drive: is not mounted"
+        rm -f "$wine_link"
+        rmdir "$mount_point" 2>/dev/null || true
+        exit 0
+    fi
+
+    echo "Unmounting ${drive^^}:..."
+    if ! fusermount -u "$mount_point" 2>/dev/null; then
+        echo "Device busy - use: wine-iso swap $drive <new-iso>"
+        exit 1
+    fi
+    rm -f "$wine_link"
+    rmdir "$mount_point" 2>/dev/null || true
+
+    local regfile=$(mktemp --suffix=.reg)
+    cat > "$regfile" << EOF
+REGEDIT4
+
+[HKEY_LOCAL_MACHINE\Software\Wine\Drives]
+"${drive}:"=-
+EOF
+    wine regedit "$regfile" 2>/dev/null
+    rm -f "$regfile"
+
+    echo "Done"
+}
+
+list_mounted() {
+    echo "Mounted ISO drives:"
+    echo
+    local found=0
+    for mount_point in "$MOUNT_BASE"/*; do
+        [[ -d "$mount_point" ]] || continue
+        if mountpoint -q "$mount_point" 2>/dev/null; then
+            local drive=$(basename "$mount_point")
+            local source=$(findmnt -n -o SOURCE "$mount_point" 2>/dev/null || echo "unknown")
+            printf "  %s:  ->  %s\n" "${drive^^}" "$source"
+            found=1
+        fi
+    done
+    [[ $found -eq 0 ]] && echo "  (none)"
+}
+
+unmount_all() {
+    echo "Unmounting all ISO drives..."
+    local found=0
+    for mount_point in "$MOUNT_BASE"/*; do
+        [[ -d "$mount_point" ]] || continue
+        if mountpoint -q "$mount_point" 2>/dev/null; then
+            local drive=$(basename "$mount_point")
+            unmount_iso "$drive"
+            found=1
+        fi
+    done
+    [[ $found -eq 0 ]] && echo "No drives to unmount"
+}
+
+case "${1:-}" in
+    mount)
+        [[ -z "${2:-}" || -z "${3:-}" ]] && usage
+        mount_iso "$2" "$3"
+        ;;
+    swap)
+        [[ -z "${2:-}" || -z "${3:-}" ]] && usage
+        swap_iso "$2" "$3"
+        ;;
+    unmount|umount)
+        [[ -z "${2:-}" ]] && usage
+        unmount_iso "$2"
+        ;;
+    list|ls)
+        list_mounted
+        ;;
+    unmount-all|umount-all)
+        unmount_all
+        ;;
+    *)
+        usage
+        ;;
+esac

@@ -176,7 +176,8 @@ enum class WineBackend {
     Auto,
     Box86,
     Box64,
-    Hangover
+    Hangover,
+    HangoverFex
 };
 
 enum class ExeArch {
@@ -513,10 +514,12 @@ WineBackend showGuiDialog(WineBackend recommended) {
             "%s 'Box86' "
             "%s 'Box64' "
             "%s 'Hangover' "
-            "--width=250 --height=300 2>/dev/null",
+            "%s 'Hangover-FEX' "
+            "--width=250 --height=350 2>/dev/null",
             recommended == WineBackend::Box86 ? "TRUE" : "FALSE",
             recommended == WineBackend::Box64 ? "TRUE" : "FALSE",
-            recommended == WineBackend::Hangover ? "TRUE" : "FALSE");
+            recommended == WineBackend::Hangover ? "TRUE" : "FALSE",
+            recommended == WineBackend::HangoverFex ? "TRUE" : "FALSE");
     } else if (commandExists("yad")) {
         snprintf(cmd, sizeof(cmd),
             "yad --list --radiolist --no-headers "
@@ -525,16 +528,19 @@ WineBackend showGuiDialog(WineBackend recommended) {
             "%s 'Box86' "
             "%s 'Box64' "
             "%s 'Hangover' "
-            "--width=200 --height=200 --print-column=2 2>/dev/null",
+            "%s 'Hangover-FEX' "
+            "--width=200 --height=250 --print-column=2 2>/dev/null",
             recommended == WineBackend::Box86 ? "TRUE" : "FALSE",
             recommended == WineBackend::Box64 ? "TRUE" : "FALSE",
-            recommended == WineBackend::Hangover ? "TRUE" : "FALSE");
+            recommended == WineBackend::Hangover ? "TRUE" : "FALSE",
+            recommended == WineBackend::HangoverFex ? "TRUE" : "FALSE");
     } else if (commandExists("kdialog")) {
         snprintf(cmd, sizeof(cmd),
             "kdialog --menu '' "
             "'Box86' 'Box86' "
             "'Box64' 'Box64' "
-            "'Hangover' 'Hangover' 2>/dev/null");
+            "'Hangover' 'Hangover' "
+            "'Hangover-FEX' 'Hangover-FEX' 2>/dev/null");
     } else {
         return recommended;
     }
@@ -563,6 +569,8 @@ WineBackend showGuiDialog(WineBackend recommended) {
 
     if (result.find("Box86") != std::string::npos) return WineBackend::Box86;
     if (result.find("Box64") != std::string::npos) return WineBackend::Box64;
+    // Check Hangover-FEX before Hangover since it contains "Hangover"
+    if (result.find("Hangover-FEX") != std::string::npos) return WineBackend::HangoverFex;
     if (result.find("Hangover") != std::string::npos) return WineBackend::Hangover;
     return WineBackend::Auto;
 }
@@ -575,27 +583,30 @@ WineBackend showTerminalDialog(WineBackend recommended) {
 
     if (commandExists("whiptail")) {
         snprintf(cmd, sizeof(cmd),
-            "whiptail --menu 'Wine Backend' 10 30 3 "
+            "whiptail --menu 'Wine Backend' 12 35 4 "
             "'Box86' '' "
             "'Box64' '' "
             "'Hangover' '' "
+            "'Hangover-FEX' '' "
             "--default-item '%s' "
             "3>&1 1>&2 2>&3",
             backendName(recommended));
     } else if (commandExists("dialog")) {
         snprintf(cmd, sizeof(cmd),
-            "dialog --menu 'Wine Backend' 10 30 3 "
+            "dialog --menu 'Wine Backend' 12 35 4 "
             "'Box86' '' "
             "'Box64' '' "
             "'Hangover' '' "
+            "'Hangover-FEX' '' "
             "--default-item '%s' "
             "3>&1 1>&2 2>&3",
             backendName(recommended));
     } else {
         // Fallback to simple text menu
         int rec = (recommended == WineBackend::Box86) ? 1 :
-                  (recommended == WineBackend::Box64) ? 2 : 3;
-        fprintf(stderr, "1) Box86  2) Box64  3) Hangover  [%d]: ", rec);
+                  (recommended == WineBackend::Box64) ? 2 :
+                  (recommended == WineBackend::HangoverFex) ? 4 : 3;
+        fprintf(stderr, "1) Box86  2) Box64  3) Hangover  4) Hangover-FEX  [%d]: ", rec);
 
         char choice[16];
         if (fgets(choice, sizeof(choice), stdin)) {
@@ -604,6 +615,7 @@ WineBackend showTerminalDialog(WineBackend recommended) {
                 case '1': return WineBackend::Box86;
                 case '2': return WineBackend::Box64;
                 case '3': return WineBackend::Hangover;
+                case '4': return WineBackend::HangoverFex;
                 default: return recommended;
             }
         }
@@ -637,6 +649,7 @@ WineBackend showTerminalDialog(WineBackend recommended) {
 
     if (result == "Box86") return WineBackend::Box86;
     if (result == "Box64") return WineBackend::Box64;
+    if (result == "Hangover-FEX") return WineBackend::HangoverFex;
     if (result == "Hangover") return WineBackend::Hangover;
     return recommended;
 }
@@ -682,7 +695,6 @@ void setBox86Env() {
     setenv("BOX86_DYNAREC_STRONGMEM", "2", 1);
     setenv("BOX86_GL", "1", 1);
     setenv("BOX86_LOG", "1", 1);
-    setenv("WINEDEBUG", "-all", 1);
     setenv("WINEESYNC", "0", 1);
     setenv("WINEFSYNC", "0", 1);
 }
@@ -695,7 +707,6 @@ void setBox64Env() {
     setenv("BOX64_DYNAREC_BIGBLOCK", "3", 1);
     setenv("BOX64_DYNAREC_STRONGMEM", "2", 1);
     setenv("BOX64_LOG", "1", 1);
-    setenv("WINEDEBUG", "-all", 1);
     setenv("WINEESYNC", "0", 1);
     setenv("WINEFSYNC", "0", 1);
 }
@@ -703,7 +714,12 @@ void setBox64Env() {
 void setHangoverEnv() {
     std::string prefix = getHomeDir() + "/.wine-hangover";
     setenv("WINEPREFIX", prefix.c_str(), 1);
-    setenv("WINEDEBUG", "-all", 1);
+}
+
+void setHangoverFexEnv() {
+    std::string prefix = getHomeDir() + "/.wine-hangover";
+    setenv("WINEPREFIX", prefix.c_str(), 1);
+    setenv("HODLL", "libwow64fex.dll", 1);
 }
 
 // Detect which backend's wineserver is running (if any)
@@ -796,28 +812,29 @@ void execWine(WineBackend backend, int argc, char** argv) {
     killIfDifferentBackend(backend);
 
     std::vector<const char*> args;
-    const char* wineBin = nullptr;
 
     switch (backend) {
         case WineBackend::Box86:
             setBox86Env();
             args.push_back(BOX86_BIN);
             args.push_back(BOX86_WINE);
-            wineBin = BOX86_BIN;
             break;
 
         case WineBackend::Box64:
             setBox64Env();
             args.push_back(BOX64_BIN);
             args.push_back(BOX64_WINE);
-            wineBin = BOX64_BIN;
+            break;
+
+        case WineBackend::HangoverFex:
+            setHangoverFexEnv();
+            args.push_back(HANGOVER_WINE);
             break;
 
         case WineBackend::Hangover:
         default:
             setHangoverEnv();
             args.push_back(HANGOVER_WINE);
-            wineBin = HANGOVER_WINE;
             break;
     }
 
@@ -827,97 +844,33 @@ void execWine(WineBackend backend, int argc, char** argv) {
     }
     args.push_back(nullptr);
 
-    // Snapshot all PIDs before launching wine
-    std::set<pid_t> pidsBefore;
-    DIR* proc = opendir("/proc");
-    if (proc) {
-        struct dirent* entry;
-        while ((entry = readdir(proc)) != nullptr) {
-            if (entry->d_name[0] >= '0' && entry->d_name[0] <= '9') {
-                pidsBefore.insert(atoi(entry->d_name));
-            }
-        }
-        closedir(proc);
+    // Print the full command with environment for debugging
+    fprintf(stderr, "[wine-launcher] To reproduce, run:\n");
+    fprintf(stderr, "WINEPREFIX=\"%s\"", getenv("WINEPREFIX") ? getenv("WINEPREFIX") : "");
+    if (getenv("WINEARCH")) fprintf(stderr, " WINEARCH=\"%s\"", getenv("WINEARCH"));
+    if (getenv("WINEDEBUG")) fprintf(stderr, " WINEDEBUG=\"%s\"", getenv("WINEDEBUG"));
+    if (backend == WineBackend::Box86 || backend == WineBackend::Box64) {
+        if (getenv("BOX86_LOG")) fprintf(stderr, " BOX86_LOG=\"%s\"", getenv("BOX86_LOG"));
+        if (getenv("BOX64_LOG")) fprintf(stderr, " BOX64_LOG=\"%s\"", getenv("BOX64_LOG"));
     }
-    fprintf(stderr, "[DEBUG] PIDs before: %zu\n", pidsBefore.size());
-
-    // Fork to run wine
-    pid_t winePid = fork();
-
-    if (winePid == 0) {
-        // Child: exec wine
-        execv(args[0], const_cast<char* const*>(args.data()));
-        perror("execv failed");
-        exit(1);
-    } else if (winePid > 0) {
-        // Standard wine processes to ignore
-        const char* wineSystemProcs[] = {
-            "wineserver", "services.exe", "winedevice.exe", "plugplay.exe",
-            "explorer.exe", "svchost.exe", "rpcss.exe", "wineboot.exe",
-            "rundll32.exe", "conhost.exe", "start.exe", nullptr
-        };
-
-        auto isSystemProc = [&](const char* cmdline) {
-            // Exclude anything in system32 or syswow64
-            if (strstr(cmdline, "system32") || strstr(cmdline, "syswow64")) return true;
-            for (int i = 0; wineSystemProcs[i]; i++) {
-                if (strstr(cmdline, wineSystemProcs[i])) return true;
-            }
-            return false;
-        };
-
-        // Poll rapidly for new non-system wine processes
-        pid_t targetPid = 0;
-        std::string targetCmd;
-        int attempts = 0;
-        const int maxAttempts = 5000;
-
-        while (attempts < maxAttempts && targetPid == 0) {
-            DIR* proc = opendir("/proc");
-            if (proc) {
-                struct dirent* entry;
-                while ((entry = readdir(proc)) != nullptr) {
-                    if (entry->d_name[0] >= '0' && entry->d_name[0] <= '9') {
-                        pid_t pid = atoi(entry->d_name);
-                        if (pidsBefore.find(pid) == pidsBefore.end() && pid != winePid && pid != getpid()) {
-                            char cmdPath[64];
-                            snprintf(cmdPath, sizeof(cmdPath), "/proc/%d/cmdline", pid);
-                            FILE* f = fopen(cmdPath, "r");
-                            if (f) {
-                                char cmdline[512] = {0};
-                                fread(cmdline, 1, sizeof(cmdline)-1, f);
-                                fclose(f);
-                                // Must have .exe but NOT be a system process
-                                if (strstr(cmdline, ".exe") && !isSystemProc(cmdline)) {
-                                    targetPid = pid;
-                                    targetCmd = cmdline;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                closedir(proc);
-            }
-            attempts++;
-        }
-
-        if (targetPid > 0) {
-            fprintf(stderr, "[DEBUG] Found target after %d attempts: PID %d: %s\n", attempts, targetPid, targetCmd.c_str());
-
-            // Attach strace immediately - no filtering
-            std::string straceCmd = "strace -f -s9999 -p " + std::to_string(targetPid) + " 2>&1";
-
-            fprintf(stderr, "[DEBUG] Running: %s\n", straceCmd.c_str());
-            system(straceCmd.c_str());
+    if (backend == WineBackend::HangoverFex) {
+        if (getenv("HODLL")) fprintf(stderr, " HODLL=\"%s\"", getenv("HODLL"));
+    }
+    for (size_t i = 0; args[i] != nullptr; i++) {
+        fprintf(stderr, " ");
+        // Quote args with spaces or backslashes
+        if (strchr(args[i], ' ') || strchr(args[i], '\\')) {
+            fprintf(stderr, "\"%s\"", args[i]);
         } else {
-            fprintf(stderr, "[DEBUG] No target process found after %d attempts\n", attempts);
+            fprintf(stderr, "%s", args[i]);
         }
-        exit(0);
-    } else {
-        perror("fork failed");
-        exit(1);
     }
+    fprintf(stderr, "\n");
+
+    // Just exec wine directly
+    execv(args[0], const_cast<char* const*>(args.data()));
+    perror("execv failed");
+    exit(1);
 }
 
 const char* backendName(WineBackend b) {
@@ -925,6 +878,7 @@ const char* backendName(WineBackend b) {
         case WineBackend::Box86: return "Box86";
         case WineBackend::Box64: return "Box64";
         case WineBackend::Hangover: return "Hangover";
+        case WineBackend::HangoverFex: return "Hangover-FEX";
         default: return "Auto";
     }
 }
@@ -932,7 +886,7 @@ const char* backendName(WineBackend b) {
 void printUsage(const char* prog) {
     fprintf(stderr, "Usage: %s [options] [program.exe] [arguments...]\n\n", prog);
     fprintf(stderr, "Options:\n");
-    fprintf(stderr, "  --backend=<type>   Select backend: auto, box86, box64, hangover\n");
+    fprintf(stderr, "  --backend=<type>   Select backend: auto, box86, box64, hangover, hangover-fex\n");
     fprintf(stderr, "  --info <file>      Show executable info and exit\n");
     fprintf(stderr, "  --help             Show this help\n");
     fprintf(stderr, "\nIf no --backend is specified, a selection dialog is shown.\n");
@@ -951,6 +905,8 @@ int main(int argc, char** argv) {
                 selectedBackend = WineBackend::Box86;
             } else if (strcasecmp(val, "box64") == 0) {
                 selectedBackend = WineBackend::Box64;
+            } else if (strcasecmp(val, "hangover-fex") == 0) {
+                selectedBackend = WineBackend::HangoverFex;
             } else if (strcasecmp(val, "hangover") == 0) {
                 selectedBackend = WineBackend::Hangover;
             } else if (strcasecmp(val, "auto") == 0) {

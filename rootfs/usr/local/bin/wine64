@@ -1,2 +1,0 @@
-#!/bin/bash
-box64 /home/trixie/.local/share/wine64/bin/wine64 "$@"
