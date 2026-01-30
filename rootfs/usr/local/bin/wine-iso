@@ -4,7 +4,12 @@
 set -e
 
 MOUNT_BASE="$HOME/mnt/wine-iso"
-WINE_DRIVES="$HOME/.wine/dosdevices"
+# All wine prefixes used by wine-launcher
+WINE_PREFIXES=(
+    "$HOME/.wine32"
+    "$HOME/.wine64"
+    "$HOME/.wine-hangover"
+)
 
 usage() {
     cat << EOF
@@ -27,7 +32,27 @@ EOF
 
 ensure_dirs() {
     mkdir -p "$MOUNT_BASE"
-    mkdir -p "$WINE_DRIVES"
+    for prefix in "${WINE_PREFIXES[@]}"; do
+        mkdir -p "$prefix/dosdevices"
+    done
+}
+
+# Create symlink in all wine prefixes
+link_drive() {
+    local drive="$1"
+    local target="$2"
+    for prefix in "${WINE_PREFIXES[@]}"; do
+        rm -f "$prefix/dosdevices/${drive}:"
+        ln -s "$target" "$prefix/dosdevices/${drive}:"
+    done
+}
+
+# Remove symlink from all wine prefixes
+unlink_drive() {
+    local drive="$1"
+    for prefix in "${WINE_PREFIXES[@]}"; do
+        rm -f "$prefix/dosdevices/${drive}:"
+    done
 }
 
 to_lower() {
@@ -38,7 +63,6 @@ mount_iso() {
     local drive=$(to_lower "$1")
     local iso_path="$2"
     local mount_point="$MOUNT_BASE/$drive"
-    local wine_link="$WINE_DRIVES/${drive}:"
 
     if [[ ! -f "$iso_path" ]]; then
         echo "Error: ISO file not found: $iso_path"
@@ -57,20 +81,9 @@ mount_iso() {
     echo "Mounting: $iso_path"
     fuseiso -o ro,umask=0222 "$iso_path" "$mount_point"
 
-    rm -f "$wine_link"
-    ln -s "$mount_point" "$wine_link"
+    link_drive "$drive" "$mount_point"
 
-    local regfile=$(mktemp --suffix=.reg)
-    cat > "$regfile" << EOF
-REGEDIT4
-
-[HKEY_LOCAL_MACHINE\Software\Wine\Drives]
-"${drive}:"="cdrom"
-EOF
-    wine regedit "$regfile" 2>/dev/null
-    rm -f "$regfile"
-
-    echo "Mounted as ${drive^^}: in Wine"
+    echo "Mounted as ${drive^^}: in Wine (all prefixes)"
     echo "Contents:"
     ls "$mount_point" | head -10
     local count=$(ls "$mount_point" | wc -l)
@@ -81,7 +94,6 @@ swap_iso() {
     local drive=$(to_lower "$1")
     local iso_path="$2"
     local mount_point="$MOUNT_BASE/$drive"
-    local wine_link="$WINE_DRIVES/${drive}:"
 
     if [[ ! -f "$iso_path" ]]; then
         echo "Error: ISO file not found: $iso_path"
@@ -102,10 +114,9 @@ swap_iso() {
     echo "Mounting: $iso_path"
     fuseiso -o ro,umask=0222 "$iso_path" "$mount_point"
 
-    rm -f "$wine_link"
-    ln -s "$mount_point" "$wine_link"
+    link_drive "$drive" "$mount_point"
 
-    echo "Swapped ${drive^^}: in Wine"
+    echo "Swapped ${drive^^}: in Wine (all prefixes)"
     echo "Contents:"
     ls "$mount_point" | head -10
     local count=$(ls "$mount_point" | wc -l)
@@ -115,11 +126,10 @@ swap_iso() {
 unmount_iso() {
     local drive=$(to_lower "$1")
     local mount_point="$MOUNT_BASE/$drive"
-    local wine_link="$WINE_DRIVES/${drive}:"
 
     if ! mountpoint -q "$mount_point" 2>/dev/null; then
         echo "Drive $drive: is not mounted"
-        rm -f "$wine_link"
+        unlink_drive "$drive"
         rmdir "$mount_point" 2>/dev/null || true
         exit 0
     fi
@@ -129,18 +139,8 @@ unmount_iso() {
         echo "Device busy - use: wine-iso swap $drive <new-iso>"
         exit 1
     fi
-    rm -f "$wine_link"
+    unlink_drive "$drive"
     rmdir "$mount_point" 2>/dev/null || true
-
-    local regfile=$(mktemp --suffix=.reg)
-    cat > "$regfile" << EOF
-REGEDIT4
-
-[HKEY_LOCAL_MACHINE\Software\Wine\Drives]
-"${drive}:"=-
-EOF
-    wine regedit "$regfile" 2>/dev/null
-    rm -f "$regfile"
 
     echo "Done"
 }

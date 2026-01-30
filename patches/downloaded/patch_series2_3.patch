@@ -1,0 +1,507 @@
+From mboxrd@z Thu Jan  1 00:00:00 1970
+Return-Path: <linux-rockchip-bounces+linux-rockchip=archiver.kernel.org@lists.infradead.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from bombadil.infradead.org (bombadil.infradead.org [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.lore.kernel.org (Postfix) with ESMTPS id E5796D46BE5
+	for <linux-rockchip@archiver.kernel.org>; Wed, 28 Jan 2026 17:49:01 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=bombadil.20210309; h=Sender:
+	Content-Transfer-Encoding:Content-Type:List-Subscribe:List-Help:List-Post:
+	List-Archive:List-Unsubscribe:List-Id:MIME-Version:References:In-Reply-To:
+	Message-ID:Date:Subject:Cc:To:From:Reply-To:Content-ID:Content-Description:
+	Resent-Date:Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:
+	List-Owner; bh=PpJMU7AviQ2+92G8js5sVey9H9fe5e2YMTnLC2w8QM4=; b=0CHbN5CfJUCQyT
+	CBIlCAkDz4T5DHboHe9nbmFEVq48cBP+fbt84+Ncs3VMNt6KUCbUkBeyDGzjp4w80fChemMJFENMp
+	jFQm68U9Ewv0TBv6IXy9B4NwDGWZ++b+EIp02eBH+Pos8MVSLn6HQe8uNbxZFVQZhanOaFtIkRsBP
+	6R++EtDbUW0eX23i8ZHx5FLi2PZdxbyMsZYvVzLs92n8eMf9m7OnwXuUrUFHrk6dgWgTxz8siv5tV
+	fnl/1ZvyamGayA6ScsTwCRbahvZ6BRRvIHpC1djTsc2S4Y0iZpux6mBY18mY0zMfm3ey4OoOE3KcT
+	8Fm4JOHhxsig7/tK6MVA==;
+Received: from localhost ([::1] helo=bombadil.infradead.org)
+	by bombadil.infradead.org with esmtp (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1vl9ep-0000000GWRl-1Ryl;
+	Wed, 28 Jan 2026 17:48:47 +0000
+Received: from mail-oo1-xc2e.google.com ([2607:f8b0:4864:20::c2e])
+	by bombadil.infradead.org with esmtps (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1vl9em-0000000GWQP-2SLm
+	for linux-rockchip@lists.infradead.org;
+	Wed, 28 Jan 2026 17:48:45 +0000
+Received: by mail-oo1-xc2e.google.com with SMTP id 006d021491bc7-662fca4503cso63948eaf.0
+        for <linux-rockchip@lists.infradead.org>; Wed, 28 Jan 2026 09:48:44 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1769622523; x=1770227323; darn=lists.infradead.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=LI2PXO6QtqofNQG9xx+2bhCGL8mFGjiSxAqb+y/MmWY=;
+        b=gWtT/YCyEuNaheSvPjkOZ/aGUwBX/p21aBozexVi0YALEvNWfT1TtkZYjt8K39g7i3
+         UkwHG9SKcY3UUGMiNZE3FlRzQc9bvlW0u2BM48rHfY5mU7JWGKg1Rc89IptlIM0/ZEAm
+         l8gU5tKN0FIGUN9Me7Myopj7mVE42p/IrZK3WnHH15CzMymAYDi9/NKCTLTChm+nsqrY
+         mc/aGU/E4Xk06YvxEp0X0NMHwz2KqoIP1EEsS2FDhOVuealg0OAGKi5wcaI+c5p/pEFX
+         rszoUh6599ikvmf1BayeZfMZ1kk6bMatzV8dTZKJ7gTpJcrHRTED9/oBbP5ePabPof0X
+         YFEw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1769622523; x=1770227323;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=LI2PXO6QtqofNQG9xx+2bhCGL8mFGjiSxAqb+y/MmWY=;
+        b=gWhRTB/QpEIMNIwL1rsdKf4JGcWlBNYEps6sC2R8bk5VN5wiaRm3l9/HbI1gXmFAEr
+         curpBTBkdcVGkm9WQnY7D6gEHLgPlbVxgDUXSpg2Tx2YpQXubnFN8BNgEn6Vwxv83INX
+         jiEzzDUIAvf0bgpx1w3z7i58CIT+TtbE1qghZHm6h8gLzwvoqjFyC/6XsklNQpJqfnIK
+         y0wxYQp9p07e+Cf/cjsUyaBt5hnqGq9ZBWzP5BRckP/vohiNk0I/hi/6KzDy4/ju4IJn
+         VPG5zd2Oe5TJf0RTbZrlnHmEgjGXxhY1LewVIzH9AQE/e4zeZRmBfDR4zIlNmGkPZHdD
+         JElA==
+X-Forwarded-Encrypted: i=1; AJvYcCV/qAE9na6hNVmkY/NVIDxIz0XiDuh8FDe2OCx3nLP7cj2E4rPPregHCvVQfCsP8YqwHUenuvQM3pIHThGUmA==@lists.infradead.org
+X-Gm-Message-State: AOJu0YyAZAcK6ghN9qq/LUHZstmuTEnpXwVp+ZF8PCr6dbFMhr0V20eH
+	7rnNVR2VRPFI+mLs0u2kdkfDe2JM85XipK5q4RrPT6tGxrK98+HrmN4V
+X-Gm-Gg: AZuq6aIVUVkr/0QRWmaJABPZICjWg/vrRrFK0XGXbD4onOpWBuB4G05s4ZHFbTNEevA
+	ZgzYYpb6zJzZdAqlKY8PNmlQTz85Bwvh5tCPH4qHkrYWgeoe6iuiL4+YRe0RpfGTPq6lCwpy49I
+	yzFClMii6ar0VGgYYEmpJldIgvKXiMZdcJEjKOddXk6ALMeiUJ8IrBhND5wWO9UhUilghf+B6kN
+	UDAUA0qxqri9X0QPTuGnXKbrlD3BNZ0JpsoEmGcW5YlYANWwkERKob8TMV0Pun1N6lLtdBUMPDw
+	/M96cAKzgmvVc+PbzWz2Nz53Zvzyb49eamIEQ80ILlAlfvODqhYPD179qWCtYf6BQJUoUro9Vmu
+	Qoh08MkwgMh1M4M1egl7WOC0Rn8Woa/5G8bDASIuKZCFg57ieqdUj2HrlgBDQPYjhqzPdOGCZwj
+	zo65SOoyzb
+X-Received: by 2002:a4a:e9ec:0:b0:662:f486:cc90 with SMTP id 006d021491bc7-662f486f145mr2553572eaf.4.1769622523363;
+        Wed, 28 Jan 2026 09:48:43 -0800 (PST)
+Received: from localhost.localdomain ([2600:1700:fb0:1bc0::54])
+        by smtp.gmail.com with ESMTPSA id 586e51a60fabf-409575b0a89sm2187647fac.20.2026.01.28.09.48.42
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 28 Jan 2026 09:48:42 -0800 (PST)
+From: Chris Morgan <macroalpha82@gmail.com>
+To: linux-sound@vger.kernel.org
+Cc: devicetree@vger.kernel.org,
+	wangweidong.a@awinic.com,
+	tiwai@suse.com,
+	perex@perex.cz,
+	conor+dt@kernel.org,
+	krzk+dt@kernel.org,
+	robh@kernel.org,
+	broonie@kernel.org,
+	lgirdwood@gmail.com,
+	heiko@sntech.de,
+	linux-rockchip@lists.infradead.org,
+	Chris Morgan <macromorgan@hotmail.com>
+Subject: [PATCH V2 2/3] ASoC: codecs: aw87390: Add Anbernic RG-DS amp driver
+Date: Wed, 28 Jan 2026 11:46:07 -0600
+Message-ID: <20260128174608.1498-3-macroalpha82@gmail.com>
+X-Mailer: git-send-email 2.43.0
+In-Reply-To: <20260128174608.1498-1-macroalpha82@gmail.com>
+References: <20260128174608.1498-1-macroalpha82@gmail.com>
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20260128_094844_653002_3C441950 
+X-CRM114-Status: GOOD (  22.96  )
+X-BeenThere: linux-rockchip@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: Upstream kernel work for Rockchip platforms <linux-rockchip.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-rockchip>,
+ <mailto:linux-rockchip-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-rockchip/>
+List-Post: <mailto:linux-rockchip@lists.infradead.org>
+List-Help: <mailto:linux-rockchip-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-rockchip>,
+ <mailto:linux-rockchip-request@lists.infradead.org?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Sender: "Linux-rockchip" <linux-rockchip-bounces@lists.infradead.org>
+Errors-To: linux-rockchip-bounces+linux-rockchip=archiver.kernel.org@lists.infradead.org
+
+From: Chris Morgan <macromorgan@hotmail.com>
+
+Add support for Anbernic's RG-DS audio amplifiers, powered by
+Awinic AW87391 amplifier ICs. These chips typically require an
+init sequence provided by firmware, but the manufacturer did not
+provide firmware in this case. As a result we had to hard-code
+the init sequence and use a device specific binding (rather than
+a binding just for the aw87391).
+
+Signed-off-by: Chris Morgan <macromorgan@hotmail.com>
+---
+ sound/soc/codecs/aw87390.c | 175 +++++++++++++++++++++++++++++++++++--
+ sound/soc/codecs/aw87390.h |  86 ++++++++++++++++++
+ 2 files changed, 253 insertions(+), 8 deletions(-)
+
+diff --git a/sound/soc/codecs/aw87390.c b/sound/soc/codecs/aw87390.c
+index d7fd865c349f..613daccca3af 100644
+--- a/sound/soc/codecs/aw87390.c
++++ b/sound/soc/codecs/aw87390.c
+@@ -314,6 +314,45 @@ static int aw87390_drv_event(struct snd_soc_dapm_widget *w,
+ 	return ret;
+ }
+ 
++static int aw87391_rgds_drv_event(struct snd_soc_dapm_widget *w,
++				struct snd_kcontrol *kcontrol, int event)
++{
++	struct snd_soc_component *component = snd_soc_dapm_to_component(w->dapm);
++	struct aw87390 *aw87390 = snd_soc_component_get_drvdata(component);
++	struct aw_device *aw_dev = aw87390->aw_pa;
++
++	switch (event) {
++	case SND_SOC_DAPM_PRE_PMU:
++		if (!IS_ERR(aw87390->vdd_reg)) {
++			if (regulator_enable(aw87390->vdd_reg))
++				dev_warn(aw_dev->dev, "Failed to enable vdd\n");
++	}
++		break;
++	case SND_SOC_DAPM_POST_PMU:
++		regmap_write(aw_dev->regmap, AW87391_SYSCTRL_REG,
++			     AW87391_REG_VER_SEL_LOW | AW87391_REG_EN_ADAP |
++			     AW87391_REG_EN_2X | AW87391_EN_SPK |
++			     AW87391_EN_PA | AW87391_REG_EN_CP |
++			     AW87391_EN_SW);
++		break;
++	case SND_SOC_DAPM_PRE_PMD:
++		regmap_write(aw_dev->regmap, AW87390_SYSCTRL_REG,
++			     AW87390_POWER_DOWN_VALUE);
++		break;
++	case SND_SOC_DAPM_POST_PMD:
++		if (!IS_ERR(aw87390->vdd_reg)) {
++			if (regulator_disable(aw87390->vdd_reg))
++				dev_warn(aw_dev->dev, "Failed to disable vdd\n");
++	}
++		break;
++	default:
++		dev_err(aw_dev->dev, "%s: invalid event %d\n", __func__, event);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
+ static const struct snd_soc_dapm_widget aw87390_dapm_widgets[] = {
+ 	SND_SOC_DAPM_INPUT("IN"),
+ 	SND_SOC_DAPM_PGA_E("SPK PA", SND_SOC_NOPM, 0, 0, NULL, 0, aw87390_drv_event,
+@@ -321,6 +360,14 @@ static const struct snd_soc_dapm_widget aw87390_dapm_widgets[] = {
+ 	SND_SOC_DAPM_OUTPUT("OUT"),
+ };
+ 
++static const struct snd_soc_dapm_widget aw87391_rgds_dapm_widgets[] = {
++	SND_SOC_DAPM_INPUT("IN"),
++	SND_SOC_DAPM_PGA_E("SPK PA", SND_SOC_NOPM, 0, 0, NULL, 0, aw87391_rgds_drv_event,
++			   SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
++			   SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
++	SND_SOC_DAPM_OUTPUT("OUT"),
++};
++
+ static const struct snd_soc_dapm_route aw87390_dapm_routes[] = {
+ 	{ "SPK PA", NULL, "IN" },
+ 	{ "OUT", NULL, "SPK PA" },
+@@ -339,6 +386,80 @@ static int aw87390_codec_probe(struct snd_soc_component *component)
+ 	return 0;
+ }
+ 
++/*
++ * Firmware typically is used to load the sequence of init commands,
++ * however for the Anbernic RG-DS we don't have a firmware file just
++ * a list of registers and values. Most of these values are undocumented
++ * in the AW87391 datasheet.
++ */
++static void aw87391_rgds_codec_init(struct aw87390 *aw87390)
++{
++	struct aw_device *aw_dev = aw87390->aw_pa;
++
++	/* Undocumented command per datasheet. */
++	regmap_write(aw_dev->regmap, 0x64, 0x3a);
++
++	/* Bits 7:4 are undocumented but provided by manufacturer. */
++	regmap_write(aw_dev->regmap, AW87391_CP_REG,
++		     (5 << 4) | AW87391_REG_CP_OVP_8_50V);
++
++	regmap_write(aw_dev->regmap, AW87391_AGCPO_REG,
++		     AW87391_AK1_S_016 | AW87391_AGC2PO_MW(500));
++
++	regmap_write(aw_dev->regmap, AW87391_AGC2PA_REG,
++		     AW87391_RK_S_20_48 | AW87391_AK2_S_41 | AW87391_AK2F_S_41);
++
++	/* Undocumented commands per datasheet. */
++	regmap_write(aw_dev->regmap, 0x5d, 0x00);
++	regmap_write(aw_dev->regmap, 0x5e, 0xb4);
++	regmap_write(aw_dev->regmap, 0x5f, 0x30);
++	regmap_write(aw_dev->regmap, 0x60, 0x39);
++	regmap_write(aw_dev->regmap, 0x61, 0x10);
++	regmap_write(aw_dev->regmap, 0x62, 0x03);
++	regmap_write(aw_dev->regmap, 0x63, 0x7d);
++	regmap_write(aw_dev->regmap, 0x65, 0xa0);
++	regmap_write(aw_dev->regmap, 0x66, 0x21);
++	regmap_write(aw_dev->regmap, 0x67, 0x41);
++	regmap_write(aw_dev->regmap, 0x68, 0x3b);
++	regmap_write(aw_dev->regmap, 0x6e, 0x00);
++	regmap_write(aw_dev->regmap, 0x6f, 0x00);
++	regmap_write(aw_dev->regmap, 0x70, 0x00);
++	regmap_write(aw_dev->regmap, 0x71, 0x00);
++	regmap_write(aw_dev->regmap, 0x72, 0x34);
++	regmap_write(aw_dev->regmap, 0x73, 0x06);
++	regmap_write(aw_dev->regmap, 0x74, 0x10);
++	regmap_write(aw_dev->regmap, 0x75, 0x00);
++	regmap_write(aw_dev->regmap, 0x7a, 0x00);
++	regmap_write(aw_dev->regmap, 0x7b, 0x00);
++	regmap_write(aw_dev->regmap, 0x7c, 0x00);
++	regmap_write(aw_dev->regmap, 0x7d, 0x00);
++
++	regmap_write(aw_dev->regmap, AW87391_PAG_REG, AW87391_GAIN_12DB);
++	regmap_write(aw_dev->regmap, AW87391_SYSCTRL_REG,
++		     AW87391_EN_PA | AW87391_REG_EN_CP | AW87391_EN_SW);
++	regmap_write(aw_dev->regmap, AW87391_SYSCTRL_REG,
++		     AW87391_REG_VER_SEL_LOW | AW87391_REG_EN_ADAP |
++		     AW87391_REG_EN_2X | AW87391_EN_SPK | AW87391_EN_PA |
++		     AW87391_REG_EN_CP | AW87391_EN_SW);
++	regmap_write(aw_dev->regmap, AW87391_PAG_REG, AW87391_GAIN_15DB);
++}
++
++static int aw87391_rgds_codec_probe(struct snd_soc_component *component)
++{
++	struct aw87390 *aw87390 = snd_soc_component_get_drvdata(component);
++
++	aw87390->vdd_reg = devm_regulator_get_optional(aw87390->aw_pa->dev,
++						       "vdd");
++	if (IS_ERR(aw87390->vdd_reg) && PTR_ERR(aw87390->vdd_reg) != -ENODEV)
++		return dev_err_probe(aw87390->aw_pa->dev,
++				     PTR_ERR(aw87390->vdd_reg),
++				     "Could not get vdd regulator\n");
++
++	aw87391_rgds_codec_init(aw87390);
++
++	return 0;
++}
++
+ static const struct snd_soc_component_driver soc_codec_dev_aw87390 = {
+ 	.probe = aw87390_codec_probe,
+ 	.dapm_widgets = aw87390_dapm_widgets,
+@@ -349,6 +470,14 @@ static const struct snd_soc_component_driver soc_codec_dev_aw87390 = {
+ 	.num_controls = ARRAY_SIZE(aw87390_controls),
+ };
+ 
++static const struct snd_soc_component_driver soc_codec_dev_anbernic_rgds = {
++	.probe = aw87391_rgds_codec_probe,
++	.dapm_widgets = aw87391_rgds_dapm_widgets,
++	.num_dapm_widgets = ARRAY_SIZE(aw87391_rgds_dapm_widgets),
++	.dapm_routes = aw87390_dapm_routes,
++	.num_dapm_routes = ARRAY_SIZE(aw87390_dapm_routes),
++};
++
+ static void aw87390_parse_channel_dt(struct aw87390 *aw87390)
+ {
+ 	struct aw_device *aw_dev = aw87390->aw_pa;
+@@ -366,6 +495,10 @@ static int aw87390_init(struct aw87390 *aw87390, struct i2c_client *i2c, struct
+ 	unsigned int chip_id;
+ 	int ret;
+ 
++	aw_dev = devm_kzalloc(&i2c->dev, sizeof(*aw_dev), GFP_KERNEL);
++	if (!aw_dev)
++		return -ENOMEM;
++
+ 	/* read chip id */
+ 	ret = regmap_read(regmap, AW87390_ID_REG, &chip_id);
+ 	if (ret) {
+@@ -373,22 +506,24 @@ static int aw87390_init(struct aw87390 *aw87390, struct i2c_client *i2c, struct
+ 		return ret;
+ 	}
+ 
+-	if (chip_id != AW87390_CHIP_ID) {
++	switch (chip_id) {
++	case AW87390_CHIP_ID:
++		aw_dev->chip_id = AW87390_CHIP_ID;
++		break;
++	case AW87391_CHIP_ID:
++		aw_dev->chip_id = AW87391_CHIP_ID;
++		break;
++	default:
+ 		dev_err(&i2c->dev, "unsupported device\n");
+ 		return -ENXIO;
+ 	}
+ 
+ 	dev_dbg(&i2c->dev, "chip id = 0x%x\n", chip_id);
+ 
+-	aw_dev = devm_kzalloc(&i2c->dev, sizeof(*aw_dev), GFP_KERNEL);
+-	if (!aw_dev)
+-		return -ENOMEM;
+-
+ 	aw87390->aw_pa = aw_dev;
+ 	aw_dev->i2c = i2c;
+ 	aw_dev->regmap = regmap;
+ 	aw_dev->dev = &i2c->dev;
+-	aw_dev->chip_id = AW87390_CHIP_ID;
+ 	aw_dev->acf = NULL;
+ 	aw_dev->prof_info.prof_desc = NULL;
+ 	aw_dev->prof_info.count = 0;
+@@ -406,6 +541,7 @@ static int aw87390_init(struct aw87390 *aw87390, struct i2c_client *i2c, struct
+ static int aw87390_i2c_probe(struct i2c_client *i2c)
+ {
+ 	struct aw87390 *aw87390;
++	const struct snd_soc_component_driver *priv;
+ 	int ret;
+ 
+ 	ret = i2c_check_functionality(i2c->adapter, I2C_FUNC_I2C);
+@@ -434,16 +570,38 @@ static int aw87390_i2c_probe(struct i2c_client *i2c)
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = devm_snd_soc_register_component(&i2c->dev,
+-				&soc_codec_dev_aw87390, NULL, 0);
++	switch (aw87390->aw_pa->chip_id) {
++	case AW87390_CHIP_ID:
++		ret = devm_snd_soc_register_component(&i2c->dev,
++					&soc_codec_dev_aw87390, NULL, 0);
++		break;
++	case AW87391_CHIP_ID:
++		priv = of_device_get_match_data(&i2c->dev);
++		if (!priv)
++			return dev_err_probe(&i2c->dev, -EINVAL,
++					     "aw87391 not currently supported\n");
++		ret = devm_snd_soc_register_component(&i2c->dev, priv, NULL, 0);
++		break;
++	default:
++		return -ENXIO;
++	}
++
+ 	if (ret)
+ 		dev_err(&i2c->dev, "failed to register aw87390: %d\n", ret);
+ 
+ 	return ret;
+ }
+ 
++static const struct of_device_id aw87390_of_match[] = {
++	{ .compatible = "awinic,aw87390" },
++	{ .compatible = "anbernic,rgds-amp", .data = &soc_codec_dev_anbernic_rgds },
++	{},
++};
++MODULE_DEVICE_TABLE(of, aw87390_of_match);
++
+ static const struct i2c_device_id aw87390_i2c_id[] = {
+ 	{ AW87390_I2C_NAME },
++	{ AW87391_I2C_NAME },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(i2c, aw87390_i2c_id);
+@@ -451,6 +609,7 @@ MODULE_DEVICE_TABLE(i2c, aw87390_i2c_id);
+ static struct i2c_driver aw87390_i2c_driver = {
+ 	.driver = {
+ 		.name = AW87390_I2C_NAME,
++		.of_match_table = of_match_ptr(aw87390_of_match),
+ 	},
+ 	.probe = aw87390_i2c_probe,
+ 	.id_table = aw87390_i2c_id,
+diff --git a/sound/soc/codecs/aw87390.h b/sound/soc/codecs/aw87390.h
+index d0d049e65991..f48b207e4bb4 100644
+--- a/sound/soc/codecs/aw87390.h
++++ b/sound/soc/codecs/aw87390.h
+@@ -52,6 +52,90 @@
+ #define AW87390_I2C_NAME		"aw87390"
+ #define AW87390_ACF_FILE		"aw87390_acf.bin"
+ 
++#define AW87391_SYSCTRL_REG		(0x01)
++#define AW87391_REG_VER_SEL_LOW		(0 << 6)
++#define AW87391_REG_VER_SEL_NORMAL	(1 << 6)
++#define AW87391_REG_VER_SEL_SUPER	(2 << 6)
++#define AW87391_REG_EN_ADAP		BIT(5)
++#define AW87391_REG_EN_2X		BIT(4)
++#define AW87391_EN_SPK			BIT(3)
++#define AW87391_EN_PA			BIT(2)
++#define AW87391_REG_EN_CP		BIT(1)
++#define AW87391_EN_SW			BIT(0)
++
++#define AW87391_CP_REG                  (0x02)
++#define AW87391_REG_CP_OVP_6_50V	0
++#define AW87391_REG_CP_OVP_6_75V	1
++#define AW87391_REG_CP_OVP_7_00V	2
++#define AW87391_REG_CP_OVP_7_25V	3
++#define AW87391_REG_CP_OVP_7_50V	4
++#define AW87391_REG_CP_OVP_7_75V	5
++#define AW87391_REG_CP_OVP_8_00V	6
++#define AW87391_REG_CP_OVP_8_25V	7
++#define AW87391_REG_CP_OVP_8_50V	8
++
++#define AW87391_PAG_REG                 (0x03)
++#define AW87391_GAIN_12DB		0
++#define AW87391_GAIN_15DB		1
++#define AW87391_GAIN_18DB		2
++#define AW87391_GAIN_21DB		3
++#define AW87391_GAIN_24DB		4
++
++#define AW87391_AGCPO_REG               (0x04)
++#define AW87391_AK1_S_016		(2 << 5)
++#define AW87391_AK1_S_032		(3 << 5)
++#define AW87391_PD_AGC1_PWRDN		BIT(4)
++/* AGC2PO supports values between 500mW (0000) to 1600mW (1011) */
++#define AW87391_AGC2PO_MW(n)		((n / 100) - 5)
++
++#define AW87391_AGC2PA_REG              (0x05)
++#define AW87391_RK_S_5_12		(0 << 5)
++#define AW87391_RK_S_10_24		(1 << 5)
++#define AW87391_RK_S_20_48		(2 << 5)
++#define AW87391_RK_S_41			(3 << 5)
++#define AW87391_RK_S_82			(4 << 5)
++#define AW87391_RK_S_164		(5 << 5)
++#define AW87391_RK_S_328		(6 << 5)
++#define AW87391_RK_S_656		(7 << 5)
++#define AW87391_AK2_S_1_28		(0 << 2)
++#define AW87391_AK2_S_2_56		(1 << 2)
++#define AW87391_AK2_S_10_24		(2 << 2)
++#define AW87391_AK2_S_41		(3 << 2)
++#define AW87391_AK2_S_82		(4 << 2)
++#define AW87391_AK2_S_164		(5 << 2)
++#define AW87391_AK2_S_328		(6 << 2)
++#define AW87391_AK2_S_656		(7 << 2)
++#define AW87391_AK2F_S_10_24		0
++#define AW87391_AK2F_S_20_48		1
++#define AW87391_AK2F_S_41		2
++#define AW87391_AK2F_S_82		3
++
++#define AW87391_SYSST_REG               (0x06)
++#define AW87391_UVLO			BIT(7)
++#define AW87391_OTN			BIT(6)
++#define AW87391_OC_FLAG			BIT(5)
++#define AW87391_ADAP_CP			BIT(4)
++#define AW87391_STARTOK			BIT(3)
++#define AW87391_CP_OVP			BIT(2)
++#define AW87391_PORN			BIT(1)
++
++#define AW87391_SYSINT_REG              (0x07)
++#define AW87391_UVLOI			BIT(7)
++#define AW87391_ONTI			BIT(6)
++#define AW87391_OC_FLAGI		BIT(5)
++#define AW87391_ADAP_CPI		BIT(4)
++#define AW87391_STARTOKI		BIT(3)
++#define AW87391_CP_OVPI			BIT(2)
++#define AW87391_PORNI			BIT(1)
++
++#define AW87391_DFT_THGEN0_REG          (0x63)
++#define AW87391_ADAPVTH_01W		(0 << 2)
++#define AW87391_ADAPVTH_02W		(1 << 2)
++#define AW87391_ADAPVTH_03W		(2 << 2)
++#define AW87391_ADAPVTH_04W		(3 << 2)
++
++#define AW87391_I2C_NAME                "aw87391"
++
+ #define AW87390_PROFILE_EXT(xname, profile_info, profile_get, profile_set) \
+ { \
+ 	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, \
+@@ -63,6 +147,7 @@
+ 
+ enum aw87390_id {
+ 	AW87390_CHIP_ID = 0x76,
++	AW87391_CHIP_ID = 0xc1,
+ };
+ 
+ enum {
+@@ -80,6 +165,7 @@ struct aw87390 {
+ 	struct mutex lock;
+ 	struct regmap *regmap;
+ 	struct aw_container *aw_cfg;
++	struct regulator *vdd_reg;
+ };
+ 
+ #endif
+-- 
+2.43.0
+
+
+_______________________________________________
+Linux-rockchip mailing list
+Linux-rockchip@lists.infradead.org
+http://lists.infradead.org/mailman/listinfo/linux-rockchip
+

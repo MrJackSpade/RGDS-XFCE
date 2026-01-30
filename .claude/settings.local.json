@@ -2,7 +2,30 @@
   "permissions": {
     "allow": [
       "Bash(ssh:*)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(for patch in /mnt/z/git/RGDS-XFCE/patches/downloaded/patch_series2_{2,3,4}.patch)",
+      "Bash(git apply:*)",
+      "Bash(done)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(aarch64-linux-gnu-gcc:*)",
+      "Bash(apt-cache search:*)",
+      "Bash(sudo apt-get install:*)",
+      "Bash(sudo -S apt-get install:*)",
+      "Bash(make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig:*)",
+      "Bash(sudo -S mkdir:*)",
+      "Bash(sudo -S wget -q https://git.kernel.org/pub/scm/linux/kernel/git/sforshee/wireless-regdb.git/plain/regulatory.db -O /lib/firmware/regulatory.db)",
+      "Bash(sudo -S wget -q https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_bt/rtl8821cs_fw.bin -O rtl8821cs_fw.bin)",
+      "Bash(sudo -S bash -c 'mkdir -p /lib/firmware/rtl_bt && wget -q https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_bt/rtl8821cs_fw.bin -O /lib/firmware/rtl_bt/rtl8821cs_fw.bin && wget -q https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rtl_bt/rtl8821cs_config.bin -O /lib/firmware/rtl_bt/rtl8821cs_config.bin')",
+      "Bash(printf:*)",
+      "Bash(sudo -S wget:*)",
+      "Bash(sudo -S cp:*)",
+      "Bash(wget:*)",
+      "Bash(ls:*)",
+      "Bash(make:*)",
+      "Bash(tee:*)",
+      "Bash(grep:*)",
+      "Bash(git clone:*)"
     ]
   }
 }
