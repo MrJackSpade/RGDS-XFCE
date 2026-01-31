@@ -1,0 +1,30 @@
+diff --git a/board/anbernic/rgxx3_rk3566/rgxx3-rk3566.c b/board/anbernic/rgxx3_rk3566/rgxx3-rk3566.c
+index d402374e..0797bb21 100644
+--- a/board/anbernic/rgxx3_rk3566/rgxx3-rk3566.c
++++ b/board/anbernic/rgxx3_rk3566/rgxx3-rk3566.c
+@@ -60,6 +60,8 @@ enum rgxx3_device_id {
+ 	RG353PS,
+ 	RG353VS,
+ 	RGARCS,
++	/* RK3568-based devices */
++	RGDS,
+ };
+ 
+ static const struct rg3xx_model rg3xx_model_details[] = {
+@@ -164,6 +166,16 @@ static const struct rg3xx_model rg3xx_model_details[] = {
+ 		.detect_regulator = 0,
+ 		.uart_con = 1,
+ 	},
++	/* RK3568-based Anbernic RG-DS (dual screen handheld) */
++	[RGDS] = {
++		.adc_value = 523, /* Observed from device */
++		.board = "rk3568-anbernic-rg-ds",
++		.board_name = "Anbernic RG DS",
++		.fdtfile = DTB_DIR "rk3568-anbernic-rg-ds.dtb",
++		.detect_panel = 0,
++		.detect_regulator = 0,
++		.uart_con = 1,
++	},
+ };
+ 
+ struct rg353_panel {

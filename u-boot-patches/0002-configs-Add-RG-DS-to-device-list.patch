@@ -1,0 +1,13 @@
+diff --git a/configs/anbernic-rgxx3-rk3566_defconfig b/configs/anbernic-rgxx3-rk3566_defconfig
+index 0b2147c5..b1fda14b 100644
+--- a/configs/anbernic-rgxx3-rk3566_defconfig
++++ b/configs/anbernic-rgxx3-rk3566_defconfig
+@@ -40,7 +40,7 @@ CONFIG_CMD_MMC=y
+ # CONFIG_SPL_DOS_PARTITION is not set
+ CONFIG_SPL_OF_CONTROL=y
+ CONFIG_OF_LIVE=y
+-CONFIG_OF_LIST="rockchip/rk3566-anbernic-rg353p rockchip/rk3566-anbernic-rg353v rockchip/rk3566-anbernic-rg503 rockchip/rk3566-anbernic-rg-arc-d rockchip/rk3566-anbernic-rg353ps rockchip/rk3566-anbernic-rg353vs rockchip/rk3566-anbernic-rg-arc-s rockchip/rk3566-powkiddy-rgb30 rockchip/rk3566-powkiddy-rk2023 rockchip/rk3566-powkiddy-rgb10max3"
++CONFIG_OF_LIST="rockchip/rk3566-anbernic-rg353p rockchip/rk3566-anbernic-rg353v rockchip/rk3566-anbernic-rg503 rockchip/rk3566-anbernic-rg-arc-d rockchip/rk3566-anbernic-rg353ps rockchip/rk3566-anbernic-rg353vs rockchip/rk3566-anbernic-rg-arc-s rockchip/rk3566-powkiddy-rgb30 rockchip/rk3566-powkiddy-rk2023 rockchip/rk3566-powkiddy-rgb10max3 rockchip/rk3568-anbernic-rg-ds"
+ CONFIG_OF_SPL_REMOVE_PROPS="clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
+ CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
+ CONFIG_NO_NET=y

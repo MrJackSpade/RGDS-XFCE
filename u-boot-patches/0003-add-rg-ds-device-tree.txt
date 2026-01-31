@@ -1,0 +1,16 @@
+# Adding RG-DS Device Tree Files
+
+These files need to be added to U-Boot (not patches, new files):
+
+## 1. Main Device Tree
+Copy to: u-boot/dts/upstream/src/arm64/rockchip/rk3568-anbernic-rg-ds.dts
+Source: Decompiled from working /boot/rk3568-anbernic-rg-ds.dtb
+
+## 2. U-Boot Additions
+Copy to: u-boot/arch/arm/dts/rk3568-anbernic-rg-ds-u-boot.dtsi
+Content: Standard RK356x U-Boot additions (SARADC for device detection, boot order)
+
+## Files included in this directory:
+- rk3568-anbernic-rg-ds.dts - Main device tree
+- rk3568-anbernic-rg-ds-u-boot.dtsi - U-Boot specific additions (copy from u-boot/arch/arm/dts/)
+- rk3568-anbernic-rg-ds.dtb - Original compiled DTB from device (for reference)

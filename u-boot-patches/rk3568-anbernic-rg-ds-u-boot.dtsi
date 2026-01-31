@@ -1,0 +1,132 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+// U-Boot additions for Anbernic RG-DS
+// Uses full paths since decompiled DTS lacks labels
+
+/ {
+	chosen {
+		u-boot,spl-boot-order = "same-as-spl", &{/mmc@fe2b0000}, &{/mmc@fe310000};
+	};
+
+	dmc: dmc {
+		compatible = "rockchip,rk3568-dmc";
+		bootph-all;
+	};
+
+	otp: nvmem@fe38c000 {
+		compatible = "rockchip,rk3568-otp";
+		reg = <0x0 0xfe38c000 0x0 0x4000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		bootph-some-ram;
+
+		cpu_id: id@a {
+			reg = <0x0a 0x10>;
+		};
+	};
+
+	/*
+	 * Adding fixed regulator to work around driver regulator
+	 * requirements for SARADC device detection.
+	 */
+	vcc_1v8_dummy: vcc-1v8-dummy {
+		bootph-pre-ram;
+		bootph-some-ram;
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-name = "vcc_1v8_dummy";
+		status = "okay";
+	};
+};
+
+/* Clock controller (cru) */
+&{/clock-controller@fdd20000} {
+	bootph-all;
+};
+
+/* PMU clock controller */
+&{/clock-controller@fdd00000} {
+	bootph-all;
+};
+
+/* SARADC for device detection */
+&{/saradc@fe720000} {
+	bootph-pre-ram;
+	bootph-some-ram;
+	vref-supply = <&vcc_1v8_dummy>;
+	status = "okay";
+};
+
+/* eMMC */
+&{/mmc@fe310000} {
+	bootph-pre-ram;
+	bootph-some-ram;
+	max-frequency = <200000000>;
+};
+
+/* SD card */
+&{/mmc@fe2b0000} {
+	bootph-pre-ram;
+	bootph-some-ram;
+};
+
+/* UART2 for debug */
+&{/serial@fe660000} {
+	bootph-all;
+	clock-frequency = <24000000>;
+};
+
+/* Pinctrl */
+&{/pinctrl} {
+	bootph-all;
+};
+
+/* ========== VIDEO SUBSYSTEM FOR EARLY FRAMEBUFFER ========== */
+
+/* Display subsystem */
+&{/display-subsystem} {
+	bootph-all;
+};
+
+/* VOP (Video Output Processor) */
+&{/vop@fe040000} {
+	bootph-all;
+};
+
+/* DSI0 - bottom display */
+&{/dsi@fe060000} {
+	bootph-all;
+};
+
+&{/dsi@fe060000/panel@0} {
+	bootph-all;
+};
+
+/* DSI1 - top display */
+&{/dsi@fe070000} {
+	bootph-all;
+};
+
+&{/dsi@fe070000/panel@0} {
+	bootph-all;
+};
+
+/* MIPI D-PHY controllers */
+&{/mipi-dphy@fe850000} {
+	bootph-all;
+};
+
+&{/mipi-dphy@fe860000} {
+	bootph-all;
+};
+
+/* Backlights */
+&{/backlight0} {
+	bootph-all;
+};
+
+&{/backlight1} {
+	bootph-all;
+};
