@@ -1,0 +1,44 @@
+# RGDS Boot Animation - 640x480 @ 30fps
+# 481 frames, 16 seconds
+
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+# Load all 481 frames
+frame_count = 0;
+for (i = 1; i <= 481; i++) {
+    if (i < 10) {
+        frames[frame_count] = Image("frame-000" + i + ".png");
+    } else if (i < 100) {
+        frames[frame_count] = Image("frame-00" + i + ".png");
+    } else {
+        frames[frame_count] = Image("frame-0" + i + ".png");
+    }
+    frame_count++;
+}
+
+# Create sprite centered on screen
+anim_sprite = Sprite();
+anim_sprite.SetPosition(Window.GetX() + (Window.GetWidth() - 640) / 2,
+                        Window.GetY() + (Window.GetHeight() - 480) / 2,
+                        10);
+
+if (frames[0])
+    anim_sprite.SetImage(frames[0]);
+
+current_frame = 0;
+refresh_count = 0;
+
+fun refresh_callback() {
+    global.refresh_count++;
+    # 30fps = every 2 refreshes at 60Hz
+    if (global.refresh_count >= 2) {
+        global.refresh_count = 0;
+        global.current_frame++;
+        if (global.current_frame >= global.frame_count)
+            global.current_frame = 0;
+        global.anim_sprite.SetImage(global.frames[global.current_frame]);
+    }
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);

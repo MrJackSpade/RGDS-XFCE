@@ -25,7 +25,9 @@
       "Bash(make:*)",
       "Bash(tee:*)",
       "Bash(grep:*)",
-      "Bash(git clone:*)"
+      "Bash(git clone:*)",
+      "Bash(sshpass -p 'trixie' ssh:*)",
+      "Bash(sshpass:*)"
     ]
   }
 }
