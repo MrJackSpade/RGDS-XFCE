@@ -1,31 +1,44 @@
 #!/bin/bash
 # U-Boot build script for Anbernic RG-DS
 # Run from the u-boot-patches directory
+#
+# This script is self-contained and includes the required firmware blobs
+# in the bin/ subdirectory. It can optionally clone u-boot if not present.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-UBOOT_DIR="${SCRIPT_DIR}/../u-boot"
-RKBIN_DIR="${SCRIPT_DIR}/../rkbin"
+BIN_DIR="${SCRIPT_DIR}/bin"
+UBOOT_DIR="${SCRIPT_DIR}/u-boot"
 
-# Binaries for RK3568
-BL31="${RKBIN_DIR}/bin/rk35/rk3568_bl31_v1.45.elf"
-DDR="${RKBIN_DIR}/bin/rk35/rk3568_ddr_1056MHz_v1.23.bin"
+# U-Boot version to clone if not present
+UBOOT_REPO="https://source.denx.de/u-boot/u-boot.git"
+UBOOT_TAG="v2026.01"
+
+# Firmware binaries (stored locally in bin/)
+BL31="${BIN_DIR}/rk3568_bl31_v1.45.elf"
+DDR="${BIN_DIR}/rk3568_ddr_1560MHz_v1.23.bin"
 
 # Cross compiler prefix (adjust if needed)
 CROSS_COMPILE="${CROSS_COMPILE:-aarch64-linux-gnu-}"
 
 echo "=== U-Boot Build for Anbernic RG-DS ==="
+echo "Script dir: ${SCRIPT_DIR}"
 echo "U-Boot dir: ${UBOOT_DIR}"
-echo "rkbin dir: ${RKBIN_DIR}"
 echo "Cross compiler: ${CROSS_COMPILE}gcc"
 echo ""
 
 # Check prerequisites
-command -v ${CROSS_COMPILE}gcc >/dev/null 2>&1 || { echo "ERROR: Cross compiler not found"; exit 1; }
+command -v ${CROSS_COMPILE}gcc >/dev/null 2>&1 || { echo "ERROR: Cross compiler not found. Install with: sudo apt install gcc-aarch64-linux-gnu"; exit 1; }
 command -v swig >/dev/null 2>&1 || { echo "ERROR: swig not found. Install with: sudo apt install swig"; exit 1; }
 [ -f "${BL31}" ] || { echo "ERROR: BL31 not found at ${BL31}"; exit 1; }
 [ -f "${DDR}" ] || { echo "ERROR: DDR blob not found at ${DDR}"; exit 1; }
+
+# Clone u-boot if not present
+if [ ! -d "${UBOOT_DIR}" ]; then
+    echo "U-Boot not found, cloning ${UBOOT_TAG}..."
+    git clone --depth 1 --branch "${UBOOT_TAG}" "${UBOOT_REPO}" "${UBOOT_DIR}"
+fi
 
 cd "${UBOOT_DIR}"
 
@@ -66,11 +79,15 @@ if [ -f "u-boot.itb" ] && [ -f "idbloader.img" ]; then
     echo ""
     echo "=== Build Successful ==="
     echo "Output files:"
-    ls -la u-boot.itb idbloader.img
+    ls -la u-boot.itb idbloader.img u-boot-rockchip.bin 2>/dev/null || ls -la u-boot.itb idbloader.img
     echo ""
     echo "To flash (BACKUP FIRST!):"
+    echo "  # Option 1: Flash individual images"
     echo "  dd if=idbloader.img of=/dev/mmcblk1 bs=512 seek=64 conv=fsync"
     echo "  dd if=u-boot.itb of=/dev/mmcblk1 bs=512 seek=16384 conv=fsync"
+    echo ""
+    echo "  # Option 2: Flash combined image (if available)"
+    echo "  dd if=u-boot-rockchip.bin of=/dev/mmcblk1 bs=512 seek=64 conv=fsync"
 else
     echo "ERROR: Build output not found"
     exit 1
