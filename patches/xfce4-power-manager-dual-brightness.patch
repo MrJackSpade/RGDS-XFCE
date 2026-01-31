@@ -1,0 +1,533 @@
+# xfce4-power-manager-dual-brightness.patch
+# Adds dual brightness control for devices with two backlight interfaces (backlight0/backlight1)
+# Also removes Presentation Mode from the menu
+# Apply with: patch -p1 < xfce4-power-manager-dual-brightness.patch
+
+--- xfce4-power-manager-orig/common/xfpm-brightness.h	2026-01-31 13:59:43.254408147 -0700
++++ /mnt/z/git/RGDS-XFCE/rootfs/home/trixie/source/xfce4-power-manager/common/xfpm-brightness.h	2026-01-31 13:09:47.726469000 -0700
+@@ -48,6 +48,8 @@
+ 
+ XfpmBrightness *
+ xfpm_brightness_new (void);
++XfpmBrightness *
++xfpm_brightness_new_for_device (const gchar *device_name);
+ gint32
+ xfpm_brightness_get_min_level (XfpmBrightness *brightness);
+ void
+--- xfce4-power-manager-orig/common/xfpm-brightness.c	2026-01-31 13:59:43.254408147 -0700
++++ /mnt/z/git/RGDS-XFCE/rootfs/home/trixie/source/xfce4-power-manager/common/xfpm-brightness.c	2026-01-31 14:00:25.406353900 -0700
+@@ -113,6 +113,40 @@
+   return brightness;
+ }
+ 
++XfpmBrightness *
++xfpm_brightness_new_for_device (const gchar *device_name)
++{
++  XfpmBrightness *brightness = NULL;
++  XfpmBrightnessPrivate *priv;
++
++  if (device_name == NULL)
++    return xfpm_brightness_new ();
++
++#ifdef HAVE_POLKIT
++  brightness = xfpm_brightness_polkit_new_for_device (device_name);
++  if (brightness != NULL)
++  {
++    priv = get_instance_private (brightness);
++    if (!XFPM_BRIGHTNESS_GET_CLASS (brightness)->setup (brightness, &priv->min_level, &priv->max_level))
++    {
++      g_object_unref (brightness);
++      brightness = NULL;
++    }
++  }
++#endif
++
++  if (brightness == NULL)
++  {
++    XFPM_DEBUG ("No brightness controls available for device %s", device_name);
++    return NULL;
++  }
++
++  priv->hw_min_level = priv->min_level;
++  xfpm_brightness_set_step_count (brightness, DEFAULT_BRIGHTNESS_STEP_COUNT, DEFAULT_BRIGHTNESS_EXPONENTIAL);
++
++  return brightness;
++}
++
+ gint32
+ xfpm_brightness_get_min_level (XfpmBrightness *brightness)
+ {
+--- xfce4-power-manager-orig/common/xfpm-brightness-polkit.h	2026-01-31 13:59:43.254408147 -0700
++++ /mnt/z/git/RGDS-XFCE/rootfs/home/trixie/source/xfce4-power-manager/common/xfpm-brightness-polkit.h	2026-01-31 13:07:32.172819300 -0700
+@@ -28,6 +28,9 @@
+ #define XFPM_TYPE_BRIGHTNESS_POLKIT (xfpm_brightness_polkit_get_type ())
+ G_DECLARE_FINAL_TYPE (XfpmBrightnessPolkit, xfpm_brightness_polkit, XFPM, BRIGHTNESS_POLKIT, XfpmBrightness)
+ 
++XfpmBrightness *
++xfpm_brightness_polkit_new_for_device (const gchar *device_name);
++
+ G_END_DECLS
+ 
+ #endif /* __XFPM_BRIGHTNESS_POLKIT_H__ */
+--- xfce4-power-manager-orig/common/xfpm-brightness-polkit.c	2026-01-31 13:59:43.254408147 -0700
++++ /mnt/z/git/RGDS-XFCE/rootfs/home/trixie/source/xfce4-power-manager/common/xfpm-brightness-polkit.c	2026-01-31 13:44:51.865196500 -0700
+@@ -23,6 +23,8 @@
+ #include "config.h"
+ #endif
+ 
++#include <stdio.h>
++
+ #include "xfpm-brightness-polkit.h"
+ #include "xfpm-debug.h"
+ 
+@@ -46,6 +48,7 @@
+ struct _XfpmBrightnessPolkit
+ {
+   XfpmBrightness __parent__;
++  gchar *device_name;
+ };
+ 
+ 
+@@ -55,9 +58,20 @@
+ 
+ 
+ static void
++xfpm_brightness_polkit_finalize (GObject *object)
++{
++  XfpmBrightnessPolkit *brightness = XFPM_BRIGHTNESS_POLKIT (object);
++  g_free (brightness->device_name);
++  G_OBJECT_CLASS (xfpm_brightness_polkit_parent_class)->finalize (object);
++}
++
++static void
+ xfpm_brightness_polkit_class_init (XfpmBrightnessPolkitClass *klass)
+ {
+   XfpmBrightnessClass *brightness_class = XFPM_BRIGHTNESS_CLASS (klass);
++  GObjectClass *object_class = G_OBJECT_CLASS (klass);
++
++  object_class->finalize = xfpm_brightness_polkit_finalize;
+ 
+   brightness_class->setup = xfpm_brightness_polkit_setup;
+   brightness_class->get_level = xfpm_brightness_polkit_get_level;
+@@ -69,18 +83,30 @@
+ static void
+ xfpm_brightness_polkit_init (XfpmBrightnessPolkit *brightness)
+ {
++  brightness->device_name = NULL;
+ }
+ 
+-
++XfpmBrightness *
++xfpm_brightness_polkit_new_for_device (const gchar *device_name)
++{
++  XfpmBrightnessPolkit *brightness = g_object_new (XFPM_TYPE_BRIGHTNESS_POLKIT, NULL);
++  brightness->device_name = g_strdup (device_name);
++  return XFPM_BRIGHTNESS (brightness);
++}
+ 
+ static gint
+-helper_get_value (const gchar *argument)
++helper_get_value (XfpmBrightnessPolkit *polkit, const gchar *argument)
+ {
+   GError *error = NULL;
+   gchar *stdout_data = NULL;
+   gint status;
+   gint value = -1;
+-  gchar *command = g_strdup_printf (SBINDIR "/xfpm-power-backlight-helper --%s", argument);
++  gchar *command;
++
++  if (polkit->device_name != NULL)
++    command = g_strdup_printf (SBINDIR "/xfpm-power-backlight-helper --device %s --%s", polkit->device_name, argument);
++  else
++    command = g_strdup_printf (SBINDIR "/xfpm-power-backlight-helper --%s", argument);
+ 
+   XFPM_DEBUG ("Executing command: %s", command);
+   if (!g_spawn_command_line_sync (command, &stdout_data, NULL, &status, &error)
+@@ -114,8 +140,9 @@
+                               gint32 *min_level,
+                               gint32 *max_level)
+ {
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
+   *min_level = 0;
+-  *max_level = helper_get_value ("get-max-brightness");
++  *max_level = helper_get_value (polkit, "get-max-brightness");
+   XFPM_DEBUG ("get-max-brightness returned %i", *max_level);
+ 
+   if (*max_level >= 0)
+@@ -137,7 +164,8 @@
+ xfpm_brightness_polkit_get_level (XfpmBrightness *brightness,
+                                   gint32 *level)
+ {
+-  gint32 ret = helper_get_value ("get-brightness");
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
++  gint32 ret = helper_get_value (polkit, "get-brightness");
+   XFPM_DEBUG ("get-brightness returned %i", ret);
+ 
+   if (ret >= 0)
+@@ -153,9 +181,33 @@
+ xfpm_brightness_polkit_set_level (XfpmBrightness *brightness,
+                                   gint32 level)
+ {
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
+   GError *error = NULL;
+   gint status;
+-  gchar *command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --set-brightness %i", level);
++  gchar *command;
++
++  /* Try direct sysfs write first if device_name is set */
++  if (polkit->device_name != NULL)
++  {
++    gchar *sysfs_path = g_strdup_printf ("/sys/class/backlight/%s/brightness", polkit->device_name);
++    FILE *f = fopen (sysfs_path, "w");
++    if (f != NULL)
++    {
++      fprintf (f, "%d", level);
++      fclose (f);
++      g_free (sysfs_path);
++      XFPM_DEBUG ("Direct sysfs write succeeded for %s", polkit->device_name);
++      return TRUE;
++    }
++    g_free (sysfs_path);
++    XFPM_DEBUG ("Direct sysfs write failed, falling back to pkexec");
++  }
++
++  /* Fall back to pkexec */
++  if (polkit->device_name != NULL)
++    command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --device %s --set-brightness %i", polkit->device_name, level);
++  else
++    command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --set-brightness %i", level);
+ 
+   XFPM_DEBUG ("Executing command: %s", command);
+   if (!g_spawn_command_line_sync (command, NULL, NULL, &status, &error)
+@@ -175,7 +227,8 @@
+ xfpm_brightness_polkit_get_switch (XfpmBrightness *brightness,
+                                    gint *_switch)
+ {
+-  gint ret = helper_get_value ("get-brightness-switch");
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
++  gint ret = helper_get_value (polkit, "get-brightness-switch");
+   XFPM_DEBUG ("get-brightness-switch returned %i", ret);
+ 
+   if (ret >= 0)
+@@ -191,9 +244,15 @@
+ xfpm_brightness_polkit_set_switch (XfpmBrightness *brightness,
+                                    gint _switch)
+ {
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
+   GError *error = NULL;
+   gint status;
+-  gchar *command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --set-brightness-switch %i", _switch);
++  gchar *command;
++
++  if (polkit->device_name != NULL)
++    command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --device %s --set-brightness-switch %i", polkit->device_name, _switch);
++  else
++    command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --set-brightness-switch %i", _switch);
+ 
+   if (!g_spawn_command_line_sync (command, NULL, NULL, &status, &error)
+       || !g_spawn_check_wait_status (status, &error))
+--- xfce4-power-manager-orig/panel-plugins/power-manager-plugin/power-manager-button.c	2026-01-31 13:59:43.285401253 -0700
++++ /mnt/z/git/RGDS-XFCE/rootfs/home/trixie/source/xfce4-power-manager/panel-plugins/power-manager-plugin/power-manager-button.c	2026-01-31 13:53:46.211656500 -0700
+@@ -84,12 +84,21 @@
+ 
+   XfpmBrightness *brightness;
+ 
+-  /* display brightness slider widget */
++  /* Top screen brightness slider widget */
+   GtkWidget *range;
+ 
+   /* filter range value changed events for snappier UI feedback */
+   guint set_level_timeout;
+ 
++  /* Bottom screen brightness (backlight1) */
++  XfpmBrightness *brightness_bottom;
++  GtkWidget *range_bottom;
++  guint set_level_timeout_bottom;
++
++  /* Both screens slider */
++  GtkWidget *range_both;
++  guint set_level_timeout_both;
++
+   gint show_panel_label;
+   gboolean presentation_mode;
+   gboolean show_presentation_indicator;
+@@ -852,17 +861,32 @@
+ static void
+ set_brightness_properties (PowerManagerButton *button)
+ {
+-  gint32 level = xfconf_channel_get_int (button->priv->channel, XFPM_PROPERTIES_PREFIX BRIGHTNESS_SLIDER_MIN_LEVEL, DEFAULT_BRIGHTNESS_SLIDER_MIN_LEVEL);
+   guint step_count = xfconf_channel_get_uint (button->priv->channel, XFPM_PROPERTIES_PREFIX BRIGHTNESS_STEP_COUNT, DEFAULT_BRIGHTNESS_STEP_COUNT);
+   gboolean exponential = xfconf_channel_get_bool (button->priv->channel, XFPM_PROPERTIES_PREFIX BRIGHTNESS_EXPONENTIAL, DEFAULT_BRIGHTNESS_EXPONENTIAL);
++  gint32 min_level, max_level;
+ 
+-  /* order accounts: default min level depends on step count */
++  /* Top screen - use hardware minimum (0) to allow turning off completely */
+   xfpm_brightness_set_step_count (button->priv->brightness, step_count, exponential);
+-  xfpm_brightness_set_min_level (button->priv->brightness, level);
++  xfpm_brightness_set_min_level (button->priv->brightness, 0);
++  min_level = xfpm_brightness_get_min_level (button->priv->brightness);
++  max_level = xfpm_brightness_get_max_level (button->priv->brightness);
+   if (button->priv->range != NULL)
+-    gtk_range_set_range (GTK_RANGE (button->priv->range),
+-                         xfpm_brightness_get_min_level (button->priv->brightness),
+-                         xfpm_brightness_get_max_level (button->priv->brightness));
++    gtk_range_set_range (GTK_RANGE (button->priv->range), min_level, max_level);
++
++  /* Bottom screen - same settings */
++  if (button->priv->brightness_bottom != NULL)
++  {
++    xfpm_brightness_set_step_count (button->priv->brightness_bottom, step_count, exponential);
++    xfpm_brightness_set_min_level (button->priv->brightness_bottom, 0);
++    if (button->priv->range_bottom != NULL)
++      gtk_range_set_range (GTK_RANGE (button->priv->range_bottom),
++                           xfpm_brightness_get_min_level (button->priv->brightness_bottom),
++                           xfpm_brightness_get_max_level (button->priv->brightness_bottom));
++  }
++
++  /* Both screens slider - use the same range as top screen */
++  if (button->priv->range_both != NULL)
++    gtk_range_set_range (GTK_RANGE (button->priv->range_both), min_level, max_level);
+ }
+ 
+ static void
+@@ -952,9 +976,14 @@
+   gtk_widget_set_focus_on_click (GTK_WIDGET (button), FALSE);
+   gtk_widget_set_name (GTK_WIDGET (button), "xfce4-power-manager-plugin");
+ 
+-  button->priv->brightness = xfpm_brightness_new ();
++  /* Top screen brightness */
++  button->priv->brightness = xfpm_brightness_new_for_device ("backlight1");
+   button->priv->set_level_timeout = 0;
+ 
++  /* Bottom screen brightness */
++  button->priv->brightness_bottom = xfpm_brightness_new_for_device ("backlight0");
++  button->priv->set_level_timeout_bottom = 0;
++
+   button->priv->upower = up_client_new ();
+   if (!xfconf_init (&error))
+   {
+@@ -1042,6 +1071,19 @@
+     button->priv->set_level_timeout = 0;
+   }
+ 
++  if (button->priv->brightness_bottom != NULL)
++    g_object_unref (button->priv->brightness_bottom);
++  if (button->priv->set_level_timeout_bottom)
++  {
++    g_source_remove (button->priv->set_level_timeout_bottom);
++    button->priv->set_level_timeout_bottom = 0;
++  }
++  if (button->priv->set_level_timeout_both)
++  {
++    g_source_remove (button->priv->set_level_timeout_both);
++    button->priv->set_level_timeout_both = 0;
++  }
++
+   if (button->priv->upower != NULL)
+   {
+     g_signal_handlers_disconnect_by_data (button->priv->upower, button);
+@@ -1285,8 +1327,10 @@
+ {
+   PowerManagerButton *button = POWER_MANAGER_BUTTON (user_data);
+ 
+-  /* menu destroyed, range slider is gone */
++  /* menu destroyed, range sliders are gone */
+   button->priv->range = NULL;
++  button->priv->range_bottom = NULL;
++  button->priv->range_both = NULL;
+ 
+   /* untoggle panel icon */
+   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+@@ -1545,6 +1589,81 @@
+                                                    button);
+ }
+ 
++static gboolean
++brightness_set_level_with_timeout_bottom (PowerManagerButton *button)
++{
++  gint32 range_level, hw_level;
++
++  range_level = (gint32) gtk_range_get_value (GTK_RANGE (button->priv->range_bottom));
++
++  xfpm_brightness_get_level (button->priv->brightness_bottom, &hw_level);
++
++  if (hw_level != range_level)
++  {
++    xfpm_brightness_set_level (button->priv->brightness_bottom, range_level);
++  }
++
++  if (button->priv->set_level_timeout_bottom)
++  {
++    g_source_remove (button->priv->set_level_timeout_bottom);
++    button->priv->set_level_timeout_bottom = 0;
++  }
++
++  return FALSE;
++}
++
++static void
++range_value_changed_cb_bottom (PowerManagerButton *button,
++                               GtkWidget *widget)
++{
++  if (button->priv->set_level_timeout_bottom)
++    return;
++
++  button->priv->set_level_timeout_bottom = g_timeout_add (SET_LEVEL_TIMEOUT,
++                                                          (GSourceFunc) brightness_set_level_with_timeout_bottom,
++                                                          button);
++}
++
++static gboolean
++brightness_set_level_with_timeout_both (PowerManagerButton *button)
++{
++  gint32 range_level;
++
++  range_level = (gint32) gtk_range_get_value (GTK_RANGE (button->priv->range_both));
++
++  /* Set both screens to the same level */
++  if (button->priv->brightness != NULL)
++    xfpm_brightness_set_level (button->priv->brightness, range_level);
++  if (button->priv->brightness_bottom != NULL)
++    xfpm_brightness_set_level (button->priv->brightness_bottom, range_level);
++
++  /* Update the individual sliders to match */
++  if (button->priv->range != NULL)
++    gtk_range_set_value (GTK_RANGE (button->priv->range), range_level);
++  if (button->priv->range_bottom != NULL)
++    gtk_range_set_value (GTK_RANGE (button->priv->range_bottom), range_level);
++
++  if (button->priv->set_level_timeout_both)
++  {
++    g_source_remove (button->priv->set_level_timeout_both);
++    button->priv->set_level_timeout_both = 0;
++  }
++
++  return FALSE;
++}
++
++static void
++range_value_changed_cb_both (PowerManagerButton *button,
++                             GtkWidget *widget)
++{
++  if (button->priv->set_level_timeout_both)
++    return;
++
++  button->priv->set_level_timeout_both = g_timeout_add (SET_LEVEL_TIMEOUT,
++                                                        (GSourceFunc) brightness_set_level_with_timeout_both,
++                                                        button);
++}
++
+ static void
+ range_show_cb (GtkWidget *widget,
+                PowerManagerButton *button)
+@@ -1629,7 +1748,7 @@
+                                          xfpm_brightness_get_max_level (button->priv->brightness),
+                                          1);
+ 
+-    scale_menu_item_set_description_label (SCALE_MENU_ITEM (mi), _("<b>Display brightness</b>"));
++    scale_menu_item_set_description_label (SCALE_MENU_ITEM (mi), _("<b>Top screen brightness</b>"));
+ 
+     /* range slider */
+     button->priv->range = scale_menu_item_get_scale (SCALE_MENU_ITEM (mi));
+@@ -1652,29 +1771,78 @@
+     gtk_menu_shell_append (GTK_MENU_SHELL (menu), mi);
+   }
+ 
+-  /* Presentation mode checkbox */
+-#ifdef XFCE_PLUGIN
+-  mi = gtk_menu_item_new ();
+-  box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+-  label = gtk_label_new_with_mnemonic (_("Presentation _mode"));
+-  gtk_label_set_xalign (GTK_LABEL (label), 0.0);
+-  sw = gtk_switch_new ();
+-  gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
+-  gtk_box_pack_start (GTK_BOX (box), sw, FALSE, FALSE, 0);
+-  gtk_container_add (GTK_CONTAINER (mi), box);
+-  g_signal_connect (G_OBJECT (mi), "activate", G_CALLBACK (power_manager_button_toggle_presentation_mode), sw);
+-  g_object_bind_property (G_OBJECT (button), PRESENTATION_MODE,
+-                          G_OBJECT (sw), "active",
+-                          G_BINDING_SYNC_CREATE | G_BINDING_BIDIRECTIONAL);
+-#else
+-  mi = gtk_check_menu_item_new_with_mnemonic (_("Presentation _mode"));
+-  gtk_widget_set_sensitive (mi, TRUE);
+-  xfconf_g_property_bind (button->priv->channel,
+-                          XFPM_PROPERTIES_PREFIX PRESENTATION_MODE,
+-                          G_TYPE_BOOLEAN, G_OBJECT (mi), "active");
+-#endif
+-  gtk_widget_show_all (mi);
+-  gtk_menu_shell_append (GTK_MENU_SHELL (menu), mi);
++  /* Bottom screen brightness slider - show if there's hardware support for it */
++  {
++    FILE *f = fopen("/tmp/xfpm-debug.log", "a");
++    if (f) { fprintf(f, "show_menu: brightness_bottom=%p\n", (void*)button->priv->brightness_bottom); fclose(f); }
++  }
++  if (button->priv->brightness_bottom != NULL)
++  {
++    GtkWidget *img;
++    gint32 current_level = 0;
++
++    {
++      FILE *f = fopen("/tmp/xfpm-debug.log", "a");
++      if (f) { fprintf(f, "show_menu: creating bottom slider\n"); fclose(f); }
++    }
++
++    mi = scale_menu_item_new_with_range (xfpm_brightness_get_min_level (button->priv->brightness_bottom),
++                                         xfpm_brightness_get_max_level (button->priv->brightness_bottom),
++                                         1);
++
++    scale_menu_item_set_description_label (SCALE_MENU_ITEM (mi), _("<b>Bottom screen brightness</b>"));
++
++    /* range slider */
++    button->priv->range_bottom = scale_menu_item_get_scale (SCALE_MENU_ITEM (mi));
++
++    /* update the slider to the current brightness level */
++    xfpm_brightness_get_level (button->priv->brightness_bottom, &current_level);
++    gtk_range_set_value (GTK_RANGE (button->priv->range_bottom), current_level);
++
++    g_signal_connect_swapped (mi, "value-changed", G_CALLBACK (range_value_changed_cb_bottom), button);
++    g_signal_connect (menu, "show", G_CALLBACK (range_show_cb), button);
++
++    /* load and display the brightness icon and force it to 32px size */
++    img = gtk_image_new_from_icon_name (XFPM_DISPLAY_BRIGHTNESS_ICON, GTK_ICON_SIZE_DND);
++    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
++    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (mi), img);
++    G_GNUC_END_IGNORE_DEPRECATIONS
++    gtk_image_set_pixel_size (GTK_IMAGE (img), 32);
++    gtk_widget_show_all (mi);
++    gtk_menu_shell_append (GTK_MENU_SHELL (menu), mi);
++  }
++
++  /* Both screens brightness slider - show if both screens are available */
++  if (button->priv->brightness != NULL && button->priv->brightness_bottom != NULL)
++  {
++    GtkWidget *img;
++    gint32 current_level = 0;
++
++    mi = scale_menu_item_new_with_range (xfpm_brightness_get_min_level (button->priv->brightness),
++                                         xfpm_brightness_get_max_level (button->priv->brightness),
++                                         1);
++
++    scale_menu_item_set_description_label (SCALE_MENU_ITEM (mi), _("<b>Both screens</b>"));
++
++    /* range slider */
++    button->priv->range_both = scale_menu_item_get_scale (SCALE_MENU_ITEM (mi));
++
++    /* use average of both current brightness levels */
++    xfpm_brightness_get_level (button->priv->brightness, &current_level);
++    gtk_range_set_value (GTK_RANGE (button->priv->range_both), current_level);
++
++    g_signal_connect_swapped (mi, "value-changed", G_CALLBACK (range_value_changed_cb_both), button);
++    g_signal_connect (menu, "show", G_CALLBACK (range_show_cb), button);
++
++    /* load and display the brightness icon and force it to 32px size */
++    img = gtk_image_new_from_icon_name (XFPM_DISPLAY_BRIGHTNESS_ICON, GTK_ICON_SIZE_DND);
++    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
++    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (mi), img);
++    G_GNUC_END_IGNORE_DEPRECATIONS
++    gtk_image_set_pixel_size (GTK_IMAGE (img), 32);
++    gtk_widget_show_all (mi);
++    gtk_menu_shell_append (GTK_MENU_SHELL (menu), mi);
++  }
+ 
+   /* Show any applications currently inhibiting now */
+   display_inhibitors (button, menu);

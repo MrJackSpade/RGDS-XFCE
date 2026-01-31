@@ -1,0 +1,166 @@
+From: RGDS-XFCE
+Subject: [PATCH 2/4] brightness-polkit: add device name support
+
+Store and use device name when calling the backlight helper, allowing
+control of specific backlight devices.
+
+---
+ common/xfpm-brightness-polkit.c | 65 +++++++++++++++++++++++++++------
+ common/xfpm-brightness-polkit.h |  3 ++
+ 2 files changed, 57 insertions(+), 11 deletions(-)
+
+diff --git a/common/xfpm-brightness-polkit.h b/common/xfpm-brightness-polkit.h
+index 1234567..abcdefg 100644
+--- a/common/xfpm-brightness-polkit.h
++++ b/common/xfpm-brightness-polkit.h
+@@ -26,6 +26,9 @@ G_BEGIN_DECLS
+ #define XFPM_TYPE_BRIGHTNESS_POLKIT (xfpm_brightness_polkit_get_type ())
+ G_DECLARE_FINAL_TYPE (XfpmBrightnessPolkit, xfpm_brightness_polkit, XFPM, BRIGHTNESS_POLKIT, XfpmBrightness)
+
++XfpmBrightness *
++xfpm_brightness_polkit_new_for_device (const gchar *device_name);
++
+ G_END_DECLS
+
+ #endif /* __XFPM_BRIGHTNESS_POLKIT_H__ */
+diff --git a/common/xfpm-brightness-polkit.c b/common/xfpm-brightness-polkit.c
+index 1234567..abcdefg 100644
+--- a/common/xfpm-brightness-polkit.c
++++ b/common/xfpm-brightness-polkit.c
+@@ -42,6 +42,7 @@ xfpm_brightness_polkit_set_switch (XfpmBrightness *brightness,
+ struct _XfpmBrightnessPolkit
+ {
+   XfpmBrightness __parent__;
++  gchar *device_name;
+ };
+
+
+@@ -50,6 +51,17 @@ G_DEFINE_FINAL_TYPE (XfpmBrightnessPolkit, xfpm_brightness_polkit, XFPM_TYPE_BRI
+
+
+
+ static void
++xfpm_brightness_polkit_finalize (GObject *object)
++{
++  XfpmBrightnessPolkit *brightness = XFPM_BRIGHTNESS_POLKIT (object);
++
++  g_free (brightness->device_name);
++
++  G_OBJECT_CLASS (xfpm_brightness_polkit_parent_class)->finalize (object);
++}
++
++static void
+ xfpm_brightness_polkit_class_init (XfpmBrightnessPolkitClass *klass)
+ {
+   XfpmBrightnessClass *brightness_class = XFPM_BRIGHTNESS_CLASS (klass);
++  GObjectClass *object_class = G_OBJECT_CLASS (klass);
++
++  object_class->finalize = xfpm_brightness_polkit_finalize;
+
+   brightness_class->setup = xfpm_brightness_polkit_setup;
+   brightness_class->get_level = xfpm_brightness_polkit_get_level;
+@@ -61,17 +73,30 @@ xfpm_brightness_polkit_class_init (XfpmBrightnessPolkitClass *klass)
+ static void
+ xfpm_brightness_polkit_init (XfpmBrightnessPolkit *brightness)
+ {
++  brightness->device_name = NULL;
+ }
+
+
+
+-static gint
+-helper_get_value (const gchar *argument)
++XfpmBrightness *
++xfpm_brightness_polkit_new_for_device (const gchar *device_name)
++{
++  XfpmBrightnessPolkit *brightness = g_object_new (XFPM_TYPE_BRIGHTNESS_POLKIT, NULL);
++  brightness->device_name = g_strdup (device_name);
++  return XFPM_BRIGHTNESS (brightness);
++}
++
++static gint
++helper_get_value (XfpmBrightnessPolkit *brightness, const gchar *argument)
+ {
+   GError *error = NULL;
+   gchar *stdout_data = NULL;
+   gint status;
+   gint value = -1;
+-  gchar *command = g_strdup_printf (SBINDIR "/xfpm-power-backlight-helper --%s", argument);
++  gchar *command;
++
++  if (brightness->device_name != NULL)
++    command = g_strdup_printf (SBINDIR "/xfpm-power-backlight-helper --device %s --%s", brightness->device_name, argument);
++  else
++    command = g_strdup_printf (SBINDIR "/xfpm-power-backlight-helper --%s", argument);
+
+   XFPM_DEBUG ("Executing command: %s", command);
+   if (!g_spawn_command_line_sync (command, &stdout_data, NULL, &status, &error)
+@@ -100,8 +125,9 @@ static gboolean
+ xfpm_brightness_polkit_setup (XfpmBrightness *brightness,
+                               gint32 *min_level,
+                               gint32 *max_level)
+ {
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
+   *min_level = 0;
+-  *max_level = helper_get_value ("get-max-brightness");
++  *max_level = helper_get_value (polkit, "get-max-brightness");
+   XFPM_DEBUG ("get-max-brightness returned %i", *max_level);
+
+   if (*max_level >= 0)
+@@ -121,7 +147,8 @@ static gboolean
+ xfpm_brightness_polkit_get_level (XfpmBrightness *brightness,
+                                   gint32 *level)
+ {
+-  gint32 ret = helper_get_value ("get-brightness");
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
++  gint32 ret = helper_get_value (polkit, "get-brightness");
+   XFPM_DEBUG ("get-brightness returned %i", ret);
+
+   if (ret >= 0)
+@@ -137,9 +164,15 @@ static gboolean
+ xfpm_brightness_polkit_set_level (XfpmBrightness *brightness,
+                                   gint32 level)
+ {
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
+   GError *error = NULL;
+   gint status;
+-  gchar *command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --set-brightness %i", level);
++  gchar *command;
++
++  if (polkit->device_name != NULL)
++    command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --device %s --set-brightness %i", polkit->device_name, level);
++  else
++    command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --set-brightness %i", level);
+
+   XFPM_DEBUG ("Executing command: %s", command);
+   if (!g_spawn_command_line_sync (command, NULL, NULL, &status, &error)
+@@ -159,7 +192,8 @@ static gboolean
+ xfpm_brightness_polkit_get_switch (XfpmBrightness *brightness,
+                                    gint *_switch)
+ {
+-  gint ret = helper_get_value ("get-brightness-switch");
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
++  gint ret = helper_get_value (polkit, "get-brightness-switch");
+   XFPM_DEBUG ("get-brightness-switch returned %i", ret);
+
+   if (ret >= 0)
+@@ -175,9 +209,15 @@ static gboolean
+ xfpm_brightness_polkit_set_switch (XfpmBrightness *brightness,
+                                    gint _switch)
+ {
++  XfpmBrightnessPolkit *polkit = XFPM_BRIGHTNESS_POLKIT (brightness);
+   GError *error = NULL;
+   gint status;
+-  gchar *command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --set-brightness-switch %i", _switch);
++  gchar *command;
++
++  if (polkit->device_name != NULL)
++    command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --device %s --set-brightness-switch %i", polkit->device_name, _switch);
++  else
++    command = g_strdup_printf ("pkexec " SBINDIR "/xfpm-power-backlight-helper --set-brightness-switch %i", _switch);
+
+   if (!g_spawn_command_line_sync (command, NULL, NULL, &status, &error)
+       || !g_spawn_check_wait_status (status, &error))
+--
+2.39.0
+

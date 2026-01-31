@@ -27,7 +27,8 @@
       "Bash(grep:*)",
       "Bash(git clone:*)",
       "Bash(sshpass -p 'trixie' ssh:*)",
-      "Bash(sshpass:*)"
+      "Bash(sshpass:*)",
+      "Bash(tar xf:*)"
     ]
   }
 }

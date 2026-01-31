@@ -1,0 +1,76 @@
+From: RGDS-XFCE
+Subject: [PATCH 3/4] brightness: add xfpm_brightness_new_for_device function
+
+Add a new constructor that creates a brightness object for a specific
+backlight device, enabling control of multiple displays independently.
+
+---
+ common/xfpm-brightness.c | 41 +++++++++++++++++++++++++++++++++++++++++
+ common/xfpm-brightness.h |  2 ++
+ 2 files changed, 43 insertions(+)
+
+diff --git a/common/xfpm-brightness.h b/common/xfpm-brightness.h
+index 1234567..abcdefg 100644
+--- a/common/xfpm-brightness.h
++++ b/common/xfpm-brightness.h
+@@ -47,6 +47,8 @@ struct _XfpmBrightnessClass
+
+ XfpmBrightness *
+ xfpm_brightness_new (void);
++XfpmBrightness *
++xfpm_brightness_new_for_device (const gchar *device_name);
+ gint32
+ xfpm_brightness_get_min_level (XfpmBrightness *brightness);
+ void
+diff --git a/common/xfpm-brightness.c b/common/xfpm-brightness.c
+index 1234567..abcdefg 100644
+--- a/common/xfpm-brightness.c
++++ b/common/xfpm-brightness.c
+@@ -97,6 +97,47 @@ xfpm_brightness_new (void)
+   return brightness;
+ }
+
++XfpmBrightness *
++xfpm_brightness_new_for_device (const gchar *device_name)
++{
++  XfpmBrightness *brightness = NULL;
++  XfpmBrightnessPrivate *priv;
++
++  if (device_name == NULL)
++    return xfpm_brightness_new ();
++
++#ifdef ENABLE_X11
++  /* X11 brightness doesn't support device selection, skip it when device is specified */
++#endif
++
++#ifdef HAVE_POLKIT
++  brightness = xfpm_brightness_polkit_new_for_device (device_name);
++  if (brightness != NULL)
++  {
++    priv = get_instance_private (brightness);
++    if (!XFPM_BRIGHTNESS_GET_CLASS (brightness)->setup (brightness, &priv->min_level, &priv->max_level))
++    {
++      g_object_unref (brightness);
++      brightness = NULL;
++    }
++  }
++#endif
++
++  if (brightness == NULL)
++  {
++    XFPM_DEBUG ("No brightness controls available for device %s", device_name);
++    return NULL;
++  }
++
++  priv->hw_min_level = priv->min_level;
++  xfpm_brightness_set_step_count (brightness, DEFAULT_BRIGHTNESS_STEP_COUNT, DEFAULT_BRIGHTNESS_EXPONENTIAL);
++
++  return brightness;
++}
++
+ gint32
+ xfpm_brightness_get_min_level (XfpmBrightness *brightness)
+ {
+--
+2.39.0
+

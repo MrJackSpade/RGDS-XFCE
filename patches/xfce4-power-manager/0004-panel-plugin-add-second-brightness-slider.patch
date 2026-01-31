@@ -1,0 +1,169 @@
+From: RGDS-XFCE
+Subject: [PATCH 4/4] panel-plugin: add second brightness slider for dual-screen devices
+
+Add a second brightness slider to the power manager panel menu for
+controlling a secondary display (backlight1). This is needed for
+devices like the RGDS that have separate backlights for top and
+bottom screens.
+
+---
+ panel-plugins/power-manager-plugin/power-manager-button.c | 85 +++++++++++++++-
+ panel-plugins/power-manager-plugin/power-manager-button.h |  1 +
+ 2 files changed, 85 insertions(+), 1 deletion(-)
+
+diff --git a/panel-plugins/power-manager-plugin/power-manager-button.c b/panel-plugins/power-manager-plugin/power-manager-button.c
+index 1234567..abcdefg 100644
+--- a/panel-plugins/power-manager-plugin/power-manager-button.c
++++ b/panel-plugins/power-manager-plugin/power-manager-button.c
+@@ -85,9 +85,15 @@ struct PowerManagerButtonPrivate
+
+   XfpmBrightness *brightness;
+
+-  /* display brightness slider widget */
++  /* Top screen brightness (backlight0) */
+   GtkWidget *range;
+
++  /* Bottom screen brightness (backlight1) */
++  XfpmBrightness *brightness_bottom;
++  GtkWidget *range_bottom;
++  guint set_level_timeout_bottom;
++
+   /* filter range value changed events for snappier UI feedback */
+   guint set_level_timeout;
+
+@@ -952,6 +958,8 @@ static void
+ power_manager_button_init (PowerManagerButton *button)
+ {
+   GError *error = NULL;
+   GtkCssProvider *css_provider;
+
+   button->priv = power_manager_button_get_instance_private (button);
+
+@@ -961,6 +969,12 @@ power_manager_button_init (PowerManagerButton *button)
+   gtk_widget_set_focus_on_click (GTK_WIDGET (button), FALSE);
+   gtk_widget_set_name (GTK_WIDGET (button), "xfce4-power-manager-plugin");
+
+-  button->priv->brightness = xfpm_brightness_new ();
++  /* Top screen brightness (primary/default) */
++  button->priv->brightness = xfpm_brightness_new_for_device ("backlight0");
+   button->priv->set_level_timeout = 0;
++
++  /* Bottom screen brightness */
++  button->priv->brightness_bottom = xfpm_brightness_new_for_device ("backlight1");
++  button->priv->set_level_timeout_bottom = 0;
+
+   button->priv->upower = up_client_new ();
+   if (!xfconf_init (&error))
+@@ -1037,6 +1051,8 @@ power_manager_button_finalize (GObject *object)
+   if (button->priv->brightness != NULL)
+     g_object_unref (button->priv->brightness);
++  if (button->priv->brightness_bottom != NULL)
++    g_object_unref (button->priv->brightness_bottom);
+   if (button->priv->set_level_timeout)
+   {
+     g_source_remove (button->priv->set_level_timeout);
+     button->priv->set_level_timeout = 0;
+   }
++  if (button->priv->set_level_timeout_bottom)
++  {
++    g_source_remove (button->priv->set_level_timeout_bottom);
++    button->priv->set_level_timeout_bottom = 0;
++  }
+
+   if (button->priv->upower != NULL)
+   {
+@@ -1290,6 +1306,7 @@ menu_destroyed_cb (GtkMenuShell *menu,
+
+   /* menu destroyed, range slider is gone */
+   button->priv->range = NULL;
++  button->priv->range_bottom = NULL;
+
+   /* untoggle panel icon */
+   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+@@ -1535,6 +1552,26 @@ brightness_set_level_with_timeout (PowerManagerButton *button)
+   return FALSE;
+ }
+
++static gboolean
++brightness_set_level_with_timeout_bottom (PowerManagerButton *button)
++{
++  gint32 range_level, hw_level;
++
++  range_level = (gint32) gtk_range_get_value (GTK_RANGE (button->priv->range_bottom));
++
++  xfpm_brightness_get_level (button->priv->brightness_bottom, &hw_level);
++
++  if (hw_level != range_level)
++  {
++    xfpm_brightness_set_level (button->priv->brightness_bottom, range_level);
++  }
++
++  button->priv->set_level_timeout_bottom = 0;
++
++  return FALSE;
++}
++
+ static void
+ range_value_changed_cb (PowerManagerButton *button,
+                         GtkWidget *widget)
+@@ -1546,6 +1583,17 @@ range_value_changed_cb (PowerManagerButton *button,
+                                                    button);
+ }
+
++static void
++range_value_changed_cb_bottom (PowerManagerButton *button,
++                               GtkWidget *widget)
++{
++  if (button->priv->set_level_timeout_bottom)
++    return;
++
++  button->priv->set_level_timeout_bottom = g_timeout_add (SET_LEVEL_TIMEOUT,
++                                                          (GSourceFunc) brightness_set_level_with_timeout_bottom,
++                                                          button);
++}
++
+ static void
+ range_show_cb (GtkWidget *widget,
+                PowerManagerButton *button)
+@@ -1653,6 +1701,41 @@ power_manager_button_show_menu (PowerManagerButton *button)
+     gtk_menu_shell_append (GTK_MENU_SHELL (menu), mi);
+   }
+
++  /* Bottom screen brightness slider - show if there's hardware support for it */
++  if (button->priv->brightness_bottom != NULL)
++  {
++    GtkWidget *img;
++    gint32 current_level = 0;
++
++    mi = scale_menu_item_new_with_range (xfpm_brightness_get_min_level (button->priv->brightness_bottom),
++                                         xfpm_brightness_get_max_level (button->priv->brightness_bottom),
++                                         1);
++
++    scale_menu_item_set_description_label (SCALE_MENU_ITEM (mi), _("<b>Bottom screen brightness</b>"));
++
++    /* range slider */
++    button->priv->range_bottom = scale_menu_item_get_scale (SCALE_MENU_ITEM (mi));
++
++    /* update the slider to the current brightness level */
++    xfpm_brightness_get_level (button->priv->brightness_bottom, &current_level);
++    gtk_range_set_value (GTK_RANGE (button->priv->range_bottom), current_level);
++
++    g_signal_connect_swapped (mi, "value-changed", G_CALLBACK (range_value_changed_cb_bottom), button);
++    g_signal_connect (menu, "show", G_CALLBACK (range_show_cb), button);
++
++    /* load and display the brightness icon and force it to 32px size */
++    img = gtk_image_new_from_icon_name (XFPM_DISPLAY_BRIGHTNESS_ICON, GTK_ICON_SIZE_DND);
++    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
++    gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (mi), img);
++    G_GNUC_END_IGNORE_DEPRECATIONS
++    gtk_image_set_pixel_size (GTK_IMAGE (img), 32);
++    gtk_widget_show_all (mi);
++    gtk_menu_shell_append (GTK_MENU_SHELL (menu), mi);
++  }
++
+   /* Presentation mode checkbox */
+ #ifdef XFCE_PLUGIN
+   mi = gtk_menu_item_new ();
+--
+2.39.0
+

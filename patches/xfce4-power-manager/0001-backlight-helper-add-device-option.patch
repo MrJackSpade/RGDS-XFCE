@@ -1,0 +1,107 @@
+From: RGDS-XFCE
+Subject: [PATCH 1/4] backlight-helper: add --device option for specifying backlight device
+
+This allows selecting a specific backlight device by name instead of
+auto-detecting the "best" one. Needed for dual-screen devices where
+each screen has its own backlight.
+
+---
+ src/xfpm-backlight-helper.c | 52 +++++++++++++++++++++++++++++++++++--
+ 1 file changed, 50 insertions(+), 2 deletions(-)
+
+diff --git a/src/xfpm-backlight-helper.c b/src/xfpm-backlight-helper.c
+index 1234567..abcdefg 100644
+--- a/src/xfpm-backlight-helper.c
++++ b/src/xfpm-backlight-helper.c
+@@ -327,6 +327,39 @@ backlight_helper_get_best_backlight (void)
+   return best_device;
+ }
+
++/*
++ * Get a specific backlight device by name
++ */
++static gchar *
++backlight_helper_get_device_by_name (const gchar *device_name)
++{
++  gchar *filename = NULL;
++  gchar *brightness_file = NULL;
++  gboolean exists;
++
++  if (device_name == NULL || device_name[0] == '\0')
++    return NULL;
++
++  filename = g_build_filename (BACKLIGHT_SYSFS_LOCATION, device_name, NULL);
++  brightness_file = g_build_filename (filename, "brightness", NULL);
++
++  exists = g_file_test (brightness_file, G_FILE_TEST_EXISTS);
++  g_free (brightness_file);
++
++  if (exists)
++  {
++    return filename;
++  }
++  else
++  {
++    g_printerr ("Backlight device %s not found\n", device_name);
++    g_free (filename);
++    return NULL;
++  }
++}
++
+ /*
+  * Write a value to a sysfs entry
+  */
+@@ -378,6 +411,7 @@ main (gint argc, gchar *argv[])
+   gint set_brightness_switch = -1;
+   gboolean get_brightness_switch = FALSE;
+   gchar *filename = NULL;
++  gchar *device_name = NULL;
+   gchar *filename_file = NULL;
+   gchar *contents = NULL;
+
+@@ -396,6 +430,9 @@ main (gint argc, gchar *argv[])
+     { "get-brightness-switch", '\0', 0, G_OPTION_ARG_NONE, &get_brightness_switch,
+       /* command line argument */
+       "Get the current setting of the ACPI video brightness switch handling", NULL },
++    { "device", '\0', 0, G_OPTION_ARG_STRING, &device_name,
++      /* command line argument */
++      "Specify backlight device name (e.g., backlight0, backlight1)", NULL },
+     { NULL }
+   };
+
+@@ -422,13 +459,23 @@ main (gint argc, gchar *argv[])
+     }
+   }
+   else
+-  { /* find backlight device */
+-    filename = backlight_helper_get_best_backlight ();
++  {
++    /* use specified device or find best backlight device */
++    if (device_name != NULL)
++    {
++      filename = backlight_helper_get_device_by_name (device_name);
++    }
++    else
++    {
++      filename = backlight_helper_get_best_backlight ();
++    }
++
+     if (filename == NULL)
+     {
+       puts ("No backlights were found on your system");
+       retval = EXIT_CODE_INVALID_USER;
+       goto out;
+     }
+   }
+
+@@ -525,6 +570,7 @@ main (gint argc, gchar *argv[])
+   retval = EXIT_CODE_SUCCESS;
+ out:
+   g_free (filename);
++  g_free (device_name);
+   g_free (filename_file);
+   g_free (contents);
+   return retval;
+--
+2.39.0
+
