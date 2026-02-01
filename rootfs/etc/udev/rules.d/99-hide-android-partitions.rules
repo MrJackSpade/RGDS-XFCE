@@ -1,0 +1,7 @@
+# Hide Android system partitions on mmcblk0 (except userdata p15)
+KERNEL=="mmcblk0p[1-9]", ENV{UDISKS_IGNORE}="1"
+KERNEL=="mmcblk0p1[0-4]", ENV{UDISKS_IGNORE}="1"
+KERNEL=="mmcblk0boot*", ENV{UDISKS_IGNORE}="1"
+
+# Also hide the small boot partitions on SD card
+KERNEL=="mmcblk1p[1-3]", ENV{UDISKS_IGNORE}="1"

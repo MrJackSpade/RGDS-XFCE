@@ -2,7 +2,7 @@
 
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2
-LDFLAGS = -lX11 -lXrandr
+LDFLAGS = -lX11 -lXrandr -lXtst
 
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin

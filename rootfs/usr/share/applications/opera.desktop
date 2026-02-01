@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Opera
+Comment=3DO Interactive Multiplayer Emulator
+Exec=retroarch -L /usr/local/lib/libretro/opera_libretro.so
+Icon=retroarch
+Categories=Game;Emulator;
+Terminal=false

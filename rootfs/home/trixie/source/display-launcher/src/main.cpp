@@ -16,6 +16,8 @@
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xrandr.h>
+#include <X11/extensions/XTest.h>
+#include <X11/keysym.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -31,6 +33,7 @@ struct Config {
     bool fullscreen = true;       // true = fullscreen, false = windowed
     int timeoutMs = 5000;
     std::string windowName;       // Optional: find by window name substring
+    std::string sendKey;          // Optional: key to send after positioning (e.g., "F11")
     bool debug = false;
     std::vector<char*> command;
 };
@@ -62,6 +65,7 @@ void printUsage(const char* progName) {
     fprintf(stderr, "  --size fullscreen|windowed  Window size mode (default: fullscreen)\n");
     fprintf(stderr, "  --timeout <ms>            Window detection timeout in ms (default: 5000)\n");
     fprintf(stderr, "  --name <substring>        Find window by name instead of PID\n");
+    fprintf(stderr, "  --send-key <key>          Send key after positioning (e.g., F11)\n");
     fprintf(stderr, "  --debug                   Enable debug output\n");
     fprintf(stderr, "  --help                    Show this help\n");
 }
@@ -132,6 +136,14 @@ bool parseArgs(int argc, char** argv, Config& config) {
             }
             i++;
             config.windowName = argv[i];
+        }
+        else if (strcmp(argv[i], "--send-key") == 0) {
+            if (i + 1 >= argc) {
+                fprintf(stderr, "Error: --send-key requires an argument\n");
+                return false;
+            }
+            i++;
+            config.sendKey = argv[i];
         }
         else if (argv[i][0] == '-') {
             fprintf(stderr, "Error: Unknown option '%s'\n", argv[i]);
@@ -398,6 +410,58 @@ void sendNetWMState(Display* dpy, Window win, bool add, Atom state1, Atom state2
     XSync(dpy, False);
 }
 
+KeySym stringToKeysym(const std::string& keyName) {
+    // Common key mappings
+    if (keyName == "F1") return XK_F1;
+    if (keyName == "F2") return XK_F2;
+    if (keyName == "F3") return XK_F3;
+    if (keyName == "F4") return XK_F4;
+    if (keyName == "F5") return XK_F5;
+    if (keyName == "F6") return XK_F6;
+    if (keyName == "F7") return XK_F7;
+    if (keyName == "F8") return XK_F8;
+    if (keyName == "F9") return XK_F9;
+    if (keyName == "F10") return XK_F10;
+    if (keyName == "F11") return XK_F11;
+    if (keyName == "F12") return XK_F12;
+    if (keyName == "Escape") return XK_Escape;
+    if (keyName == "Return") return XK_Return;
+    if (keyName == "Space") return XK_space;
+    // Try XStringToKeysym for anything else
+    return XStringToKeysym(keyName.c_str());
+}
+
+void sendKey(Display* dpy, Window win, const std::string& keyName) {
+    KeySym keysym = stringToKeysym(keyName);
+    if (keysym == NoSymbol) {
+        fprintf(stderr, "Warning: Unknown key '%s'\n", keyName.c_str());
+        return;
+    }
+
+    KeyCode keycode = XKeysymToKeycode(dpy, keysym);
+    if (keycode == 0) {
+        fprintf(stderr, "Warning: No keycode for key '%s'\n", keyName.c_str());
+        return;
+    }
+
+    DEBUG("Sending key '%s' (keysym=0x%lx, keycode=%d) to window 0x%lx",
+          keyName.c_str(), keysym, keycode, win);
+
+    // Focus the window first
+    XSetInputFocus(dpy, win, RevertToParent, CurrentTime);
+    XSync(dpy, False);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    // Send key press and release using XTest
+    XTestFakeKeyEvent(dpy, keycode, True, CurrentTime);
+    XSync(dpy, False);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    XTestFakeKeyEvent(dpy, keycode, False, CurrentTime);
+    XSync(dpy, False);
+
+    DEBUG("Key sent successfully");
+}
+
 void moveResizeWindow(Display* dpy, Window win, int x, int y, int w, int h) {
     // Use _NET_MOVERESIZE_WINDOW for better WM compatibility
     XEvent event;
@@ -558,6 +622,14 @@ int main(int argc, char** argv) {
         std::string winName = getWindowName(dpy, win);
         printf("Found window 0x%lx ('%s'), positioning...\n", win, winName.c_str());
         positionWindow(dpy, win, displayInfo, config.fullscreen);
+
+        // Send key if requested (e.g., F11 for app-native fullscreen)
+        if (!config.sendKey.empty()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            printf("Sending key '%s'...\n", config.sendKey.c_str());
+            sendKey(dpy, win, config.sendKey);
+        }
+
         printf("Done.\n");
     }
 

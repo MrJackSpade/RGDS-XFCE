@@ -67,6 +67,14 @@ K_LEFT = 113
 K_DOWN = 116
 K_RIGHT = 114
 
+# Shift map for symbols
+SHIFT_MAP = {
+    '`': '~', '1': '!', '2': '@', '3': '#', '4': '$', '5': '%',
+    '6': '^', '7': '&', '8': '*', '9': '(', '0': ')', '-': '_',
+    '=': '+', '[': '{', ']': '}', '\\': '|', ';': ':', "'": '"',
+    ',': '<', '.': '>', '/': '?'
+}
+
 # Define Rows
 # (Label, Keycode, WidthUnits, ForceColOffset?, IsToggle?)
 tkl_layout = [
@@ -84,19 +92,19 @@ tkl_layout = [
      ("Ins", K_INS, 1), ("Home", K_HOME, 1), ("PgUp", K_PGUP, 1)],
 
     # Row 2
-    [("Tab", K_TAB, 1.5), ("Q", K_Q, 1), ("W", K_W, 1), ("E", K_E, 1), ("R", K_R, 1), ("T", K_T, 1),
-     ("Y", K_Y, 1), ("U", K_U, 1), ("I", K_I, 1), ("O", K_O, 1), ("P", K_P, 1),
+    [("Tab", K_TAB, 1.5), ("q", K_Q, 1), ("w", K_W, 1), ("e", K_E, 1), ("r", K_R, 1), ("t", K_T, 1),
+     ("y", K_Y, 1), ("u", K_U, 1), ("i", K_I, 1), ("o", K_O, 1), ("p", K_P, 1),
      ("[", K_LBRACKET, 1), ("]", K_RBRACKET, 1), ("\\", K_BACKSLASH, 1.5), ("GAP", 0, 0.5),
      ("Del", K_DEL, 1), ("End", K_END, 1), ("PgDn", K_PGDN, 1)],
 
     # Row 3
-    [("Caps", K_CAPS, 1.75), ("A", K_A, 1), ("S", K_S, 1), ("D", K_D, 1), ("F", K_F, 1), ("G", K_G, 1),
-     ("H", K_H, 1), ("J", K_J, 1), ("K", K_K, 1), ("L", K_L, 1), (";", K_SEMICOLON, 1), ("'", K_QUOTE, 1),
+    [("Caps", K_CAPS, 1.75), ("a", K_A, 1), ("s", K_S, 1), ("d", K_D, 1), ("f", K_F, 1), ("g", K_G, 1),
+     ("h", K_H, 1), ("j", K_J, 1), ("k", K_K, 1), ("l", K_L, 1), (";", K_SEMICOLON, 1), ("'", K_QUOTE, 1),
      ("Enter", K_ENTER, 2.25)],
 
     # Row 4
-    [("Shift", K_LSHIFT, 2.25, None, True), ("Z", K_Z, 1), ("X", K_X, 1), ("C", K_C, 1), ("V", K_V, 1),
-     ("B", K_B, 1), ("N", K_N, 1), ("M", K_M, 1), (",", K_COMMA, 1), (".", K_PERIOD, 1), ("/", K_SLASH, 1),
+    [("Shift", K_LSHIFT, 2.25, None, True), ("z", K_Z, 1), ("x", K_X, 1), ("c", K_C, 1), ("v", K_V, 1),
+     ("b", K_B, 1), ("n", K_N, 1), ("m", K_M, 1), (",", K_COMMA, 1), (".", K_PERIOD, 1), ("/", K_SLASH, 1),
      ("Shift", K_RSHIFT, 2.75, None, True), ("GAP", 0, 1.5), ("Up", K_UP, 1)],
 
     # Row 5
@@ -150,5 +158,15 @@ for r_idx, row in enumerate(tkl_layout):
         if is_toggle:
             print("toggle=true")
         print(f"label={label}")
-        
+
+        # Generate shift_label and caps_label
+        if len(label) == 1:
+            if label.islower() and label.isalpha():
+                # Single lowercase letter: shift and caps both give uppercase
+                print(f"shift_label={label.upper()}")
+                print(f"caps_label={label.upper()}")
+            elif label in SHIFT_MAP:
+                # Symbol with shifted variant
+                print(f"shift_label={SHIFT_MAP[label]}")
+
         current_x_units += width_units

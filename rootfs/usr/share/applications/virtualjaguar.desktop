@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Virtual Jaguar
+Comment=Atari Jaguar Emulator
+Exec=virtualjaguar
+Icon=virtualjaguar
+Categories=Game;Emulator;
+Terminal=false

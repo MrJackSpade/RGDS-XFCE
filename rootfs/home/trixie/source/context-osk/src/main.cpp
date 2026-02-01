@@ -19,6 +19,11 @@
 #include "Theme.h"
 #include "UInput.h"
 
+// X11 keycodes for modifier keys
+const int KEYCODE_LSHIFT = 50;
+const int KEYCODE_RSHIFT = 62;
+const int KEYCODE_CAPS = 66;
+
 // Globals
 Display* dis;
 int screen;
@@ -86,6 +91,42 @@ void create_window() {
     XFlush(dis);
 }
 
+// Helper functions for modifier-aware label display
+bool is_shift_active() {
+    for (const auto& btn : current_theme.buttons) {
+        if ((btn.keycode == KEYCODE_LSHIFT || btn.keycode == KEYCODE_RSHIFT)
+            && btn.is_pressed) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool is_caps_active() {
+    for (const auto& btn : current_theme.buttons) {
+        if (btn.keycode == KEYCODE_CAPS && btn.is_pressed) {
+            return true;
+        }
+    }
+    return false;
+}
+
+const std::string& get_effective_label(const Button& btn) {
+    bool shift = is_shift_active();
+    bool caps = is_caps_active();
+
+    // For letter keys: Caps XOR Shift gives uppercase
+    // If caps_label is set, use it when caps is active and shift is not
+    if (caps && !shift && !btn.caps_label.empty()) {
+        return btn.caps_label;
+    }
+    // Shift overrides (or Shift+Caps for letters gives lowercase via default label)
+    if (shift && !btn.shift_label.empty()) {
+        return btn.shift_label;
+    }
+    return btn.label;
+}
+
 void render() {
     cairo_surface_t *surface = cairo_xlib_surface_create(dis, win, DefaultVisual(dis, screen), screen_width, current_theme.height);
     cairo_t *cr = cairo_create(surface);
@@ -123,14 +164,15 @@ void render() {
             cairo_rectangle(cr, btn.x, btn.y, btn.w, btn.h);
             cairo_clip(cr);
 
+            const std::string& effective_label = get_effective_label(btn);
             cairo_text_extents_t extents;
-            cairo_text_extents(cr, btn.label.c_str(), &extents);
+            cairo_text_extents(cr, effective_label.c_str(), &extents);
 
             double x = btn.x + (btn.w / 2.0) - (extents.width / 2.0) - extents.x_bearing;
             double y = btn.y + (btn.h / 2.0) - (extents.height / 2.0) - extents.y_bearing;
 
             cairo_move_to(cr, x, y);
-            cairo_show_text(cr, btn.label.c_str());
+            cairo_show_text(cr, effective_label.c_str());
             cairo_restore(cr);
         }
 

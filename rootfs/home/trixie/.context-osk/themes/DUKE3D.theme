@@ -1,0 +1,192 @@
+[General]
+height=214
+background_color=#1a0d0d
+window_title=*DUKE3D.EXE*
+
+; ===== ROW 1: Game Controls & Items =====
+
+; Save Game (F2)
+[Key_F2_68]
+x=2
+y=2
+width=64
+height=60
+keycode=68
+label=Save
+image=./DUKE3D/save.png
+
+; Load Game (F3)
+[Key_F3_69]
+x=68
+y=2
+width=64
+height=60
+keycode=69
+label=Load
+image=./DUKE3D/load.png
+
+; 2D Map Toggle (TAB)
+[Key_Tab_23]
+x=134
+y=2
+width=64
+height=60
+keycode=23
+label=Map
+image=./DUKE3D/map.png
+
+; === Items Section ===
+
+; Use HoloDuke (H)
+[Key_H_43]
+x=218
+y=2
+width=64
+height=60
+keycode=43
+label=HoloDuke
+image=./DUKE3D/holoduke.png
+
+; Use Jetpack (J)
+[Key_J_44]
+x=284
+y=2
+width=64
+height=60
+keycode=44
+label=Jetpack
+image=./DUKE3D/jetpack.png
+
+; Use Night Vision (N)
+[Key_N_57]
+x=350
+y=2
+width=64
+height=60
+keycode=57
+label=NightVis
+image=./DUKE3D/nightvision.png
+
+; Use Medkit (M)
+[Key_M_58]
+x=416
+y=2
+width=64
+height=60
+keycode=58
+label=Medkit
+image=./DUKE3D/medkit.png
+
+; Use Steroids (R)
+[Key_R_27]
+x=482
+y=2
+width=64
+height=60
+keycode=27
+label=Steroids
+image=./DUKE3D/steroids.png
+
+; ===== ROW 2: Weapons 1-5 =====
+
+; Weapon 1: Mighty Foot (Kick)
+[Key_1_10]
+x=2
+y=64
+width=70
+height=70
+keycode=10
+label=Kick
+image=./DUKE3D/weapon_kick.png
+
+; Weapon 2: Pistol
+[Key_2_11]
+x=74
+y=64
+width=70
+height=70
+keycode=11
+label=Pistol
+image=./DUKE3D/weapon_pistol.png
+
+; Weapon 3: Shotgun
+[Key_3_12]
+x=146
+y=64
+width=70
+height=70
+keycode=12
+label=Shotgun
+image=./DUKE3D/weapon_shotgun.png
+
+; Weapon 4: Chaingun Cannon
+[Key_4_13]
+x=218
+y=64
+width=70
+height=70
+keycode=13
+label=Chaingun
+image=./DUKE3D/weapon_chaingun.png
+
+; Weapon 5: RPG (Rocket Propelled Grenade)
+[Key_5_14]
+x=290
+y=64
+width=70
+height=70
+keycode=14
+label=RPG
+image=./DUKE3D/weapon_rpg.png
+
+; ===== ROW 3: Weapons 6-0 =====
+
+; Weapon 6: Pipe Bomb
+[Key_6_15]
+x=2
+y=136
+width=70
+height=70
+keycode=15
+label=PipeBomb
+image=./DUKE3D/weapon_pipebomb.png
+
+; Weapon 7: Shrinker
+[Key_7_16]
+x=74
+y=136
+width=70
+height=70
+keycode=16
+label=Shrinker
+image=./DUKE3D/weapon_shrinker.png
+
+; Weapon 8: Devastator
+[Key_8_17]
+x=146
+y=136
+width=70
+height=70
+keycode=17
+label=Devastor
+image=./DUKE3D/weapon_devastator.png
+
+; Weapon 9: Laser Tripbomb
+[Key_9_18]
+x=218
+y=136
+width=70
+height=70
+keycode=18
+label=Tripbomb
+image=./DUKE3D/weapon_tripbomb.png
+
+; Weapon 0: Freezethrower
+[Key_0_19]
+x=290
+y=136
+width=70
+height=70
+keycode=19
+label=Freezer
+image=./DUKE3D/weapon_freezer.png

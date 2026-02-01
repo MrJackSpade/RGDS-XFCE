@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PPSSPP
+Comment=PlayStation Portable Emulator
+Exec=ppsspp
+Icon=ppsspp
+Categories=X-Sony;
+Terminal=false

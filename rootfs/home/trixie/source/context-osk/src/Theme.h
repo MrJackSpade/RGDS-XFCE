@@ -7,7 +7,9 @@
 #include <cairo/cairo.h>
 
 struct Button {
-    std::string label;
+    std::string label;           // Default display
+    std::string shift_label;     // Display when Shift is active
+    std::string caps_label;      // Display when Caps Lock is active (for letters)
     int x, y, w, h;
     std::string image_path;
     int keycode;

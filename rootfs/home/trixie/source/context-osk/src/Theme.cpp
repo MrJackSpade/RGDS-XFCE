@@ -246,6 +246,8 @@ bool Theme::load(const std::string& path) {
                     printf("Parsed toggle: '%s' -> %d for keycode %d\n", val.c_str(), current_btn.toggle, current_btn.keycode);
                 }
                 if (key == "label") current_btn.label = val;
+                if (key == "shift_label") current_btn.shift_label = val;
+                if (key == "caps_label") current_btn.caps_label = val;
             }
         }
     }

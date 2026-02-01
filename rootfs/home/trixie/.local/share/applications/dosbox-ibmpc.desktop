@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=DOSBox-X IBMPC
+Name=IBMPC [DOSBOX]
 Comment=DOS Emulator (IBMPC)
 Exec=/home/trixie/.local/bin/dosbox-launch-ibmpc.sh
 Icon=dosbox-x

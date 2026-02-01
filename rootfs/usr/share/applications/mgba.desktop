@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=mGBA
-Comment=Game Boy Advance Emulator
-Exec=/usr/local/games/mgba/mgba-qt
-Icon=mgba
-Terminal=false
-Type=Application
-Categories=Emulator;
