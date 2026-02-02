@@ -187,10 +187,10 @@ grBufferSwap()    → blit fbi.ram to DirectDraw surface
 - [ ] This is the ONLY syscall per frame
 
 ### Phase 5: Build & Test
-- [ ] Cross-compile with i686-w64-mingw32-gcc
-- [ ] Link against DirectDraw (ddraw.lib)
+- [x] Cross-compile with i686-w64-mingw32-gcc
+- [x] Link against DirectDraw (ddraw.lib)
 - [ ] Test with simple Glide test program
-- [ ] Test with Diablo 2
+- [x] Test with Diablo 2
 
 ### Phase 6: Optimization (if needed)
 - Multi-threading already in DOSBox code

@@ -10,6 +10,11 @@ glide3x: grSstWinOpen - FBI done
 glide3x: grSstWinOpen - init TMUs
 glide3x: grSstWinOpen - TMUs done
 glide3x: grSstWinOpen - init display
+display_ddraw: create_window requesting 808x634 (client 800x600)
+display_ddraw: Created window client rect 644x600
+display_ddraw: Window size mismatch, attempting to force resize...
+display_ddraw: SetWindowPos succeeded. Re-verifying...
+display_ddraw: New client rect 644x600
 glide3x: grSstWinOpen - display done
 glide3x: grGet(pname=10, plength=4)
 glide3x: grGet(pname=11, plength=4)
@@ -137,6 +142,8 @@ glide3x: grTexDownloadMipMap
 glide3x: grTexDownloadMipMap
 glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
 glide3x: grBufferSwap #1 (lfb_locked=-1, frontbuf=0, backbuf=1)
+display_present #1: 800x600 fb=0282a620
+display_present: width=800, pitch_pixels=800 (bytes=1600)
 glide3x: guGammaCorrectionRGB(1.55, 1.55, 1.55)
 glide3x: grLoadGammaTable(entries=32)
 grLoadGammaTable: First entry 0x00000000, Last entry 0x00FFFFFF
@@ -158,6 +165,11 @@ glide3x: grSstWinOpen - FBI done
 glide3x: grSstWinOpen - init TMUs
 glide3x: grSstWinOpen - TMUs done
 glide3x: grSstWinOpen - init display
+display_ddraw: create_window requesting 808x634 (client 800x600)
+display_ddraw: Created window client rect 644x600
+display_ddraw: Window size mismatch, attempting to force resize...
+display_ddraw: SetWindowPos succeeded. Re-verifying...
+display_ddraw: New client rect 644x600
 glide3x: grSstWinOpen - display done
 glide3x: grCoordinateSpace
 glide3x: grVertexLayout
@@ -182,6 +194,7 @@ glide3x: grTexMinAddress
 glide3x: grTexMaxAddress
 glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
 glide3x: grBufferSwap #2 (lfb_locked=-1, frontbuf=0, backbuf=1)
+display_present #2: 800x600 fb=0282a620
 glide3x: guGammaCorrectionRGB(1.55, 1.55, 1.55)
 glide3x: grLoadGammaTable(entries=32)
 grLoadGammaTable: First entry 0x00000000, Last entry 0x00FFFFFF
@@ -200,6 +213,8 @@ glide3x: grSstWinOpen - FBI done
 glide3x: grSstWinOpen - init TMUs
 glide3x: grSstWinOpen - TMUs done
 glide3x: grSstWinOpen - init display
+display_ddraw: create_window requesting 648x514 (client 640x480)
+display_ddraw: Created window client rect 640x480
 glide3x: grSstWinOpen - display done
 glide3x: grCoordinateSpace
 glide3x: grVertexLayout
@@ -320,75 +335,93 @@ glide3x: grTexDownloadMipMap
 glide3x: grTexDownloadMipMap
 glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
 glide3x: grBufferSwap #3 (lfb_locked=-1, frontbuf=0, backbuf=1)
+display_present #3: 640x480 fb=027d6020
 glide3x: guGammaCorrectionRGB(1.00, 1.00, 1.00)
 glide3x: grLoadGammaTable(entries=32)
 grLoadGammaTable: First entry 0x00000000, Last entry 0x00FFFFFF
 glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
 glide3x: grBufferSwap #4 (lfb_locked=-1, frontbuf=1, backbuf=0)
+display_present #4: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #5: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #6: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #7: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #8: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #9: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #10: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #11: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #12: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #13: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #14: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #15: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #16: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #17: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #18: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #19: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #20: 640x480 fb=02740020
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
@@ -2287,33 +2320,3 @@ glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
-glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
-glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
-glide3x: grLfbUnlock(type=1, buffer=0)
-glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
-glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
-glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
-glide3x: grLfbUnlock(type=1, buffer=0)
-glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
-glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
-glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
-glide3x: grLfbUnlock(type=1, buffer=0)
-glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
-glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
-glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
-glide3x: grLfbUnlock(type=1, buffer=0)
-glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
-glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
-glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
-glide3x: grLfbUnlock(type=1, buffer=0)
-glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
-glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
-glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
-glide3x: grLfbUnlock(type=1, buffer=0)
-glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
-glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
-glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
-glide3x: grLfbUnlock(type=1, buffer=0)
-glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
-glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
-glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1

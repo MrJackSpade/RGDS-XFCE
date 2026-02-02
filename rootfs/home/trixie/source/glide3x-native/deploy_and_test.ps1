@@ -14,8 +14,12 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed!"
 }
 
-Write-Host "Pushing $LocalDll to $RemoteHost..."
-& "C:\Windows\System32\OpenSSH\scp.exe" $LocalDll "${RemoteUser}@${RemoteHost}:`"${RemotePath}/`""
+$SftpScript = @"
+cd "${RemotePath}"
+put $LocalDll
+bye
+"@
+$SftpScript | & "C:\Windows\System32\OpenSSH\sftp.exe" "${RemoteUser}@${RemoteHost}"
 
 Write-Host "Executing Diablo II on remote host..."
 # We run this in the background / async or wait? 
@@ -57,8 +61,11 @@ catch {
 }
 Remove-Job $Job
 
-Write-Host "Pulling log file..."
-& "C:\Windows\System32\OpenSSH\scp.exe" "${RemoteUser}@${RemoteHost}:${RemoteLogPath}" $LocalLogPath
+$SftpScriptLog = @"
+get "${RemoteLogPath}" $LocalLogPath
+bye
+"@
+$SftpScriptLog | & "C:\Windows\System32\OpenSSH\sftp.exe" "${RemoteUser}@${RemoteHost}"
 
 Write-Host "Done. Log saved to $LocalLogPath"
 Get-Content $LocalLogPath -Tail 20
