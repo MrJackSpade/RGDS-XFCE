@@ -122,22 +122,28 @@ void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
      *   Bit 3:  W buffer select (0=Z, 1=W)
      *   Bit 4:  Depth buffer enable
      *   Bit 5-7: Depth function (set separately)
+     *   Bit 20: Depth bias enable (compare to bias value)
      */
 
     uint32_t val = g_voodoo->reg[fbzMode].u;
 
+    /* Clear depth-related bits first */
+    val &= ~((1 << 3) | (1 << 4) | (1 << 20));
+
     /* Bit 4: Enable depth buffer */
-    if (mode == GR_DEPTHBUFFER_DISABLE) {
-        val &= ~(1 << 4);  /* Disable depth testing */
-    } else {
+    if (mode != GR_DEPTHBUFFER_DISABLE) {
         val |= (1 << 4);   /* Enable depth testing */
     }
 
     /* Bit 3: W-buffer select */
     if (mode == GR_DEPTHBUFFER_WBUFFER || mode == GR_DEPTHBUFFER_WBUFFER_COMPARE_TO_BIAS) {
         val |= (1 << 3);   /* Use W-buffer */
-    } else {
-        val &= ~(1 << 3);  /* Use Z-buffer */
+    }
+
+    /* Bit 20: Compare to bias value instead of buffer */
+    if (mode == GR_DEPTHBUFFER_ZBUFFER_COMPARE_TO_BIAS ||
+        mode == GR_DEPTHBUFFER_WBUFFER_COMPARE_TO_BIAS) {
+        val |= (1 << 20);  /* Enable depth bias comparison */
     }
 
     g_voodoo->reg[fbzMode].u = val;

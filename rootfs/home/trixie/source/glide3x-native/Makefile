@@ -14,8 +14,22 @@ LDFLAGS = -shared -Wl,--enable-stdcall-fixup
 LDFLAGS += -static-libgcc -static-libstdc++
 LIBS = -lgdi32 -lddraw -ldxguid
 
-# Source files
-SRCS = src/glide3x.c \
+# Source files - broken out into modules
+# Note: glide3x.c is the monolithic file, now replaced by broken-out modules
+SRCS = src/glide3x_state.c \
+       src/glide3x_init.c \
+       src/glide3x_context.c \
+       src/glide3x_buffer.c \
+       src/glide3x_lfb.c \
+       src/glide3x_combine.c \
+       src/glide3x_blend.c \
+       src/glide3x_depth.c \
+       src/glide3x_alpha.c \
+       src/glide3x_draw.c \
+       src/glide3x_texture.c \
+       src/glide3x_fog.c \
+       src/glide3x_misc.c \
+       src/glide3x_get.c \
        src/voodoo_emu.c \
        src/display_ddraw.c
 

@@ -203,8 +203,28 @@ void __stdcall grFogTable(const GrFog_t ft[])
     LOG_FUNC();
     if (!g_voodoo || !ft) return;
 
-    /* Copy all 64 entries */
+    /* Copy all 64 entries and compute deltas for interpolation
+     * The fog table stores both values and deltas for linear interpolation
+     * between entries. This allows smooth fog without per-pixel table lookups.
+     *
+     * fogblend[i] stores: (delta << 8) | value
+     * Where delta = ft[i+1] - ft[i] (clamped to 8-bit signed range)
+     */
     for (int i = 0; i < 64; i++) {
-        g_voodoo->fbi.fogblend[i] = ft[i];
+        uint8_t value = ft[i];
+        int8_t delta;
+
+        if (i < 63) {
+            int diff = (int)ft[i + 1] - (int)ft[i];
+            /* Clamp delta to signed 8-bit range */
+            if (diff > 127) diff = 127;
+            if (diff < -128) diff = -128;
+            delta = (int8_t)diff;
+        } else {
+            delta = 0;  /* Last entry has no delta */
+        }
+
+        /* Pack value and delta: lower 8 bits = value, bits 8-15 = delta */
+        g_voodoo->fbi.fogblend[i] = ((uint32_t)(uint8_t)delta << 8) | value;
     }
 }

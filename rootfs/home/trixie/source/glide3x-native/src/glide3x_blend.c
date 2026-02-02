@@ -150,7 +150,14 @@ void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t 
      *   Bits 24-31: Alpha reference value
      */
 
-    uint32_t val = 0;
+    /* Start with existing register value to preserve alpha test settings */
+    uint32_t val = g_voodoo->reg[alphaMode].u;
+
+    /* Clear blend-related bits (4-23) but preserve:
+     * - Bits 0-3: Alpha test (enable + function)
+     * - Bits 24-31: Alpha reference value
+     */
+    val &= 0xFF00000F;
 
     /* Pack blend factors */
     val |= (rgb_sf & 0xF) << 8;     /* RGB source factor */
@@ -158,11 +165,8 @@ void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t 
     val |= (alpha_sf & 0xF) << 16;  /* Alpha source factor */
     val |= (alpha_df & 0xF) << 20;  /* Alpha destination factor */
 
-    /* Enable alpha blending */
+    /* Enable alpha blending (bit 4) */
     val |= (1 << 4);
-
-    /* Preserve alpha test settings from previous register value */
-    val |= (g_voodoo->reg[alphaMode].u & 0xFF00000F);
 
     g_voodoo->reg[alphaMode].u = val;
 }

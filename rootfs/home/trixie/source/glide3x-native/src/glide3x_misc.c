@@ -333,3 +333,46 @@ void __stdcall grErrorSetCallback(void (*fnc)(const char *string, FxBool fatal))
     LOG_FUNC();
     (void)fnc;
 }
+
+/*
+ * grSstIdle - Wait for graphics subsystem to become idle
+ *
+ * On hardware, this waits for all pending rendering commands to complete.
+ * Our software renderer is synchronous, so this is a no-op.
+ */
+void __stdcall grSstIdle(void)
+{
+    LOG_FUNC();
+    /* Software renderer is always idle after each operation */
+}
+
+/*
+ * grSstStatus - Get graphics subsystem status
+ *
+ * Returns status bits indicating:
+ *   Bit 6: FBI graphics engine busy (0 = idle)
+ *   Bit 7: TMU graphics engine busy (0 = idle)
+ *   Bit 8: SST-1 TREX busy (0 = idle)
+ *
+ * Our software renderer is always idle, so return 0.
+ */
+FxU32 __stdcall grSstStatus(void)
+{
+    LOG_FUNC();
+    return 0;  /* Always idle */
+}
+
+/*
+ * grBufferNumPending - Get number of pending buffer swaps
+ *
+ * Returns the number of buffer swap operations that have been requested
+ * but not yet completed. Used for frame pacing and to determine if
+ * the application should wait before submitting more work.
+ *
+ * Our implementation doesn't queue swaps, so always return 0.
+ */
+FxI32 __stdcall grBufferNumPending(void)
+{
+    LOG_FUNC();
+    return 0;  /* No pending swaps */
+}

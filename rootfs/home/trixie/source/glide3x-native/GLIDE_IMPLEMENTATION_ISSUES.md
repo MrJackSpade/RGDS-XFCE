@@ -559,35 +559,35 @@ Per the hardware spec, TMU1 registers start at offset 0x400 from TMU0, not 0x100
 ## Implementation Checklist
 
 ### Critical Issues
-- [ ] Issue 1: grColorCombine() - Fix register bit mapping for CC_MSELECT, CC_SUB_CLOCAL, CC_ADD_ACLOCAL
-- [ ] Issue 2: grAlphaCombine() - Implement full CCA_MSELECT, CCA_REVERSE_BLEND, CCA_ADD_ACLOCAL mapping
-- [ ] Issue 3: grAlphaBlendFunction() - Preserve existing ALPHAMODE bits
+- [x] Issue 1: grColorCombine() - Fix register bit mapping for CC_MSELECT, CC_SUB_CLOCAL, CC_ADD_ACLOCAL
+- [x] Issue 2: grAlphaCombine() - Implement full CCA_MSELECT, CCA_REVERSE_BLEND, CCA_ADD_ACLOCAL mapping
+- [x] Issue 3: grAlphaBlendFunction() - Preserve existing ALPHAMODE bits
 
 ### Color Combine Issues
-- [ ] Issue 4: Fix CC_MSELECT mapping from factor parameter
-- [ ] Issue 5: Implement CC_SUB_CLOCAL support for subtract functions
-- [ ] Issue 6: Implement CC_ADD_ACLOCAL support for add functions
+- [x] Issue 4: Fix CC_MSELECT mapping from factor parameter
+- [x] Issue 5: Implement CC_SUB_CLOCAL support for subtract functions
+- [x] Issue 6: Implement CC_ADD_ACLOCAL support for add functions
 
 ### Alpha Combine Issues
-- [ ] Issue 7: Implement CCA_MSELECT from factor parameter
+- [x] Issue 7: Implement CCA_MSELECT from factor parameter
 
 ### Alpha Blending Issues
 - [ ] Issue 8: Verify destination alpha buffer handling
 - [ ] Issue 9: Implement blend modes 8-14 if needed for Voodoo 2+
 
 ### Depth Buffer Issues
-- [ ] Issue 10: Add GR_DEPTHBUFFER_*_COMPARE_TO_BIAS modes
+- [x] Issue 10: Add GR_DEPTHBUFFER_*_COMPARE_TO_BIAS modes
 - [ ] Issue 11: Verify Z vs W coordinate handling with FBZMODE_WBUFFER_SELECT
 
 ### Texture Pipeline Issues
 - [ ] Issue 12: Implement full LOD calculation in TEXTURE_PIPELINE
 - [ ] Issue 13: Fix texture W coordinate for perspective correction
 - [ ] Issue 14: Implement NCC table decoding
-- [ ] Issue 15: Calculate all mipmap level offsets in grTexSource()
-- [ ] Issue 16: Fix grTexCombine() bit positions for TC_REVERSE_BLEND
+- [x] Issue 15: Calculate all mipmap level offsets in grTexSource()
+- [x] Issue 16: Fix grTexCombine() bit positions for TC_REVERSE_BLEND
 
 ### Fog Implementation Issues
-- [ ] Issue 17: Compute fogdelta values when fog table is written
+- [x] Issue 17: Compute fogdelta values when fog table is written
 - [ ] Issue 18: Verify fog table entry count and indexing
 
 ### Triangle Rasterization Issues
@@ -596,17 +596,17 @@ Per the hardware spec, TMU1 registers start at offset 0x400 from TMU0, not 0x100
 - [ ] Issue 21: Account for pixel center sampling
 
 ### LFB Issues
-- [ ] Issue 22: Implement all LFB write modes in grLfbLock()
-- [ ] Issue 23: Handle source format conversion in grLfbWriteRegion()
+- [x] Issue 22: Implement all LFB write modes in grLfbLock()
+- [x] Issue 23: Handle source format conversion in grLfbWriteRegion()
 
 ### Missing Functions
 - [ ] Issue 24: Implement grTexDownloadMipMapLevelPartial()
 - [ ] Issue 25: Implement grTexDetailControl()
 - [ ] Issue 26: Implement grTexNCCTable()
 - [ ] Issue 27: Implement grSplash()
-- [ ] Issue 28: Implement grBufferNumPending()
-- [ ] Issue 29: Implement grSstIdle()
-- [ ] Issue 30: Implement grSstStatus()
+- [x] Issue 28: Implement grBufferNumPending()
+- [x] Issue 29: Implement grSstIdle()
+- [x] Issue 30: Implement grSstStatus()
 
 ### Register Mapping Issues
 - [ ] Issue 31: Verify clipLeftRight/clipLowYHighY encoding

@@ -17,6 +17,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <string.h>
 #include "glide3x.h"
 #include "voodoo_state.h"
 
@@ -32,6 +33,9 @@ extern int g_call_count;
 
 /* Write a message to the debug log */
 void debug_log(const char *msg);
+
+/* Flush any pending deduplicated log message */
+void debug_log_flush(void);
 
 /* Log macro for function entry */
 #define LOG_FUNC() do { \
@@ -132,6 +136,22 @@ extern int g_render_buffer;
  * when the application uses LFB writes instead of triangle rendering.
  */
 extern int g_lfb_buffer_locked;
+
+/*
+ * g_lfb_write_mode - Pixel format for LFB writes
+ *
+ * Set by grLfbLock() to track the requested pixel format.
+ * Used by write operations to convert incoming data to RGB565.
+ */
+extern GrLfbWriteMode_t g_lfb_write_mode;
+
+/*
+ * g_lfb_origin - Y coordinate origin for LFB operations
+ *
+ * GR_ORIGIN_UPPER_LEFT = Y=0 at top (DirectX style)
+ * GR_ORIGIN_LOWER_LEFT = Y=0 at bottom (OpenGL style)
+ */
+extern GrOriginLocation_t g_lfb_origin;
 
 /*************************************
  * Statistics counters (for debugging)

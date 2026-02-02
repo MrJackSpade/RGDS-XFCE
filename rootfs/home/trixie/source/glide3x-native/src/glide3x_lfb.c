@@ -126,8 +126,10 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
         g_lfb_buffer_locked = buffer;
     }
 
-    (void)writeMode;      /* We always use RGB565 internally */
-    (void)origin;         /* We use upper-left origin */
+    /* Track writeMode and origin for format conversion during writes */
+    g_lfb_write_mode = writeMode;
+    g_lfb_origin = origin;
+
     (void)pixelPipeline;  /* We don't support pipeline mode */
 
     uint8_t *bufptr;
@@ -148,9 +150,10 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
 
     info->size = sizeof(GrLfbInfo_t);
     info->lfbPtr = bufptr;
-    info->strideInBytes = g_voodoo->fbi.rowpixels * 2;  /* 16-bit = 2 bytes */
-    info->writeMode = GR_LFBWRITEMODE_565;
-    info->origin = GR_ORIGIN_UPPER_LEFT;
+    /* Stride is always based on internal 16-bit format regardless of writeMode */
+    info->strideInBytes = g_voodoo->fbi.rowpixels * 2;
+    info->writeMode = writeMode;
+    info->origin = origin;
 
     {
         char dbg[128];
@@ -268,7 +271,6 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
 
     if (!g_voodoo || !src_data) return FXFALSE;
 
-    (void)src_format;      /* We assume RGB565 */
     (void)pixelPipeline;   /* We don't support pipeline mode */
 
     /* Get destination buffer */
@@ -290,11 +292,80 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
         return FXFALSE;
     }
 
-    /* Copy data row by row */
+    /* Copy data row by row with format conversion if needed */
     uint8_t *src = (uint8_t*)src_data;
+
     for (FxU32 y = 0; y < src_height; y++) {
-        memcpy(&dest[(dst_y + y) * g_voodoo->fbi.rowpixels + dst_x],
-               &src[y * src_stride], src_width * 2);
+        uint16_t *dst_row = &dest[(dst_y + y) * g_voodoo->fbi.rowpixels + dst_x];
+
+        switch (src_format) {
+        case GR_LFB_SRC_FMT_565:
+            /* Direct copy - native format */
+            memcpy(dst_row, &src[y * src_stride], src_width * 2);
+            break;
+
+        case GR_LFB_SRC_FMT_555:
+            /* Convert RGB555 to RGB565 */
+            {
+                uint16_t *src_row = (uint16_t*)&src[y * src_stride];
+                for (FxU32 x = 0; x < src_width; x++) {
+                    uint16_t pix = src_row[x];
+                    /* RGB555: -RRRRRGGGGGBBBBB -> RGB565: RRRRRGGGGGGBBBBB */
+                    uint16_t r = (pix >> 10) & 0x1F;
+                    uint16_t g = (pix >> 5) & 0x1F;
+                    uint16_t b = pix & 0x1F;
+                    dst_row[x] = (r << 11) | (g << 6) | b;
+                }
+            }
+            break;
+
+        case GR_LFB_SRC_FMT_1555:
+            /* Convert ARGB1555 to RGB565 (discard alpha) */
+            {
+                uint16_t *src_row = (uint16_t*)&src[y * src_stride];
+                for (FxU32 x = 0; x < src_width; x++) {
+                    uint16_t pix = src_row[x];
+                    /* ARGB1555: ARRRRRGGGGGBBBBB -> RGB565: RRRRRGGGGGGBBBBB */
+                    uint16_t r = (pix >> 10) & 0x1F;
+                    uint16_t g = (pix >> 5) & 0x1F;
+                    uint16_t b = pix & 0x1F;
+                    dst_row[x] = (r << 11) | (g << 6) | b;
+                }
+            }
+            break;
+
+        case GR_LFB_SRC_FMT_888:
+            /* Convert RGB888 to RGB565 */
+            {
+                uint8_t *src_row = &src[y * src_stride];
+                for (FxU32 x = 0; x < src_width; x++) {
+                    uint8_t b = src_row[x * 3 + 0];
+                    uint8_t g = src_row[x * 3 + 1];
+                    uint8_t r = src_row[x * 3 + 2];
+                    dst_row[x] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+                }
+            }
+            break;
+
+        case GR_LFB_SRC_FMT_8888:
+            /* Convert ARGB8888 to RGB565 (discard alpha) */
+            {
+                uint32_t *src_row = (uint32_t*)&src[y * src_stride];
+                for (FxU32 x = 0; x < src_width; x++) {
+                    uint32_t pix = src_row[x];
+                    uint8_t r = (pix >> 16) & 0xFF;
+                    uint8_t g = (pix >> 8) & 0xFF;
+                    uint8_t b = pix & 0xFF;
+                    dst_row[x] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+                }
+            }
+            break;
+
+        default:
+            /* Unknown format - try direct copy assuming 16-bit */
+            memcpy(dst_row, &src[y * src_stride], src_width * 2);
+            break;
+        }
     }
 
     return FXTRUE;

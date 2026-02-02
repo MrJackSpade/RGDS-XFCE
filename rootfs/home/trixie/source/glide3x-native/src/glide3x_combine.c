@@ -145,66 +145,118 @@ void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t fa
     LOG_FUNC();
     if (!g_voodoo) return;
 
-    /* Build fbzColorPath register value */
+    /* Build fbzColorPath register value
+     *
+     * Register bit layout (per h3defs.h / voodoo_defs.h):
+     *   Bits 0-1:   CC_RGBSELECT      - other color source (iterated, texture, color1)
+     *   Bit 4:      CC_LOCALSELECT    - local color source (iterated or color0)
+     *   Bit 8:      CC_ZERO_OTHER     - zero the other input
+     *   Bit 9:      CC_SUB_CLOCAL     - subtract c_local
+     *   Bits 10-12: CC_MSELECT        - blend factor select (from factor parameter)
+     *   Bit 13:     CC_REVERSE_BLEND  - invert blend factor (1-factor)
+     *   Bit 14:     CC_ADD_CLOCAL     - add c_local to result
+     *   Bit 15:     CC_ADD_ALOCAL     - add a_local to result (as RGB)
+     *   Bit 16:     CC_INVERT_OUTPUT  - invert final output
+     */
     uint32_t val = g_voodoo->reg[fbzColorPath].u;
 
-    /* Clear color combine bits (lower 17 bits) */
+    /* Clear color combine bits (0-16) but preserve alpha combine bits (17+) */
     val &= ~0x1FFFF;
 
-    /*
-     * Bit layout for color combine:
-     *   Bits 0-1:  CC_RGBSELECT (other color source)
-     *   Bits 2-3:  CC_ASELECT (factor source for scale operations)
-     *   Bit 4:     CC_LOCALSELECT (0=iterated, 1=constant)
-     *   Bits 5-7:  CC_MSELECT (multiply factor source)
-     *   Bit 8:     CC_ZERO_OTHER (if set, other=0)
-     *   Bit 9:     CC_SUB_CLOCAL (subtract local instead of add)
-     *   Bit 10:    CC_ADD_ALOCAL (add local alpha)
-     *   Bits 11-13: CC_ADD (additional add factor)
-     *   Bit 14:    CC_ADD_ACLOCAL
-     *   Bit 15:    CC_INVERT_OUTPUT_SELECT
-     *   Bit 16:    CC_INVERT_OUTPUT
+    /* CC_RGBSELECT (bits 0-1): other color source */
+    val |= (other & 0x3);
+
+    /* CC_LOCALSELECT (bit 4): local color source */
+    val |= ((local & 0x1) << 4);
+
+    /* Handle reverse blend based on factor
+     * Factor values 0x0-0x7 are base factors
+     * Factor values 0x8-0xF are "one minus" versions
+     * When using base factors (bit 3 = 0), set REVERSE_BLEND
+     * When using "one minus" factors (bit 3 = 1), don't set REVERSE_BLEND
      */
-
-    /* Set CC_RGBSELECT based on other source */
-    val |= (other & 3);
-
-    /* Set CC_ASELECT (factor for scaling) */
-    val |= ((factor & 3) << 2);
-
-    /* Set CC_LOCALSELECT (local color source) */
-    val |= ((local & 1) << 4);
-
-    /* Set function-specific bits */
-    switch (function) {
-    case GR_COMBINE_FUNCTION_ZERO:
-        val |= (1 << 8);  /* CC_ZERO_OTHER - zero the output */
-        break;
-    case GR_COMBINE_FUNCTION_LOCAL:
-        /* Output = local color (but we still need other for some modes) */
-        break;
-    case GR_COMBINE_FUNCTION_LOCAL_ALPHA:
-        /* Output = local alpha replicated to RGB */
-        val |= (1 << 4);  /* Use local alpha */
-        break;
-    case GR_COMBINE_FUNCTION_SCALE_OTHER:
-        /* Output = other * factor */
-        break;
-    case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL:
-        /* Output = other * factor + local */
-        break;
-    case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL:
-        /* Output = (other - local) * factor */
-        val |= (1 << 9);  /* CC_SUB_CLOCAL */
-        break;
-    default:
-        /* Other functions use default path */
-        break;
+    if ((factor & 0x8) == 0) {
+        val |= (1 << 13);  /* CC_REVERSE_BLEND */
     }
 
-    /* Set invert bit */
+    /* CC_MSELECT (bits 10-12): blend factor source (strip high bit used for reverse) */
+    val |= ((factor & 0x7) << 10);
+
+    /* CC_INVERT_OUTPUT (bit 16) */
     if (invert) {
-        val |= (1 << 16);  /* CC_INVERT_OUTPUT */
+        val |= (1 << 16);
+    }
+
+    /* Set bits based on combine function
+     * The color combine equation is:
+     *   output = (CC_ZERO_OTHER ? 0 : other) * factor
+     *          - (CC_SUB_CLOCAL ? local : 0)
+     *          + (CC_ADD_CLOCAL ? local : 0)
+     *          + (CC_ADD_ALOCAL ? local.a : 0)
+     */
+    switch (function) {
+    case GR_COMBINE_FUNCTION_ZERO:
+        /* output = 0 */
+        val |= (1 << 8);  /* CC_ZERO_OTHER */
+        break;
+
+    case GR_COMBINE_FUNCTION_LOCAL:
+        /* output = local */
+        val |= (1 << 8);   /* CC_ZERO_OTHER */
+        val |= (1 << 14);  /* CC_ADD_CLOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_LOCAL_ALPHA:
+        /* output = local.alpha (broadcast to RGB) */
+        val |= (1 << 8);   /* CC_ZERO_OTHER */
+        val |= (1 << 15);  /* CC_ADD_ALOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER:
+        /* output = other * factor */
+        /* No additional bits needed */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL:
+        /* output = other * factor + local */
+        val |= (1 << 14);  /* CC_ADD_CLOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL_ALPHA:
+        /* output = other * factor + local.alpha */
+        val |= (1 << 15);  /* CC_ADD_ALOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL:
+        /* output = other * factor - local */
+        val |= (1 << 9);   /* CC_SUB_CLOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL:
+        /* output = (other - local) * factor + local = lerp(local, other, factor) */
+        val |= (1 << 9);   /* CC_SUB_CLOCAL */
+        val |= (1 << 14);  /* CC_ADD_CLOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL_ALPHA:
+        /* output = (other - local) * factor + local.alpha */
+        val |= (1 << 9);   /* CC_SUB_CLOCAL */
+        val |= (1 << 15);  /* CC_ADD_ALOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL:
+        /* output = -local * factor + local = local * (1 - factor) */
+        val |= (1 << 8);   /* CC_ZERO_OTHER */
+        val |= (1 << 9);   /* CC_SUB_CLOCAL */
+        val |= (1 << 14);  /* CC_ADD_CLOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL_ALPHA:
+        /* output = -local * factor + local.alpha */
+        val |= (1 << 8);   /* CC_ZERO_OTHER */
+        val |= (1 << 9);   /* CC_SUB_CLOCAL */
+        val |= (1 << 15);  /* CC_ADD_ALOCAL */
+        break;
     }
 
     g_voodoo->reg[fbzColorPath].u = val;
@@ -255,35 +307,103 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
     LOG_FUNC();
     if (!g_voodoo) return;
 
-    /* Build fbzColorPath register value (alpha portion) */
+    /* Build fbzColorPath register value (alpha portion)
+     *
+     * Register bit layout for alpha combine:
+     *   Bits 2-3:   ASELECT          - other alpha source (iterated, texture, c1)
+     *   Bits 5-6:   ALOCALSELECT     - local alpha source (iterated, c0, z, w)
+     *   Bit 17:     CCA_ZERO_OTHER   - zero the other input
+     *   Bit 18:     CCA_SUB_CLOCAL   - subtract local alpha
+     *   Bits 19-21: CCA_MSELECT      - blend factor select
+     *   Bit 22:     CCA_REVERSE_BLEND - invert blend factor (1-factor)
+     *   Bit 23:     CCA_ADD_CLOCAL   - add local (unused for alpha, CCA_ADD_ALOCAL used instead)
+     *   Bit 24:     CCA_ADD_ALOCAL   - add local alpha to result
+     *   Bit 25:     CCA_INVERT_OUTPUT - invert final output
+     */
     uint32_t val = g_voodoo->reg[fbzColorPath].u;
 
-    /*
-     * Alpha combine bits start at bit 17:
-     *   Bit 17:    CCA_ZERO_OTHER
-     *   Bit 18:    CCA_SUB_CLOCAL
-     *   Bits 19-20: CCA_LOCALSELECT
-     *   Bits 21-23: CCA_MSELECT
-     *   Bit 24:    CCA_INVERT_OUTPUT
-     *   Bit 25:    CCA_ADD_ALOCAL
+    /* Clear alpha combine bits:
+     * - ASELECT (bits 2-3)
+     * - ALOCALSELECT (bits 5-6)
+     * - CCA bits (bits 17-25)
      */
+    val &= ~((0x3 << 2) |      /* ASELECT */
+             (0x3 << 5) |      /* ALOCALSELECT */
+             (0x1FF << 17));   /* CCA_ZERO_OTHER through CCA_INVERT_OUTPUT */
 
-    /* Clear alpha combine bits */
-    val &= ~(0x1FF << 17);
+    /* ASELECT (bits 2-3): other alpha source */
+    val |= ((other & 0x3) << 2);
 
-    /* Set function-specific bits */
-    if (function == GR_COMBINE_FUNCTION_ZERO) {
-        val |= (1 << 17);  /* CCA_ZERO_OTHER */
+    /* ALOCALSELECT (bits 5-6): local alpha source */
+    val |= ((local & 0x3) << 5);
+
+    /* Handle reverse blend based on factor
+     * Factor values 0x0-0x7 are base factors
+     * Factor values 0x8-0xF are "one minus" versions
+     * When using base factors (bit 3 = 0), set REVERSE_BLEND
+     */
+    if ((factor & 0x8) == 0) {
+        val |= (1 << 22);  /* CCA_REVERSE_BLEND */
     }
 
+    /* CCA_MSELECT (bits 19-21): blend factor source */
+    val |= ((factor & 0x7) << 19);
+
+    /* CCA_INVERT_OUTPUT (bit 25) */
     if (invert) {
-        val |= (1 << 25);  /* CCA_INVERT_OUTPUT */
+        val |= (1 << 25);
     }
 
-    /* These parameters affect the combine in more complex ways */
-    (void)factor;
-    (void)local;
-    (void)other;
+    /* Set bits based on combine function
+     * The alpha combine equation mirrors color combine:
+     *   output = (CCA_ZERO_OTHER ? 0 : other) * factor
+     *          - (CCA_SUB_CLOCAL ? local : 0)
+     *          + (CCA_ADD_ALOCAL ? local : 0)
+     */
+    switch (function) {
+    case GR_COMBINE_FUNCTION_ZERO:
+        /* output = 0 */
+        val |= (1 << 17);  /* CCA_ZERO_OTHER */
+        break;
+
+    case GR_COMBINE_FUNCTION_LOCAL:
+    case GR_COMBINE_FUNCTION_LOCAL_ALPHA:
+        /* output = local (for alpha, LOCAL and LOCAL_ALPHA are equivalent) */
+        val |= (1 << 17);  /* CCA_ZERO_OTHER */
+        val |= (1 << 24);  /* CCA_ADD_ALOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER:
+        /* output = other * factor */
+        /* No additional bits needed */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL:
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL_ALPHA:
+        /* output = other * factor + local */
+        val |= (1 << 24);  /* CCA_ADD_ALOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL:
+        /* output = other * factor - local */
+        val |= (1 << 18);  /* CCA_SUB_CLOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL:
+    case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL_ALPHA:
+        /* output = (other - local) * factor + local */
+        val |= (1 << 18);  /* CCA_SUB_CLOCAL */
+        val |= (1 << 24);  /* CCA_ADD_ALOCAL */
+        break;
+
+    case GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL:
+    case GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL_ALPHA:
+        /* output = -local * factor + local */
+        val |= (1 << 17);  /* CCA_ZERO_OTHER */
+        val |= (1 << 18);  /* CCA_SUB_CLOCAL */
+        val |= (1 << 24);  /* CCA_ADD_ALOCAL */
+        break;
+    }
 
     g_voodoo->reg[fbzColorPath].u = val;
 }

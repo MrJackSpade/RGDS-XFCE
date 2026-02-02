@@ -28,16 +28,16 @@
 FILE *g_debug_log = NULL;
 int g_call_count = 0;
 
+/* Deduplication state for consecutive identical messages */
+static char g_last_msg[512] = {0};
+static int g_last_msg_count = 0;
+
 /*
- * debug_log - Write a message to the debug log file
+ * debug_log_output - Internal function to write a message
  *
- * Creates the log file on first call. All output is flushed immediately
- * to ensure logs are captured even if the application crashes.
- *
- * Also outputs to Windows debug console via OutputDebugStringA()
- * so messages appear in debugger output windows.
+ * Outputs to both file and Windows debug console.
  */
-void debug_log(const char *msg)
+static void debug_log_output(const char *msg)
 {
     if (!g_debug_log) {
         g_debug_log = fopen("C:\\glide3x_debug.log", "w");
@@ -47,6 +47,64 @@ void debug_log(const char *msg)
         fflush(g_debug_log);
     }
     OutputDebugStringA(msg);
+}
+
+/*
+ * debug_log_flush - Flush any pending deduplicated message
+ *
+ * Call this before shutdown to ensure the last message and its
+ * count are written to the log.
+ *
+ * Only outputs if count > 1 (duplicates occurred). Messages with
+ * count == 1 were already output on first occurrence.
+ */
+void debug_log_flush(void)
+{
+    if (g_last_msg_count > 1) {
+        char buf[600];
+        /* Remove trailing newline from stored message for formatting */
+        size_t len = strlen(g_last_msg);
+        if (len > 0 && g_last_msg[len - 1] == '\n') {
+            g_last_msg[len - 1] = '\0';
+        }
+        snprintf(buf, sizeof(buf), "%s (Called %d times)\n", g_last_msg, g_last_msg_count);
+        debug_log_output(buf);
+    }
+    /* Note: count == 1 means message was already output, no action needed */
+    g_last_msg[0] = '\0';
+    g_last_msg_count = 0;
+}
+
+/*
+ * debug_log - Write a message to the debug log file
+ *
+ * Creates the log file on first call. All output is flushed immediately
+ * to ensure logs are captured even if the application crashes.
+ *
+ * Deduplicates consecutive identical messages by counting them and
+ * outputting "message (Called N times)" when a different message arrives.
+ *
+ * Also outputs to Windows debug console via OutputDebugStringA()
+ * so messages appear in debugger output windows.
+ */
+void debug_log(const char *msg)
+{
+    /* Check if this message matches the last one */
+    if (g_last_msg_count > 0 && strcmp(msg, g_last_msg) == 0) {
+        g_last_msg_count++;
+        return;
+    }
+
+    /* Different message - flush the previous one with count if needed */
+    debug_log_flush();
+
+    /* Store and output the new message */
+    strncpy(g_last_msg, msg, sizeof(g_last_msg) - 1);
+    g_last_msg[sizeof(g_last_msg) - 1] = '\0';
+    g_last_msg_count = 1;
+
+    /* Output immediately for first occurrence */
+    debug_log_output(msg);
 }
 
 /*************************************
@@ -71,6 +129,8 @@ int g_screen_height = 480;
 GrColor_t g_constant_color = 0xFFFFFFFF;
 int g_render_buffer = 1;  /* Default: back buffer */
 int g_lfb_buffer_locked = -1;
+GrLfbWriteMode_t g_lfb_write_mode = GR_LFBWRITEMODE_565;
+GrOriginLocation_t g_lfb_origin = GR_ORIGIN_UPPER_LEFT;
 
 /*************************************
  * Statistics counters
@@ -144,6 +204,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
         }
         /* Destroy window to prevent invalid WndProc callbacks */
         display_destroy_window();
+        /* Flush any pending log messages with counts */
+        debug_log_flush();
         break;
     }
     return TRUE;

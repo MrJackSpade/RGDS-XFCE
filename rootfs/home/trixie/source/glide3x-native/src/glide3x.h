@@ -1259,15 +1259,18 @@ FX_ENTRY void FX_CALL grAlphaTestReferenceValue(GrAlpha_t value);
  * DISABLE: No depth testing (2D mode)
  * ZBUFFER: Use Z values for depth comparison
  * WBUFFER: Use W values (1/W) for depth - more precision at distance
- * ZBUFFER_COMPARE_ONLY: Test but don't write Z
- * WBUFFER_COMPARE_ONLY: Test but don't write W
+ * ZBUFFER_COMPARE_TO_BIAS: Compare Z against zaColor bias value (for decals)
+ * WBUFFER_COMPARE_TO_BIAS: Compare W against zaColor bias value
  */
 typedef FxI32 GrDepthBufferMode_t;
 #define GR_DEPTHBUFFER_DISABLE      0x0
 #define GR_DEPTHBUFFER_ZBUFFER      0x1
 #define GR_DEPTHBUFFER_WBUFFER      0x2
-#define GR_DEPTHBUFFER_ZBUFFER_COMPARE_ONLY 0x3
-#define GR_DEPTHBUFFER_WBUFFER_COMPARE_ONLY 0x4
+#define GR_DEPTHBUFFER_ZBUFFER_COMPARE_TO_BIAS 0x3
+#define GR_DEPTHBUFFER_WBUFFER_COMPARE_TO_BIAS 0x4
+/* Legacy aliases */
+#define GR_DEPTHBUFFER_ZBUFFER_COMPARE_ONLY GR_DEPTHBUFFER_ZBUFFER_COMPARE_TO_BIAS
+#define GR_DEPTHBUFFER_WBUFFER_COMPARE_ONLY GR_DEPTHBUFFER_WBUFFER_COMPARE_TO_BIAS
 
 /*
  * grDepthBufferMode - Enable/configure depth buffering
