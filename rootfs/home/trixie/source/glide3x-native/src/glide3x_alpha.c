@@ -250,23 +250,28 @@ void __stdcall grColorMask(FxBool rgb, FxBool alpha)
 
     uint32_t val = g_voodoo->reg[fbzMode].u;
 
-    /* RGB mask: bit 9, inverted (1 = disable) */
+    /*
+     * RGB mask: bit 9
+     * In Voodoo hardware, bit 9 SET = writes ENABLED (mask allows writes)
+     * This matches voodoo_create() and the rasterizer check.
+     */
     if (rgb) {
-        val &= ~(1 << 9);  /* Enable RGB writes */
+        val |= (1 << 9);   /* Enable RGB writes */
     } else {
-        val |= (1 << 9);   /* Disable RGB writes */
+        val &= ~(1 << 9);  /* Disable RGB writes */
     }
 
     /*
      * Aux mask: bit 10
+     * Same convention: bit SET = writes ENABLED
      * Enable writes if EITHER alpha OR depth mask is enabled.
      * This is because the aux buffer stores depth (which we want
      * to write when depth_mask is true) and potentially alpha.
      */
     if (g_voodoo->alpha_mask || g_voodoo->depth_mask) {
-        val &= ~(1 << 10);  /* Enable aux buffer writes */
+        val |= (1 << 10);   /* Enable aux buffer writes */
     } else {
-        val |= (1 << 10);   /* Disable aux buffer writes */
+        val &= ~(1 << 10);  /* Disable aux buffer writes */
     }
 
     g_voodoo->reg[fbzMode].u = val;

@@ -465,7 +465,7 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
                          FxBool pixelPipeline, FxI32 src_stride, void *src_data)
 {
     g_lfb_write_count++;
-    if (g_lfb_write_count <= 5) {
+    {
         char dbg[128];
         snprintf(dbg, sizeof(dbg),
                  "glide3x: grLfbWriteRegion #%d (buf=%d, x=%u, y=%u, w=%u, h=%u)\n",

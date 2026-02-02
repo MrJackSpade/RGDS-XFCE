@@ -437,7 +437,8 @@ void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
                   GrCombineFactor_t rgb_factor, GrCombineFunction_t alpha_function,
                   GrCombineFactor_t alpha_factor, FxBool rgb_invert, FxBool alpha_invert)
 {
-    LOG_FUNC();
+    LOG("grTexCombine(tmu=%d, rgb_func=%d, rgb_factor=%d, alpha_func=%d, alpha_factor=%d, rgb_inv=%d, alpha_inv=%d)",
+        tmu, rgb_function, rgb_factor, alpha_function, alpha_factor, rgb_invert, alpha_invert);
     if (!g_voodoo) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;

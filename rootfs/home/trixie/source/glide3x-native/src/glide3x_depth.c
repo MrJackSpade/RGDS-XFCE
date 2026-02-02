@@ -242,9 +242,9 @@ void __stdcall grDepthMask(FxBool mask)
 
     /*
      * fbzMode register:
-     *   Bit 10: Auxiliary buffer write disable (shared with alpha)
-     *           0 = writes enabled
-     *           1 = writes disabled
+     *   Bit 10: Auxiliary buffer write mask (shared with alpha)
+     *           In Voodoo hardware, bit SET = writes ENABLED
+     *           This matches the rasterizer check in PIXEL_PIPELINE_FINISH.
      *
      * The aux buffer contains depth (and optionally alpha).
      * We only disable writes if BOTH depth_mask AND alpha_mask are false.
@@ -252,9 +252,9 @@ void __stdcall grDepthMask(FxBool mask)
     uint32_t val = g_voodoo->reg[fbzMode].u;
 
     if (g_voodoo->alpha_mask || g_voodoo->depth_mask) {
-        val &= ~(1 << 10);  /* Enable aux buffer writes */
+        val |= (1 << 10);   /* Enable aux buffer writes */
     } else {
-        val |= (1 << 10);   /* Disable aux buffer writes */
+        val &= ~(1 << 10);  /* Disable aux buffer writes */
     }
 
     g_voodoo->reg[fbzMode].u = val;

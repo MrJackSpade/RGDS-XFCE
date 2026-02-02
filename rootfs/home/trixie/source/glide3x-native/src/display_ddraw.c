@@ -156,6 +156,11 @@ int display_init(int width, int height, HWND hWindow)
 {
     HRESULT hr;
     DDSURFACEDESC2 ddsd;
+    char dbg[256];
+
+    snprintf(dbg, sizeof(dbg), "display_init: Initializing %dx%d (hwnd=%p, prev g_width=%d g_height=%d)\n",
+             width, height, (void*)hWindow, g_width, g_height);
+    display_log(dbg);
 
     g_width = width;
     g_height = height;
@@ -220,9 +225,13 @@ int display_init(int width, int height, HWND hWindow)
 
     hr = IDirectDraw7_CreateSurface(g_dd7, &ddsd, &g_backbuf, NULL);
     if (FAILED(hr)) {
-        OutputDebugStringA("display_ddraw: CreateSurface (backbuf) failed\n");
+        snprintf(dbg, sizeof(dbg), "display_ddraw: CreateSurface (backbuf) failed hr=0x%08lX\n", hr);
+        display_log(dbg);
         goto fail;
     }
+
+    snprintf(dbg, sizeof(dbg), "display_init: Success - created %dx%d backbuffer\n", width, height);
+    display_log(dbg);
 
     return 1;
 
@@ -279,13 +288,32 @@ void display_present(uint16_t *framebuffer, int width, int height)
     char dbg[256];
 
     g_present_count++;
-    if (g_present_count <= 20) {
-        snprintf(dbg, sizeof(dbg), "display_present #%d: %dx%d fb=%p\n",
-                 g_present_count, width, height, (void*)framebuffer);
+    snprintf(dbg, sizeof(dbg), "display_present #%d: %dx%d fb=%p\n",
+             g_present_count, width, height, (void*)framebuffer);
+    display_log(dbg);
+
+    if (!g_backbuf || !g_primary) {
+        snprintf(dbg, sizeof(dbg), "display_present: EARLY RETURN - g_backbuf=%p g_primary=%p\n",
+                 (void*)g_backbuf, (void*)g_primary);
         display_log(dbg);
+        return;
     }
 
-    if (!g_backbuf || !g_primary) return;
+    /* Check if framebuffer has non-zero pixels (sample multiple rows) */
+    {
+        int nonzero_row0 = 0, nonzero_mid = 0;
+        int sample_count = (width < 100) ? width : 100;
+        int mid_row = height / 2;
+        for (int i = 0; i < sample_count; i++) {
+            if (framebuffer[i] != 0) nonzero_row0++;
+            if (framebuffer[mid_row * width + i] != 0) nonzero_mid++;
+        }
+        /* Always log for debugging */
+        snprintf(dbg, sizeof(dbg), "display_present: row0=%d/%d mid=%d/%d non-zero, pix[0]=0x%04X pix[mid]=0x%04X\n",
+                 nonzero_row0, sample_count, nonzero_mid, sample_count,
+                 framebuffer[0], framebuffer[mid_row * width]);
+        display_log(dbg);
+    }
 
     /* Process window messages */
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -335,14 +363,12 @@ void display_present(uint16_t *framebuffer, int width, int height)
                 int client_w = client_rect.right - client_rect.left;
                 int client_h = client_rect.bottom - client_rect.top;
 
-                /* Log only on size change or periodically to avoid spam */
+                /* Log on size change */
                 if (width != client_w || height != client_h) {
-                     if (g_present_count % 60 == 0) { /* Log once every 60 frames if scaling */
-                         char dbg[256];
-                         snprintf(dbg, sizeof(dbg), "display_present: Scaling %dx%d -> %dx%d\n", width, height, client_w, client_h);
-                         display_log(dbg);
-                     }
-                     SetStretchBltMode(hdcWnd, COLORONCOLOR); /* Better quality for shrinking? or HALFTONE? COLORONCOLOR is faster */
+                    char dbg[256];
+                    snprintf(dbg, sizeof(dbg), "display_present: Scaling %dx%d -> %dx%d\n", width, height, client_w, client_h);
+                    display_log(dbg);
+                    SetStretchBltMode(hdcWnd, COLORONCOLOR); /* Better quality for shrinking? or HALFTONE? COLORONCOLOR is faster */
                 }
 
                 StretchBlt(hdcWnd, 0, 0, client_w, client_h, hdcSurf, 0, 0, width, height, SRCCOPY);
