@@ -549,12 +549,29 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
         PIXEL_PIPELINE_MODIFY(vs, dither, dither4, x, r_fbzMode, r_fbzColorPath,
                               r_alphaMode, r_fogMode, iterz, iterw, iterargb);
 
-        /* Log before write with RGB_BUFFER_MASK check */
+        /* Direct test write to diagnose memory issue */
         if (diag_pixel_count <= 5 && x == startx) {
-            char dbg[256];
+            char dbg[512];
             int rgb_mask = FBZMODE_RGB_BUFFER_MASK(r_fbzMode);
+
+            /* Test: direct write to dest[x] */
+            uint16_t test_val = 0x1234;
+            uint16_t *write_addr = &dest[x];
+            uint16_t before = *write_addr;
+            *write_addr = test_val;
+            uint16_t after = *write_addr;
+
             snprintf(dbg, sizeof(dbg),
-                     "DIAG: before write rgb=(%d,%d,%d) dest=%p x=%d RGB_MASK=%d fbzMode=0x%08X\n",
+                     "DIAG: TEST x=%d addr=%p before=0x%04X wrote=0x%04X readback=0x%04X %s\n",
+                     x, (void*)write_addr, before, test_val, after,
+                     (after == test_val) ? "OK" : "WRITE FAILED!");
+            debug_log(dbg);
+
+            /* Restore and let normal pipeline write */
+            *write_addr = before;
+
+            snprintf(dbg, sizeof(dbg),
+                     "DIAG: rgb=(%d,%d,%d) dest=%p x=%d RGB_MASK=%d fbzMode=0x%08X\n",
                      r, g, b, (void*)dest, x, rgb_mask, r_fbzMode);
             debug_log(dbg);
         }
@@ -567,7 +584,7 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
             char dbg[256];
             int rgb_mask = FBZMODE_RGB_BUFFER_MASK(r_fbzMode);
             snprintf(dbg, sizeof(dbg),
-                     "DIAG: after write dest[%d]=0x%04X (should be non-zero if RGB_MASK=%d)\n",
+                     "DIAG: after FINISH dest[%d]=0x%04X (should be non-zero if RGB_MASK=%d)\n",
                      x, dest[x], rgb_mask);
             debug_log(dbg);
         }
