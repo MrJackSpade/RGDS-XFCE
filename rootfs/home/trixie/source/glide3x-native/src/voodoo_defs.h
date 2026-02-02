@@ -69,6 +69,7 @@ typedef enum {
  * FBZCOLORPATH register bits
  *************************************/
 
+/* Getter macros (extract field from register value) */
 #define FBZCP_CC_RGBSELECT(val)             (((val) >> 0) & 3)
 #define FBZCP_CC_ASELECT(val)               (((val) >> 2) & 3)
 #define FBZCP_CC_LOCALSELECT(val)           (((val) >> 4) & 1)
@@ -91,10 +92,42 @@ typedef enum {
 #define FBZCP_RGBZW_CLAMP(val)              (((val) >> 28) & 1)
 #define FBZCP_ANTI_ALIAS(val)               (((val) >> 29) & 1)
 
+/* Bit positions and masks for setting register values */
+#define FBZCP_CC_RGBSELECT_SHIFT        0
+#define FBZCP_CC_RGBSELECT_MASK         (0x3 << 0)
+#define FBZCP_CC_ASELECT_SHIFT          2
+#define FBZCP_CC_ASELECT_MASK           (0x3 << 2)
+#define FBZCP_CC_LOCALSELECT_SHIFT      4
+#define FBZCP_CC_LOCALSELECT_BIT        (1 << 4)
+#define FBZCP_CCA_LOCALSELECT_SHIFT     5
+#define FBZCP_CCA_LOCALSELECT_MASK      (0x3 << 5)
+#define FBZCP_CC_ZERO_OTHER_BIT         (1 << 8)
+#define FBZCP_CC_SUB_CLOCAL_BIT         (1 << 9)
+#define FBZCP_CC_MSELECT_SHIFT          10
+#define FBZCP_CC_MSELECT_MASK           (0x7 << 10)
+#define FBZCP_CC_REVERSE_BLEND_BIT      (1 << 13)
+#define FBZCP_CC_ADD_CLOCAL_BIT         (1 << 14)
+#define FBZCP_CC_ADD_ALOCAL_BIT         (1 << 15)
+#define FBZCP_CC_INVERT_OUTPUT_BIT      (1 << 16)
+#define FBZCP_CCA_ZERO_OTHER_BIT        (1 << 17)
+#define FBZCP_CCA_SUB_CLOCAL_BIT        (1 << 18)
+#define FBZCP_CCA_MSELECT_SHIFT         19
+#define FBZCP_CCA_MSELECT_MASK          (0x7 << 19)
+#define FBZCP_CCA_REVERSE_BLEND_BIT     (1 << 22)
+#define FBZCP_CCA_ADD_CLOCAL_BIT        (1 << 23)
+#define FBZCP_CCA_ADD_ALOCAL_BIT        (1 << 24)
+#define FBZCP_CCA_INVERT_OUTPUT_BIT     (1 << 25)
+#define FBZCP_TEXTURE_ENABLE_BIT        (1 << 27)
+
+/* Masks for clearing color combine / alpha combine sections */
+#define FBZCP_CC_BITS_MASK              0x1FFFF       /* Bits 0-16: color combine */
+#define FBZCP_CCA_BITS_MASK             ((0x3 << 2) | (0x3 << 5) | (0x1FF << 17))
+
 /*************************************
  * ALPHAMODE register bits
  *************************************/
 
+/* Getter macros */
 #define ALPHAMODE_ALPHATEST(val)            (((val) >> 0) & 1)
 #define ALPHAMODE_ALPHAFUNCTION(val)        (((val) >> 1) & 7)
 #define ALPHAMODE_ALPHABLEND(val)           (((val) >> 4) & 1)
@@ -104,6 +137,19 @@ typedef enum {
 #define ALPHAMODE_SRCALPHABLEND(val)        (((val) >> 16) & 15)
 #define ALPHAMODE_DSTALPHABLEND(val)        (((val) >> 20) & 15)
 #define ALPHAMODE_ALPHAREF(val)             (((val) >> 24) & 0xff)
+
+/* Bit positions and masks for setting register values */
+#define ALPHAMODE_ALPHATEST_BIT             (1 << 0)
+#define ALPHAMODE_ALPHAFUNCTION_SHIFT       1
+#define ALPHAMODE_ALPHAFUNCTION_MASK        (0x7 << 1)
+#define ALPHAMODE_ALPHABLEND_BIT            (1 << 4)
+#define ALPHAMODE_SRCRGBBLEND_SHIFT         8
+#define ALPHAMODE_DSTRGBBLEND_SHIFT         12
+#define ALPHAMODE_SRCALPHABLEND_SHIFT       16
+#define ALPHAMODE_DSTALPHABLEND_SHIFT       20
+#define ALPHAMODE_ALPHAREF_SHIFT            24
+#define ALPHAMODE_ALPHAREF_MASK             (0xFF << 24)
+#define ALPHAMODE_BLEND_BITS_MASK           0x00FFFFF0  /* Bits 4-23: all blend settings */
 
 /*************************************
  * FOGMODE register bits
@@ -121,6 +167,7 @@ typedef enum {
  * FBZMODE register bits
  *************************************/
 
+/* Getter macros */
 #define FBZMODE_ENABLE_CLIPPING(val)        (((val) >> 0) & 1)
 #define FBZMODE_ENABLE_CHROMAKEY(val)       (((val) >> 1) & 1)
 #define FBZMODE_ENABLE_STIPPLE(val)         (((val) >> 2) & 1)
@@ -140,6 +187,29 @@ typedef enum {
 #define FBZMODE_ALPHA_DITHER_SUBTRACT(val)  (((val) >> 19) & 1)
 #define FBZMODE_DEPTH_SOURCE_COMPARE(val)   (((val) >> 20) & 1)
 #define FBZMODE_DEPTH_FLOAT_SELECT(val)     (((val) >> 21) & 1)
+
+/* Bit positions and masks for setting register values */
+#define FBZMODE_ENABLE_CLIPPING_BIT         (1 << 0)
+#define FBZMODE_ENABLE_CHROMAKEY_BIT        (1 << 1)
+#define FBZMODE_ENABLE_STIPPLE_BIT          (1 << 2)
+#define FBZMODE_WBUFFER_SELECT_BIT          (1 << 3)
+#define FBZMODE_ENABLE_DEPTHBUF_BIT         (1 << 4)
+#define FBZMODE_DEPTH_FUNCTION_SHIFT        5
+#define FBZMODE_DEPTH_FUNCTION_MASK         (0x7 << 5)
+#define FBZMODE_ENABLE_DITHERING_BIT        (1 << 8)
+#define FBZMODE_RGB_BUFFER_MASK_BIT         (1 << 9)
+#define FBZMODE_AUX_BUFFER_MASK_BIT         (1 << 10)
+#define FBZMODE_DITHER_TYPE_BIT             (1 << 11)
+#define FBZMODE_STIPPLE_PATTERN_BIT         (1 << 12)
+#define FBZMODE_ENABLE_ALPHA_MASK_BIT       (1 << 13)
+#define FBZMODE_DRAW_BUFFER_SHIFT           14
+#define FBZMODE_DRAW_BUFFER_MASK            (0x3 << 14)
+#define FBZMODE_ENABLE_DEPTH_BIAS_BIT       (1 << 16)
+#define FBZMODE_Y_ORIGIN_BIT                (1 << 17)
+#define FBZMODE_ENABLE_ALPHA_PLANES_BIT     (1 << 18)
+#define FBZMODE_ALPHA_DITHER_SUBTRACT_BIT   (1 << 19)
+#define FBZMODE_DEPTH_SOURCE_COMPARE_BIT    (1 << 20)
+#define FBZMODE_DEPTH_FLOAT_SELECT_BIT      (1 << 21)
 
 /*************************************
  * LFBMODE register bits
@@ -217,6 +287,35 @@ typedef enum {
 #define TEXMODE_TCA_INVERT_OUTPUT(val)      (((val) >> 29) & 1)
 #define TEXMODE_TRILINEAR(val)              (((val) >> 30) & 1)
 #define TEXMODE_SEQ_8_DOWNLD(val)           (((val) >> 31) & 1)
+
+/* Bit positions and masks for setting register values */
+#define TEXMODE_MINIFICATION_FILTER_BIT     (1 << 1)
+#define TEXMODE_MAGNIFICATION_FILTER_BIT    (1 << 2)
+#define TEXMODE_CLAMP_S_BIT                 (1 << 6)
+#define TEXMODE_CLAMP_T_BIT                 (1 << 7)
+#define TEXMODE_FORMAT_SHIFT                8
+#define TEXMODE_FORMAT_MASK                 (0xF << 8)
+#define TEXMODE_TC_ZERO_OTHER_BIT           (1 << 12)
+#define TEXMODE_TC_SUB_CLOCAL_BIT           (1 << 13)
+#define TEXMODE_TC_MSELECT_SHIFT            14
+#define TEXMODE_TC_MSELECT_MASK             (0x7 << 14)
+#define TEXMODE_TC_REVERSE_BLEND_BIT        (1 << 17)
+#define TEXMODE_TC_ADD_CLOCAL_BIT           (1 << 18)
+#define TEXMODE_TC_ADD_ALOCAL_BIT           (1 << 19)
+#define TEXMODE_TC_INVERT_OUTPUT_BIT        (1 << 20)
+#define TEXMODE_TCA_ZERO_OTHER_BIT          (1 << 21)
+#define TEXMODE_TCA_SUB_CLOCAL_BIT          (1 << 22)
+#define TEXMODE_TCA_MSELECT_SHIFT           23
+#define TEXMODE_TCA_MSELECT_MASK            (0x7 << 23)
+#define TEXMODE_TCA_REVERSE_BLEND_BIT       (1 << 26)
+#define TEXMODE_TCA_ADD_CLOCAL_BIT          (1 << 27)
+#define TEXMODE_TCA_ADD_ALOCAL_BIT          (1 << 28)
+#define TEXMODE_TCA_INVERT_OUTPUT_BIT       (1 << 29)
+/* Mask for clearing all texture combine bits (RGB + Alpha) */
+#define TEXMODE_TC_BITS_MASK                (0x1FF << 12)
+#define TEXMODE_TCA_BITS_MASK               (0x1FF << 21)
+/* Combined mask to clear both filter bits */
+#define TEXMODE_FILTER_MASK                 ((1 << 1) | (1 << 2))
 
 /*************************************
  * TEXLOD register bits

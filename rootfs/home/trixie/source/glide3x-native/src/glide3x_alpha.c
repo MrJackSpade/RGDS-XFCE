@@ -132,15 +132,15 @@ void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
 
     uint32_t val = g_voodoo->reg[alphaMode].u;
 
-    /* Clear and set alpha function (bits 1-3) */
-    val &= ~(7 << 1);
-    val |= ((function & 7) << 1);
+    /* Clear and set alpha function */
+    val &= ~ALPHAMODE_ALPHAFUNCTION_MASK;
+    val |= ((function & 0x7) << ALPHAMODE_ALPHAFUNCTION_SHIFT);
 
-    /* Enable alpha test (bit 0) if function is not ALWAYS */
+    /* Enable alpha test if function is not ALWAYS */
     if (function != GR_CMP_ALWAYS) {
-        val |= 1;
+        val |= ALPHAMODE_ALPHATEST_BIT;
     } else {
-        val &= ~1;
+        val &= ~ALPHAMODE_ALPHATEST_BIT;
     }
 
     g_voodoo->reg[alphaMode].u = val;
@@ -183,9 +183,9 @@ void __stdcall grAlphaTestReferenceValue(GrAlpha_t value)
 
     uint32_t val = g_voodoo->reg[alphaMode].u;
 
-    /* Clear and set alpha reference value (bits 24-31) */
-    val &= ~(0xFF << 24);
-    val |= ((value & 0xFF) << 24);
+    /* Clear and set alpha reference value */
+    val &= ~ALPHAMODE_ALPHAREF_MASK;
+    val |= ((value & 0xFF) << ALPHAMODE_ALPHAREF_SHIFT);
 
     g_voodoo->reg[alphaMode].u = val;
 }
@@ -251,27 +251,27 @@ void __stdcall grColorMask(FxBool rgb, FxBool alpha)
     uint32_t val = g_voodoo->reg[fbzMode].u;
 
     /*
-     * RGB mask: bit 9
-     * In Voodoo hardware, bit 9 SET = writes ENABLED (mask allows writes)
+     * RGB mask: FBZMODE_RGB_BUFFER_MASK_BIT
+     * In Voodoo hardware, bit SET = writes ENABLED (mask allows writes)
      * This matches voodoo_create() and the rasterizer check.
      */
     if (rgb) {
-        val |= (1 << 9);   /* Enable RGB writes */
+        val |= FBZMODE_RGB_BUFFER_MASK_BIT;
     } else {
-        val &= ~(1 << 9);  /* Disable RGB writes */
+        val &= ~FBZMODE_RGB_BUFFER_MASK_BIT;
     }
 
     /*
-     * Aux mask: bit 10
+     * Aux mask: FBZMODE_AUX_BUFFER_MASK_BIT
      * Same convention: bit SET = writes ENABLED
      * Enable writes if EITHER alpha OR depth mask is enabled.
      * This is because the aux buffer stores depth (which we want
      * to write when depth_mask is true) and potentially alpha.
      */
     if (g_voodoo->alpha_mask || g_voodoo->depth_mask) {
-        val |= (1 << 10);   /* Enable aux buffer writes */
+        val |= FBZMODE_AUX_BUFFER_MASK_BIT;
     } else {
-        val &= ~(1 << 10);  /* Disable aux buffer writes */
+        val &= ~FBZMODE_AUX_BUFFER_MASK_BIT;
     }
 
     g_voodoo->reg[fbzMode].u = val;

@@ -254,8 +254,8 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
 
     /* Set format in TEXTUREMODE register */
     uint32_t texmode = ts->reg ? ts->reg->u : 0;
-    texmode &= ~(0xF << 8);
-    texmode |= (get_voodoo_format(info->format) << 8);
+    texmode &= ~TEXMODE_FORMAT_MASK;
+    texmode |= (get_voodoo_format(info->format) << TEXMODE_FORMAT_SHIFT);
     if (ts->reg) ts->reg->u = texmode;
 
     /* Set lookup table based on format */
@@ -448,69 +448,50 @@ void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
 
     uint32_t val = ts->reg->u;
 
-    /* Clear texture combine bits
-     * RGB: bits 12-20
-     * Alpha: bits 21-29
-     */
-    val &= ~((0x1FF << 12) | (0x1FF << 21));
+    /* Clear texture combine bits (RGB and Alpha) */
+    val &= ~(TEXMODE_TC_BITS_MASK | TEXMODE_TCA_BITS_MASK);
 
-    /* RGB combine
-     * Bit 12:    TC_ZERO_OTHER
-     * Bit 13:    TC_SUB_CLOCAL
-     * Bits 14-16: TC_MSELECT
-     * Bit 17:    TC_REVERSE_BLEND
-     * Bit 18:    TC_ADD_CLOCAL
-     * Bit 19:    TC_ADD_ALOCAL
-     * Bit 20:    TC_INVERT_OUTPUT
-     */
+    /* RGB combine */
     if (rgb_function == GR_COMBINE_FUNCTION_ZERO)
-        val |= (1 << 12);  /* TC_ZERO_OTHER */
+        val |= TEXMODE_TC_ZERO_OTHER_BIT;
 
-    /* TC_MSELECT (bits 14-16): blend factor source */
-    val |= ((rgb_factor & 0x7) << 14);
+    /* TC_MSELECT: blend factor source */
+    val |= ((rgb_factor & 0x7) << TEXMODE_TC_MSELECT_SHIFT);
 
-    /* TC_REVERSE_BLEND (bit 17): set for base factors (0-7), clear for ONE_MINUS (8-F) */
+    /* TC_REVERSE_BLEND: set for base factors (0-7), clear for ONE_MINUS (8-F) */
     if ((rgb_factor & 0x8) == 0)
-        val |= (1 << 17);
+        val |= TEXMODE_TC_REVERSE_BLEND_BIT;
 
     if (rgb_function == GR_COMBINE_FUNCTION_LOCAL ||
         rgb_function == GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL ||
         rgb_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL ||
         rgb_function == GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL)
-        val |= (1 << 18);  /* TC_ADD_CLOCAL */
+        val |= TEXMODE_TC_ADD_CLOCAL_BIT;
 
     if (rgb_function == GR_COMBINE_FUNCTION_LOCAL_ALPHA ||
         rgb_function == GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL_ALPHA ||
         rgb_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL_ALPHA ||
         rgb_function == GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL_ALPHA)
-        val |= (1 << 19);  /* TC_ADD_ALOCAL */
+        val |= TEXMODE_TC_ADD_ALOCAL_BIT;
 
     if (rgb_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL ||
         rgb_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL ||
         rgb_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL_ALPHA)
-        val |= (1 << 13);  /* TC_SUB_CLOCAL */
+        val |= TEXMODE_TC_SUB_CLOCAL_BIT;
 
     if (rgb_invert)
-        val |= (1 << 20);  /* TC_INVERT_OUTPUT */
+        val |= TEXMODE_TC_INVERT_OUTPUT_BIT;
 
-    /* Alpha combine
-     * Bit 21:    TCA_ZERO_OTHER
-     * Bit 22:    TCA_SUB_CLOCAL
-     * Bits 23-25: TCA_MSELECT
-     * Bit 26:    TCA_REVERSE_BLEND
-     * Bit 27:    TCA_ADD_CLOCAL
-     * Bit 28:    TCA_ADD_ALOCAL
-     * Bit 29:    TCA_INVERT_OUTPUT
-     */
+    /* Alpha combine */
     if (alpha_function == GR_COMBINE_FUNCTION_ZERO)
-        val |= (1 << 21);  /* TCA_ZERO_OTHER */
+        val |= TEXMODE_TCA_ZERO_OTHER_BIT;
 
-    /* TCA_MSELECT (bits 23-25): blend factor source */
-    val |= ((alpha_factor & 0x7) << 23);
+    /* TCA_MSELECT: blend factor source */
+    val |= ((alpha_factor & 0x7) << TEXMODE_TCA_MSELECT_SHIFT);
 
-    /* TCA_REVERSE_BLEND (bit 26): set for base factors (0-7), clear for ONE_MINUS (8-F) */
+    /* TCA_REVERSE_BLEND: set for base factors (0-7), clear for ONE_MINUS (8-F) */
     if ((alpha_factor & 0x8) == 0)
-        val |= (1 << 26);
+        val |= TEXMODE_TCA_REVERSE_BLEND_BIT;
 
     if (alpha_function == GR_COMBINE_FUNCTION_LOCAL ||
         alpha_function == GR_COMBINE_FUNCTION_LOCAL_ALPHA ||
@@ -520,15 +501,15 @@ void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
         alpha_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL_ALPHA ||
         alpha_function == GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL ||
         alpha_function == GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL_ALPHA)
-        val |= (1 << 28);  /* TCA_ADD_ALOCAL */
+        val |= TEXMODE_TCA_ADD_ALOCAL_BIT;
 
     if (alpha_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL ||
         alpha_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL ||
         alpha_function == GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL_ALPHA)
-        val |= (1 << 22);  /* TCA_SUB_CLOCAL */
+        val |= TEXMODE_TCA_SUB_CLOCAL_BIT;
 
     if (alpha_invert)
-        val |= (1 << 29);  /* TCA_INVERT_OUTPUT */
+        val |= TEXMODE_TCA_INVERT_OUTPUT_BIT;
 
     ts->reg->u = val;
 }
@@ -548,12 +529,12 @@ void __stdcall grTexFilterMode(GrChipID_t tmu, GrTextureFilterMode_t minfilter_m
     if (!ts->reg) return;
 
     uint32_t val = ts->reg->u;
-    val &= ~(3 << 1);
+    val &= ~TEXMODE_FILTER_MASK;
 
     if (minfilter_mode == GR_TEXTUREFILTER_BILINEAR)
-        val |= (1 << 1);
+        val |= TEXMODE_MINIFICATION_FILTER_BIT;
     if (magfilter_mode == GR_TEXTUREFILTER_BILINEAR)
-        val |= (1 << 2);
+        val |= TEXMODE_MAGNIFICATION_FILTER_BIT;
 
     ts->reg->u = val;
 }
@@ -572,12 +553,12 @@ void __stdcall grTexClampMode(GrChipID_t tmu, GrTextureClampMode_t s_clamp, GrTe
     if (!ts->reg) return;
 
     uint32_t val = ts->reg->u;
-    val &= ~((1 << 6) | (1 << 7));
+    val &= ~(TEXMODE_CLAMP_S_BIT | TEXMODE_CLAMP_T_BIT);
 
     if (s_clamp == GR_TEXTURECLAMP_CLAMP)
-        val |= (1 << 6);
+        val |= TEXMODE_CLAMP_S_BIT;
     if (t_clamp == GR_TEXTURECLAMP_CLAMP)
-        val |= (1 << 7);
+        val |= TEXMODE_CLAMP_T_BIT;
 
     ts->reg->u = val;
 }

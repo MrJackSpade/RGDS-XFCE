@@ -161,14 +161,30 @@ void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t fa
      */
     uint32_t val = g_voodoo->reg[fbzColorPath].u;
 
-    /* Clear color combine bits (0-16) but preserve alpha combine bits (17+) */
-    val &= ~0x1FFFF;
+    /* Clear color combine bits (0-16).
+     * Preserve alpha combine bits (17-26), texture enable (27), and other high bits.
+     * Both grColorCombine and grAlphaCombine can set TEXTURE_ENABLE (bit 27).
+     */
+    val &= ~FBZCP_CC_BITS_MASK;
 
     /* CC_RGBSELECT (bits 0-1): other color source */
-    val |= (other & 0x3);
+    val |= ((other & 0x3) << FBZCP_CC_RGBSELECT_SHIFT);
+
+    /*
+     * Set TEXTURE_ENABLE (bit 27) if color combine requires texture.
+     * Per 3dfx SDK: cc_requires_texture when:
+     *   - other == GR_COMBINE_OTHER_TEXTURE
+     *   - factor == GR_COMBINE_FACTOR_TEXTURE_ALPHA
+     *   - factor == GR_COMBINE_FACTOR_TEXTURE_RGB
+     */
+    if (other == GR_COMBINE_OTHER_TEXTURE ||
+        (factor & 0x7) == GR_COMBINE_FACTOR_TEXTURE_ALPHA ||
+        (factor & 0x7) == GR_COMBINE_FACTOR_TEXTURE_RGB) {
+        val |= FBZCP_TEXTURE_ENABLE_BIT;
+    }
 
     /* CC_LOCALSELECT (bit 4): local color source */
-    val |= ((local & 0x1) << 4);
+    val |= ((local & 0x1) << FBZCP_CC_LOCALSELECT_SHIFT);
 
     /* Handle reverse blend based on factor
      * Factor values 0x0-0x7 are base factors
@@ -177,15 +193,15 @@ void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t fa
      * When using "one minus" factors (bit 3 = 1), don't set REVERSE_BLEND
      */
     if ((factor & 0x8) == 0) {
-        val |= (1 << 13);  /* CC_REVERSE_BLEND */
+        val |= FBZCP_CC_REVERSE_BLEND_BIT;
     }
 
     /* CC_MSELECT (bits 10-12): blend factor source (strip high bit used for reverse) */
-    val |= ((factor & 0x7) << 10);
+    val |= ((factor & 0x7) << FBZCP_CC_MSELECT_SHIFT);
 
     /* CC_INVERT_OUTPUT (bit 16) */
     if (invert) {
-        val |= (1 << 16);
+        val |= FBZCP_CC_INVERT_OUTPUT_BIT;
     }
 
     /* Set bits based on combine function
@@ -198,19 +214,19 @@ void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t fa
     switch (function) {
     case GR_COMBINE_FUNCTION_ZERO:
         /* output = 0 */
-        val |= (1 << 8);  /* CC_ZERO_OTHER */
+        val |= FBZCP_CC_ZERO_OTHER_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_LOCAL:
         /* output = local */
-        val |= (1 << 8);   /* CC_ZERO_OTHER */
-        val |= (1 << 14);  /* CC_ADD_CLOCAL */
+        val |= FBZCP_CC_ZERO_OTHER_BIT;
+        val |= FBZCP_CC_ADD_CLOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_LOCAL_ALPHA:
         /* output = local.alpha (broadcast to RGB) */
-        val |= (1 << 8);   /* CC_ZERO_OTHER */
-        val |= (1 << 15);  /* CC_ADD_ALOCAL */
+        val |= FBZCP_CC_ZERO_OTHER_BIT;
+        val |= FBZCP_CC_ADD_ALOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER:
@@ -220,43 +236,43 @@ void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t fa
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL:
         /* output = other * factor + local */
-        val |= (1 << 14);  /* CC_ADD_CLOCAL */
+        val |= FBZCP_CC_ADD_CLOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL_ALPHA:
         /* output = other * factor + local.alpha */
-        val |= (1 << 15);  /* CC_ADD_ALOCAL */
+        val |= FBZCP_CC_ADD_ALOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL:
         /* output = other * factor - local */
-        val |= (1 << 9);   /* CC_SUB_CLOCAL */
+        val |= FBZCP_CC_SUB_CLOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL:
         /* output = (other - local) * factor + local = lerp(local, other, factor) */
-        val |= (1 << 9);   /* CC_SUB_CLOCAL */
-        val |= (1 << 14);  /* CC_ADD_CLOCAL */
+        val |= FBZCP_CC_SUB_CLOCAL_BIT;
+        val |= FBZCP_CC_ADD_CLOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL_ALPHA:
         /* output = (other - local) * factor + local.alpha */
-        val |= (1 << 9);   /* CC_SUB_CLOCAL */
-        val |= (1 << 15);  /* CC_ADD_ALOCAL */
+        val |= FBZCP_CC_SUB_CLOCAL_BIT;
+        val |= FBZCP_CC_ADD_ALOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL:
         /* output = -local * factor + local = local * (1 - factor) */
-        val |= (1 << 8);   /* CC_ZERO_OTHER */
-        val |= (1 << 9);   /* CC_SUB_CLOCAL */
-        val |= (1 << 14);  /* CC_ADD_CLOCAL */
+        val |= FBZCP_CC_ZERO_OTHER_BIT;
+        val |= FBZCP_CC_SUB_CLOCAL_BIT;
+        val |= FBZCP_CC_ADD_CLOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL_ALPHA:
         /* output = -local * factor + local.alpha */
-        val |= (1 << 8);   /* CC_ZERO_OTHER */
-        val |= (1 << 9);   /* CC_SUB_CLOCAL */
-        val |= (1 << 15);  /* CC_ADD_ALOCAL */
+        val |= FBZCP_CC_ZERO_OTHER_BIT;
+        val |= FBZCP_CC_SUB_CLOCAL_BIT;
+        val |= FBZCP_CC_ADD_ALOCAL_BIT;
         break;
     }
 
@@ -328,16 +344,28 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
      * - ASELECT (bits 2-3)
      * - ALOCALSELECT (bits 5-6)
      * - CCA bits (bits 17-25)
+     * Note: We preserve bit 27 (TEXTURE_ENABLE) - grColorCombine handles it,
+     * but we can also set it if alpha combine requires texture.
      */
-    val &= ~((0x3 << 2) |      /* ASELECT */
-             (0x3 << 5) |      /* ALOCALSELECT */
-             (0x1FF << 17));   /* CCA_ZERO_OTHER through CCA_INVERT_OUTPUT */
+    val &= ~FBZCP_CCA_BITS_MASK;
 
     /* ASELECT (bits 2-3): other alpha source */
-    val |= ((other & 0x3) << 2);
+    val |= ((other & 0x3) << FBZCP_CC_ASELECT_SHIFT);
+
+    /*
+     * Set TEXTURE_ENABLE (bit 27) if alpha combine requires texture.
+     * This complements grColorCombine - either function can enable texturing.
+     * Per 3dfx SDK: ac_requires_texture when:
+     *   - other == GR_COMBINE_OTHER_TEXTURE
+     *   - factor == GR_COMBINE_FACTOR_TEXTURE_ALPHA
+     */
+    if (other == GR_COMBINE_OTHER_TEXTURE ||
+        (factor & 0x7) == GR_COMBINE_FACTOR_TEXTURE_ALPHA) {
+        val |= FBZCP_TEXTURE_ENABLE_BIT;
+    }
 
     /* ALOCALSELECT (bits 5-6): local alpha source */
-    val |= ((local & 0x3) << 5);
+    val |= ((local & 0x3) << FBZCP_CCA_LOCALSELECT_SHIFT);
 
     /* Handle reverse blend based on factor
      * Factor values 0x0-0x7 are base factors
@@ -345,15 +373,15 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
      * When using base factors (bit 3 = 0), set REVERSE_BLEND
      */
     if ((factor & 0x8) == 0) {
-        val |= (1 << 22);  /* CCA_REVERSE_BLEND */
+        val |= FBZCP_CCA_REVERSE_BLEND_BIT;
     }
 
     /* CCA_MSELECT (bits 19-21): blend factor source */
-    val |= ((factor & 0x7) << 19);
+    val |= ((factor & 0x7) << FBZCP_CCA_MSELECT_SHIFT);
 
     /* CCA_INVERT_OUTPUT (bit 25) */
     if (invert) {
-        val |= (1 << 25);
+        val |= FBZCP_CCA_INVERT_OUTPUT_BIT;
     }
 
     /* Set bits based on combine function
@@ -365,14 +393,14 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
     switch (function) {
     case GR_COMBINE_FUNCTION_ZERO:
         /* output = 0 */
-        val |= (1 << 17);  /* CCA_ZERO_OTHER */
+        val |= FBZCP_CCA_ZERO_OTHER_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_LOCAL:
     case GR_COMBINE_FUNCTION_LOCAL_ALPHA:
         /* output = local (for alpha, LOCAL and LOCAL_ALPHA are equivalent) */
-        val |= (1 << 17);  /* CCA_ZERO_OTHER */
-        val |= (1 << 24);  /* CCA_ADD_ALOCAL */
+        val |= FBZCP_CCA_ZERO_OTHER_BIT;
+        val |= FBZCP_CCA_ADD_ALOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER:
@@ -383,27 +411,27 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
     case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL:
     case GR_COMBINE_FUNCTION_SCALE_OTHER_ADD_LOCAL_ALPHA:
         /* output = other * factor + local */
-        val |= (1 << 24);  /* CCA_ADD_ALOCAL */
+        val |= FBZCP_CCA_ADD_ALOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL:
         /* output = other * factor - local */
-        val |= (1 << 18);  /* CCA_SUB_CLOCAL */
+        val |= FBZCP_CCA_SUB_CLOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL:
     case GR_COMBINE_FUNCTION_SCALE_OTHER_MINUS_LOCAL_ADD_LOCAL_ALPHA:
         /* output = (other - local) * factor + local */
-        val |= (1 << 18);  /* CCA_SUB_CLOCAL */
-        val |= (1 << 24);  /* CCA_ADD_ALOCAL */
+        val |= FBZCP_CCA_SUB_CLOCAL_BIT;
+        val |= FBZCP_CCA_ADD_ALOCAL_BIT;
         break;
 
     case GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL:
     case GR_COMBINE_FUNCTION_SCALE_MINUS_LOCAL_ADD_LOCAL_ALPHA:
         /* output = -local * factor + local */
-        val |= (1 << 17);  /* CCA_ZERO_OTHER */
-        val |= (1 << 18);  /* CCA_SUB_CLOCAL */
-        val |= (1 << 24);  /* CCA_ADD_ALOCAL */
+        val |= FBZCP_CCA_ZERO_OTHER_BIT;
+        val |= FBZCP_CCA_SUB_CLOCAL_BIT;
+        val |= FBZCP_CCA_ADD_ALOCAL_BIT;
         break;
     }
 

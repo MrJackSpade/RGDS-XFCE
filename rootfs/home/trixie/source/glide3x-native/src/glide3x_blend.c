@@ -157,16 +157,16 @@ void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t 
      * - Bits 0-3: Alpha test (enable + function)
      * - Bits 24-31: Alpha reference value
      */
-    val &= 0xFF00000F;
+    val &= ~ALPHAMODE_BLEND_BITS_MASK;
 
     /* Pack blend factors */
-    val |= (rgb_sf & 0xF) << 8;     /* RGB source factor */
-    val |= (rgb_df & 0xF) << 12;    /* RGB destination factor */
-    val |= (alpha_sf & 0xF) << 16;  /* Alpha source factor */
-    val |= (alpha_df & 0xF) << 20;  /* Alpha destination factor */
+    val |= (rgb_sf & 0xF) << ALPHAMODE_SRCRGBBLEND_SHIFT;
+    val |= (rgb_df & 0xF) << ALPHAMODE_DSTRGBBLEND_SHIFT;
+    val |= (alpha_sf & 0xF) << ALPHAMODE_SRCALPHABLEND_SHIFT;
+    val |= (alpha_df & 0xF) << ALPHAMODE_DSTALPHABLEND_SHIFT;
 
-    /* Enable alpha blending (bit 4) */
-    val |= (1 << 4);
+    /* Enable alpha blending */
+    val |= ALPHAMODE_ALPHABLEND_BIT;
 
     g_voodoo->reg[alphaMode].u = val;
 }

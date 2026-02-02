@@ -230,8 +230,8 @@ void __stdcall grRenderBuffer(GrBuffer_t buffer)
     /* Update fbzMode register for voodoo_triangle */
     if (g_voodoo) {
         uint32_t val = g_voodoo->reg[fbzMode].u;
-        val &= ~(3 << 14);           /* Clear draw buffer bits */
-        val |= (g_render_buffer << 14);  /* Set draw buffer */
+        val &= ~FBZMODE_DRAW_BUFFER_MASK;
+        val |= (g_render_buffer << FBZMODE_DRAW_BUFFER_SHIFT);
         g_voodoo->reg[fbzMode].u = val;
     }
 }

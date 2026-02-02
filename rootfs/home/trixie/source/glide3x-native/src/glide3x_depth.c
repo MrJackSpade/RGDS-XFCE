@@ -128,22 +128,22 @@ void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
     uint32_t val = g_voodoo->reg[fbzMode].u;
 
     /* Clear depth-related bits first */
-    val &= ~((1 << 3) | (1 << 4) | (1 << 20));
+    val &= ~(FBZMODE_WBUFFER_SELECT_BIT | FBZMODE_ENABLE_DEPTHBUF_BIT | FBZMODE_DEPTH_SOURCE_COMPARE_BIT);
 
-    /* Bit 4: Enable depth buffer */
+    /* Enable depth buffer */
     if (mode != GR_DEPTHBUFFER_DISABLE) {
-        val |= (1 << 4);   /* Enable depth testing */
+        val |= FBZMODE_ENABLE_DEPTHBUF_BIT;
     }
 
-    /* Bit 3: W-buffer select */
+    /* W-buffer select */
     if (mode == GR_DEPTHBUFFER_WBUFFER || mode == GR_DEPTHBUFFER_WBUFFER_COMPARE_TO_BIAS) {
-        val |= (1 << 3);   /* Use W-buffer */
+        val |= FBZMODE_WBUFFER_SELECT_BIT;
     }
 
-    /* Bit 20: Compare to bias value instead of buffer */
+    /* Compare to bias value instead of buffer */
     if (mode == GR_DEPTHBUFFER_ZBUFFER_COMPARE_TO_BIAS ||
         mode == GR_DEPTHBUFFER_WBUFFER_COMPARE_TO_BIAS) {
-        val |= (1 << 20);  /* Enable depth bias comparison */
+        val |= FBZMODE_DEPTH_SOURCE_COMPARE_BIT;
     }
 
     g_voodoo->reg[fbzMode].u = val;
@@ -191,8 +191,8 @@ void __stdcall grDepthBufferFunction(GrCmpFnc_t func)
     uint32_t val = g_voodoo->reg[fbzMode].u;
 
     /* Clear and set depth function bits */
-    val &= ~(7 << 5);
-    val |= ((func & 7) << 5);
+    val &= ~FBZMODE_DEPTH_FUNCTION_MASK;
+    val |= ((func & 0x7) << FBZMODE_DEPTH_FUNCTION_SHIFT);
 
     g_voodoo->reg[fbzMode].u = val;
 }
@@ -252,9 +252,9 @@ void __stdcall grDepthMask(FxBool mask)
     uint32_t val = g_voodoo->reg[fbzMode].u;
 
     if (g_voodoo->alpha_mask || g_voodoo->depth_mask) {
-        val |= (1 << 10);   /* Enable aux buffer writes */
+        val |= FBZMODE_AUX_BUFFER_MASK_BIT;
     } else {
-        val &= ~(1 << 10);  /* Disable aux buffer writes */
+        val &= ~FBZMODE_AUX_BUFFER_MASK_BIT;
     }
 
     g_voodoo->reg[fbzMode].u = val;

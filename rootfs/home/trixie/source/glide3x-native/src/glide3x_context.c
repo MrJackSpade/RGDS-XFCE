@@ -214,11 +214,13 @@ GrContext_t __stdcall grSstWinOpen(
 
     /*
      * Initialize fbzMode with correct default state:
-     *   Bit 9:  RGB buffer mask = 1 (writes enabled)
-     *   Bit 10: Aux buffer mask = 1 (writes enabled, since depth_mask = true)
-     *   Bit 14: Draw buffer = 1 (back buffer)
+     *   RGB buffer mask = enabled (writes enabled)
+     *   Aux buffer mask = enabled (writes enabled, since depth_mask = true)
+     *   Draw buffer = 1 (back buffer)
      */
-    g_voodoo->reg[fbzMode].u |= (1 << 9) | (1 << 10) | (1 << 14);
+    g_voodoo->reg[fbzMode].u |= FBZMODE_RGB_BUFFER_MASK_BIT |
+                                FBZMODE_AUX_BUFFER_MASK_BIT |
+                                (1 << FBZMODE_DRAW_BUFFER_SHIFT);
 
     g_voodoo->active = true;
     g_context = (GrContext_t)g_voodoo;

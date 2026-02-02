@@ -112,13 +112,13 @@ void __stdcall grDitherMode(GrDitherMode_t mode)
     uint32_t val = g_voodoo->reg[fbzMode].u;
 
     if (mode == GR_DITHER_DISABLE) {
-        val &= ~(1 << 8);  /* Disable dithering */
+        val &= ~FBZMODE_ENABLE_DITHERING_BIT;
     } else {
-        val |= (1 << 8);   /* Enable dithering */
+        val |= FBZMODE_ENABLE_DITHERING_BIT;
         if (mode == GR_DITHER_2x2) {
-            val |= (1 << 11);  /* 2x2 pattern */
+            val |= FBZMODE_DITHER_TYPE_BIT;  /* 2x2 pattern */
         } else {
-            val &= ~(1 << 11); /* 4x4 pattern */
+            val &= ~FBZMODE_DITHER_TYPE_BIT; /* 4x4 pattern */
         }
     }
 
@@ -139,9 +139,9 @@ void __stdcall grChromakeyMode(GrChromakeyMode_t mode)
 
     uint32_t val = g_voodoo->reg[fbzMode].u;
     if (mode == GR_CHROMAKEY_ENABLE) {
-        val |= (1 << 1);
+        val |= FBZMODE_ENABLE_CHROMAKEY_BIT;
     } else {
-        val &= ~(1 << 1);
+        val &= ~FBZMODE_ENABLE_CHROMAKEY_BIT;
     }
     g_voodoo->reg[fbzMode].u = val;
 }
@@ -174,10 +174,10 @@ void __stdcall grSstOrigin(GrOriginLocation_t origin)
 
     if (origin == GR_ORIGIN_LOWER_LEFT) {
         g_voodoo->fbi.yorigin = g_voodoo->fbi.height - 1;
-        g_voodoo->reg[fbzMode].u |= (1 << 17);
+        g_voodoo->reg[fbzMode].u |= FBZMODE_Y_ORIGIN_BIT;
     } else {
         g_voodoo->fbi.yorigin = 0;
-        g_voodoo->reg[fbzMode].u &= ~(1 << 17);
+        g_voodoo->reg[fbzMode].u &= ~FBZMODE_Y_ORIGIN_BIT;
     }
 }
 
