@@ -67,8 +67,9 @@ static int g_render_buffer = 1;  /* back buffer (default) */
 static int g_lfb_buffer_locked = -1;  /* Which buffer was last locked for LFB writes */
 
 /* Forward declarations */
-extern int display_init(int width, int height);
+extern int display_init(int width, int height, HWND hWindow);
 extern void display_shutdown(void);
+extern void display_destroy_window(void);
 extern void display_present(uint16_t *framebuffer, int width, int height);
 
 /*************************************
@@ -91,6 +92,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
         if (g_initialized) {
             grGlideShutdown();
         }
+        /* Ensure window is destroyed when DLL is unloaded to prevent invalid WndProc */
+        display_destroy_window();
         break;
     }
     return TRUE;
@@ -146,6 +149,9 @@ void __stdcall grGlideShutdown(void)
         g_context = NULL;
     }
 
+    /* Explicitly destroy the window now - MOVED TO DllMain */
+    /* display_destroy_window(); */ 
+
     if (g_voodoo) {
         voodoo_destroy(g_voodoo);
         g_voodoo = NULL;
@@ -180,7 +186,7 @@ GrContext_t __stdcall grSstWinOpen(
     (void)numColorBuffers;
     (void)numAuxBuffers;
 
-    snprintf(dbg, sizeof(dbg), "glide3x: grSstWinOpen(res=%d, origin=%d)\n", resolution, origin);
+    snprintf(dbg, sizeof(dbg), "glide3x: grSstWinOpen(hwnd=0x%x, res=%d, origin=%d)\n", (int)hwnd, resolution, origin);
     debug_log(dbg);
 
     if (!g_initialized) {
@@ -232,7 +238,7 @@ GrContext_t __stdcall grSstWinOpen(
 
     /* Initialize display output */
     debug_log("glide3x: grSstWinOpen - init display\n");
-    if (!display_init(g_screen_width, g_screen_height)) {
+    if (!display_init(g_screen_width, g_screen_height, (HWND)hwnd)) {
         debug_log("glide3x: Failed to initialize display\n");
         return NULL;
     }

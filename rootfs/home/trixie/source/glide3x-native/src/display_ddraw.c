@@ -20,6 +20,7 @@ static LPDIRECTDRAWSURFACE7 g_backbuf = NULL;
 static HWND g_hwnd = NULL;
 static int g_width = 0;
 static int g_height = 0;
+static int g_window_owned = 0;
 
 /* Debug logging - write to same log file as glide3x.c */
 /* Shared debug logging from glide3x.c */
@@ -39,9 +40,15 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 {
     switch (msg) {
     case WM_CLOSE:
+        display_log("display_ddraw: WndProc received WM_CLOSE\n");
         DestroyWindow(hwnd);
         return 0;
     case WM_DESTROY:
+        display_log("display_ddraw: WndProc received WM_DESTROY\n");
+        if (hwnd == g_hwnd) {
+            display_log("display_ddraw: wndproc clearing g_hwnd\n");
+            g_hwnd = NULL;
+        }
         PostQuitMessage(0);
         return 0;
     case WM_KEYDOWN:
@@ -55,8 +62,25 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 }
 
 /* Create output window */
-static HWND create_window(int width, int height)
+static HWND create_window(int width, int height, HWND hWindow)
 {
+    char dbg[128];
+
+    /* If external window provided, use it */
+    if (hWindow) {
+        snprintf(dbg, sizeof(dbg), "display_ddraw: Using external window %p\n", (void*)hWindow);
+        display_log(dbg);
+        g_window_owned = 0;
+        
+        /* Ensure it's visible and sized correctly? 
+           Diablo II might manage this itself, but let's safe-guard. */
+        /* SetWindowPos(hWindow, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW); */
+        /* Better not to resize external window forcibly unless necessary, 
+           as it might mess up the app's layout. But for fullscreen games usually we want to.
+           Let's just update our tracking variable. */
+        return hWindow;
+    }
+
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WndProc;
     wc.hInstance = GetModuleHandle(NULL);
@@ -74,10 +98,17 @@ static HWND create_window(int width, int height)
     int win_width = rect.right - rect.left;
     int win_height = rect.bottom - rect.top;
     
-    char dbg[128];
     snprintf(dbg, sizeof(dbg), "display_ddraw: create_window requesting %dx%d (client %dx%d)\n", 
              win_width, win_height, width, height);
     display_log(dbg);
+
+    /* Reuse existing window if available */
+    if (g_hwnd) {
+        display_log("display_ddraw: Reusing existing window\n");
+        /* Simply resize and show */
+        SetWindowPos(g_hwnd, NULL, 0, 0, win_width, win_height, SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW);
+        return g_hwnd;
+    }
 
     /* Use 0,0 explicitly instead of CW_USEDEFAULT to avoid weird placement/sizing logic on some Wine setups */
     HWND hwnd = CreateWindow(
@@ -90,6 +121,7 @@ static HWND create_window(int width, int height)
     );
 
     if (hwnd) {
+        g_window_owned = 1;
         ShowWindow(hwnd, SW_SHOW);
         UpdateWindow(hwnd);
         
@@ -120,7 +152,7 @@ static HWND create_window(int width, int height)
 }
 
 /* Initialize DirectDraw */
-int display_init(int width, int height)
+int display_init(int width, int height, HWND hWindow)
 {
     HRESULT hr;
     DDSURFACEDESC2 ddsd;
@@ -129,7 +161,7 @@ int display_init(int width, int height)
     g_height = height;
 
     /* Create window */
-    g_hwnd = create_window(width, height);
+    g_hwnd = create_window(width, height, hWindow);
     if (!g_hwnd) {
         OutputDebugStringA("display_ddraw: Failed to create window\n");
         return 0;
@@ -218,8 +250,20 @@ void display_shutdown(void)
         IDirectDraw_Release(g_dd);
         g_dd = NULL;
     }
+    display_log("display_ddraw: display_shutdown complete (window preserved)\n");
+}
+
+/* Explicitly destroy window (called on DLL detach) */
+void display_destroy_window(void)
+{
+    display_log("display_ddraw: display_destroy_window called\n");
     if (g_hwnd) {
-        DestroyWindow(g_hwnd);
+        if (g_window_owned) {
+            display_log("display_ddraw: Destroying owned window\n");
+            DestroyWindow(g_hwnd);
+        } else {
+            display_log("display_ddraw: Detaching from external window (not destroying)\n");
+        }
         g_hwnd = NULL;
     }
 }

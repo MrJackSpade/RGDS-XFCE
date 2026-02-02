@@ -184,7 +184,10 @@ grBufferSwap()    → blit fbi.ram to DirectDraw surface
 ### Phase 4: Display Output (Minimal Wine Interaction)
 - [ ] Create DirectDraw primary surface on grSstWinOpen
 - [ ] On grBufferSwap: Lock surface, memcpy fbi.ram, Unlock, Flip
+- [ ] Create DirectDraw primary surface on grSstWinOpen
+- [ ] On grBufferSwap: Lock surface, memcpy fbi.ram, Unlock, Flip
 - [ ] This is the ONLY syscall per frame
+- [x] Configure xrandr scaling (Force 800x600 on 640x480 screen)
 
 ### Phase 5: Build & Test
 - [x] Cross-compile with i686-w64-mingw32-gcc

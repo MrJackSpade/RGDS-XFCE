@@ -19,25 +19,27 @@ SRCS = src/glide3x.c \
        src/voodoo_emu.c \
        src/display_ddraw.c
 
-OBJS = $(SRCS:.c=.o)
-
 # Output
-TARGET = glide3x.dll
+BUILD_DIR = build
+TARGET = $(BUILD_DIR)/glide3x.dll
 DEFFILE = src/glide3x.def
+OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 
 .PHONY: all clean install test
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS) $(DEFFILE)
+	@mkdir -p $(dir $@)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(DEFFILE) $(LIBS)
 	@echo "Built $@"
 
-%.o: %.c
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -rf $(BUILD_DIR)
 
 # Install to Wine prefix
 install: $(TARGET)

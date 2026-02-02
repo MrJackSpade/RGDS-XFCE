@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 $RemoteUser = "trixie"
 $RemoteHost = "192.168.12.204"
 $RemotePath = "/home/trixie/.wine-hangover/drive_c/Program Files (x86)/Diablo II"
-$LocalDll = "glide3x.dll"
+$LocalDll = "build/glide3x.dll"
 $RemoteLogPath = "/home/trixie/.wine-hangover/drive_c/glide3x_debug.log"
 $LocalLogPath = "glide3x_debug.log"
 
