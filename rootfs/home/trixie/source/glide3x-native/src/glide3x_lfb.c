@@ -170,6 +170,8 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
     if (bpp != 2 && type == GR_LFB_WRITE_ONLY) {
         /* Allocate or resize shadow buffer if needed */
         size_t needed_size = (size_t)stride * height;
+        int need_init = 0;
+
         if (g_lfb_shadow_buffer_size < needed_size) {
             free(g_lfb_shadow_buffer);
             g_lfb_shadow_buffer = (uint8_t*)malloc(needed_size);
@@ -178,10 +180,25 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
                 return FXFALSE;
             }
             g_lfb_shadow_buffer_size = needed_size;
+            need_init = 1;  /* New buffer needs initialization */
         }
 
-        /* Clear the shadow buffer */
-        memset(g_lfb_shadow_buffer, 0, needed_size);
+        /*
+         * Only initialize the shadow buffer on first allocation.
+         * On subsequent locks, keep the existing contents - this avoids
+         * redundant framebuffer->shadow->framebuffer round-trips and
+         * preserves 32-bit precision across frames.
+         */
+        if (need_init) {
+            /* Initialize new shadow buffer to black (or could copy from FB) */
+            memset(g_lfb_shadow_buffer, 0, needed_size);
+
+            char dbg[128];
+            snprintf(dbg, sizeof(dbg),
+                     "glide3x: grLfbLock allocated new shadow buffer %zu bytes\n",
+                     needed_size);
+            debug_log(dbg);
+        }
 
         /* Track shadow buffer parameters for unlock */
         g_lfb_shadow_width = width;
