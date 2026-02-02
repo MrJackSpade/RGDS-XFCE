@@ -43,7 +43,8 @@
       "Bash(echo:*)",
       "Bash(xargs cat:*)",
       "Bash(find:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(tree:*)"
     ]
   }
 }

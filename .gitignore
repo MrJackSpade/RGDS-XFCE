@@ -4,3 +4,4 @@ rootfs/home/trixie/source/qjoypad/build/
 rootfs/tmp/
 sanitize_sd_image.ps1
 backups/
+rootfs/home/trixie/source/glide3x-native/references/

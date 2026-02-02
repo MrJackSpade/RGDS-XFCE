@@ -1,0 +1,375 @@
+/*
+ * glide3x_lfb.c - Linear Frame Buffer (LFB) access
+ *
+ * This module implements direct CPU access to the framebuffer:
+ *   - grLfbLock(): Lock a buffer for CPU read/write access
+ *   - grLfbUnlock(): Release buffer lock
+ *   - grLfbWriteRegion(): Write a rectangular region to buffer
+ *   - grLfbReadRegion(): Read a rectangular region from buffer
+ *
+ * LFB CONCEPT:
+ * The Linear Frame Buffer provides direct CPU access to video memory,
+ * bypassing the 3D rendering pipeline. This allows applications to:
+ *   - Write video frames directly (for FMV playback)
+ *   - Perform 2D blitting operations
+ *   - Read back rendered images (screenshots)
+ *   - Apply CPU-based post-processing effects
+ *
+ * PERFORMANCE CONSIDERATIONS:
+ * On original Voodoo hardware, LFB access was relatively slow because:
+ *   1. Data traveled over the PCI bus (133 MB/s max)
+ *   2. Memory access patterns weren't optimized for sequential transfer
+ *   3. Reads were especially slow (read-back over PCI)
+ *
+ * Voodoo Banshee and later cards improved this with:
+ *   - AGP bus for higher bandwidth
+ *   - Unified Memory Architecture (UMA)
+ *   - Write combining for sequential writes
+ *
+ * Our software implementation has no such bottlenecks, but the API
+ * remains the same for compatibility.
+ *
+ * PIXEL FORMATS:
+ * LFB supports various pixel formats for reads and writes:
+ *   - RGB565 (16-bit): Default framebuffer format
+ *   - ARGB1555 (16-bit): 1 bit alpha, 5 bits per color
+ *   - ARGB4444 (16-bit): 4 bits per component
+ *   - ARGB8888 (32-bit): 8 bits per component (Banshee+)
+ *
+ * The writeMode parameter to grLfbLock() specifies the format.
+ * Our implementation uses RGB565 internally.
+ *
+ * PIXEL PIPELINE:
+ * The pixelPipeline parameter to grLfbLock() determines whether writes
+ * go through the pixel pipeline (depth test, alpha blend, etc.) or
+ * write directly to memory. Pipeline mode is useful for effects like
+ * drawing UI elements that should respect depth ordering.
+ */
+
+#include "glide3x_state.h"
+
+/*
+ * grLfbLock - Lock a buffer for direct CPU access
+ *
+ * From the 3dfx SDK:
+ * "grLfbLock() gives the caller direct access to the specified buffer.
+ * The buffer remains locked until grLfbUnlock() is called. While locked,
+ * 3D rendering to the buffer is still possible."
+ *
+ * Parameters:
+ *   type - Lock type (GR_LFB_*):
+ *          READ_ONLY:  Lock for reading only
+ *          WRITE_ONLY: Lock for writing only
+ *          READ_WRITE: Lock for both (Banshee+)
+ *          NOIDLE:     Don't wait for graphics idle before locking
+ *
+ *   buffer - Which buffer to lock:
+ *            GR_BUFFER_FRONTBUFFER: Currently displayed buffer
+ *            GR_BUFFER_BACKBUFFER:  Rendering target buffer
+ *            GR_BUFFER_AUXBUFFER:   Depth/alpha buffer
+ *
+ *   writeMode - Pixel format for writes (GR_LFBWRITEMODE_*):
+ *               565:      RGB565 (16-bit, no alpha)
+ *               1555:     ARGB1555 (16-bit, 1-bit alpha)
+ *               4444:     ARGB4444 (16-bit, 4-bit alpha)
+ *               8888:     ARGB8888 (32-bit, full alpha)
+ *               RESERVED: Use format from previous lock
+ *
+ *   origin - Y origin for LFB addressing:
+ *            UPPER_LEFT: Y=0 at top (DirectX style)
+ *            LOWER_LEFT: Y=0 at bottom (OpenGL style)
+ *            Can differ from 3D rendering origin.
+ *
+ *   pixelPipeline - Enable pixel pipeline for writes:
+ *                   FXFALSE: Direct memory access (fastest)
+ *                   FXTRUE:  Go through depth test, blend, etc.
+ *
+ *   info - Output structure filled with:
+ *          lfbPtr:        Pointer to buffer start
+ *          strideInBytes: Bytes per row (includes padding)
+ *          writeMode:     Actual write mode in effect
+ *          origin:        Actual origin in effect
+ *
+ * Returns:
+ *   FXTRUE on success, FXFALSE on failure.
+ *
+ * IMPORTANT USAGE NOTES:
+ *
+ * 1. Buffer pointers are valid only between Lock and Unlock.
+ *    Don't cache them across frames.
+ *
+ * 2. Writing to the front buffer appears immediately on screen.
+ *    This can cause tearing if done during display refresh.
+ *
+ * 3. The stride may be larger than width * bytesPerPixel due to
+ *    hardware alignment requirements. Always use strideInBytes.
+ *
+ * 4. Our implementation tracks which buffer was locked so
+ *    grBufferSwap() knows whether to present front or back buffer.
+ */
+FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t writeMode,
+                 GrOriginLocation_t origin, FxBool pixelPipeline, GrLfbInfo_t *info)
+{
+    g_lfb_lock_count++;
+    {
+        char dbg[128];
+        snprintf(dbg, sizeof(dbg),
+                 "glide3x: grLfbLock #%d (type=%d, buffer=%d, writeMode=%d)\n",
+                 g_lfb_lock_count, type, buffer, writeMode);
+        debug_log(dbg);
+    }
+
+    if (!g_voodoo || !info) return FXFALSE;
+
+    /* Track which buffer is being locked for writes */
+    if (type == GR_LFB_WRITE_ONLY || type == (GR_LFB_READ_ONLY + 1)) {
+        g_lfb_buffer_locked = buffer;
+    }
+
+    (void)writeMode;      /* We always use RGB565 internally */
+    (void)origin;         /* We use upper-left origin */
+    (void)pixelPipeline;  /* We don't support pipeline mode */
+
+    uint8_t *bufptr;
+    switch (buffer) {
+    case GR_BUFFER_FRONTBUFFER:
+        bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf];
+        break;
+    case GR_BUFFER_BACKBUFFER:
+        bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf];
+        break;
+    case GR_BUFFER_AUXBUFFER:
+    case GR_BUFFER_DEPTHBUFFER:
+        bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs;
+        break;
+    default:
+        return FXFALSE;
+    }
+
+    info->size = sizeof(GrLfbInfo_t);
+    info->lfbPtr = bufptr;
+    info->strideInBytes = g_voodoo->fbi.rowpixels * 2;  /* 16-bit = 2 bytes */
+    info->writeMode = GR_LFBWRITEMODE_565;
+    info->origin = GR_ORIGIN_UPPER_LEFT;
+
+    {
+        char dbg[128];
+        snprintf(dbg, sizeof(dbg),
+                 "glide3x: grLfbLock returning lfbPtr=%p stride=%d\n",
+                 bufptr, info->strideInBytes);
+        debug_log(dbg);
+    }
+
+    return FXTRUE;
+}
+
+/*
+ * grLfbUnlock - Release a locked buffer
+ *
+ * From the 3dfx SDK:
+ * "grLfbUnlock() releases the lock on the specified buffer that was
+ * acquired with grLfbLock()."
+ *
+ * Parameters:
+ *   type   - Must match the type used in grLfbLock()
+ *   buffer - Must match the buffer used in grLfbLock()
+ *
+ * Returns:
+ *   FXTRUE on success, FXFALSE if buffer wasn't locked.
+ *
+ * SPECIAL BEHAVIOR:
+ * If a WRITE_ONLY lock is released on the front buffer, we immediately
+ * present that buffer to the display. This ensures LFB writes to the
+ * front buffer are visible without requiring a grBufferSwap().
+ *
+ * This behavior is important for applications that:
+ *   - Play fullscreen video directly to the front buffer
+ *   - Draw UI elements after the main rendering pass
+ *   - Don't use double buffering
+ */
+FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
+{
+    g_lfb_unlock_count++;
+    {
+        char dbg[128];
+        snprintf(dbg, sizeof(dbg),
+                 "glide3x: grLfbUnlock #%d (type=%d, buffer=%d)\n",
+                 g_lfb_unlock_count, type, buffer);
+        debug_log(dbg);
+    }
+
+    /* If this was a write lock on front buffer, present immediately */
+    if (type == GR_LFB_WRITE_ONLY && buffer == GR_BUFFER_FRONTBUFFER && g_voodoo) {
+        uint16_t *frontbuf = (uint16_t*)(g_voodoo->fbi.ram +
+                                          g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
+        {
+            char dbg[128];
+            snprintf(dbg, sizeof(dbg),
+                     "glide3x: grLfbUnlock presenting front buffer\n");
+            debug_log(dbg);
+        }
+        display_present(frontbuf, g_voodoo->fbi.width, g_voodoo->fbi.height);
+    }
+
+    return FXTRUE;
+}
+
+/*
+ * grLfbWriteRegion - Write a rectangular region to the framebuffer
+ *
+ * From the 3dfx SDK:
+ * "grLfbWriteRegion() writes a rectangular region of pixels from system
+ * memory to the specified buffer. This is typically faster than locking
+ * the buffer and writing manually for large regions."
+ *
+ * Parameters:
+ *   dst_buffer    - Destination buffer (front, back, or aux)
+ *   dst_x, dst_y  - Destination position in buffer
+ *   src_format    - Format of source data (GR_LFB_SRC_FMT_*)
+ *   src_width     - Width of region in pixels
+ *   src_height    - Height of region in pixels
+ *   pixelPipeline - Enable pixel pipeline for writes
+ *   src_stride    - Bytes per row in source data
+ *   src_data      - Pointer to source pixel data
+ *
+ * Returns:
+ *   FXTRUE on success, FXFALSE on failure.
+ *
+ * SOURCE FORMATS:
+ *   565:     RGB565 (16-bit, most common)
+ *   1555:    ARGB1555 (16-bit with 1-bit alpha)
+ *   4444:    ARGB4444 (16-bit with 4-bit alpha)
+ *   8888:    ARGB8888 (32-bit with 8-bit alpha)
+ *   RLE16:   Run-length encoded 16-bit
+ *
+ * Our implementation assumes RGB565 source format and direct memory copy.
+ *
+ * COMMON USES:
+ *   - Video playback: Decompress frames to system memory, blit to FB
+ *   - Loading screens: Display pre-rendered images
+ *   - UI overlays: Render 2D elements to back buffer
+ *
+ * PERFORMANCE NOTE:
+ * For repeated small writes, grLfbLock/Unlock may be faster.
+ * For single large writes, grLfbWriteRegion is more convenient.
+ */
+FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_y,
+                         GrLfbSrcFmt_t src_format, FxU32 src_width, FxU32 src_height,
+                         FxBool pixelPipeline, FxI32 src_stride, void *src_data)
+{
+    g_lfb_write_count++;
+    if (g_lfb_write_count <= 5) {
+        char dbg[128];
+        snprintf(dbg, sizeof(dbg),
+                 "glide3x: grLfbWriteRegion #%d (buf=%d, x=%u, y=%u, w=%u, h=%u)\n",
+                 g_lfb_write_count, dst_buffer, dst_x, dst_y, src_width, src_height);
+        debug_log(dbg);
+    }
+
+    if (!g_voodoo || !src_data) return FXFALSE;
+
+    (void)src_format;      /* We assume RGB565 */
+    (void)pixelPipeline;   /* We don't support pipeline mode */
+
+    /* Get destination buffer */
+    uint16_t *dest;
+    switch (dst_buffer) {
+    case GR_BUFFER_FRONTBUFFER:
+        dest = (uint16_t*)(g_voodoo->fbi.ram +
+                           g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
+        break;
+    case GR_BUFFER_BACKBUFFER:
+        dest = (uint16_t*)(g_voodoo->fbi.ram +
+                           g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf]);
+        break;
+    case GR_BUFFER_AUXBUFFER:
+    case GR_BUFFER_DEPTHBUFFER:
+        dest = (uint16_t*)(g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs);
+        break;
+    default:
+        return FXFALSE;
+    }
+
+    /* Copy data row by row */
+    uint8_t *src = (uint8_t*)src_data;
+    for (FxU32 y = 0; y < src_height; y++) {
+        memcpy(&dest[(dst_y + y) * g_voodoo->fbi.rowpixels + dst_x],
+               &src[y * src_stride], src_width * 2);
+    }
+
+    return FXTRUE;
+}
+
+/*
+ * grLfbReadRegion - Read a rectangular region from the framebuffer
+ *
+ * From the 3dfx SDK:
+ * "grLfbReadRegion() reads a rectangular region of pixels from the
+ * specified buffer to system memory."
+ *
+ * Parameters:
+ *   src_buffer        - Source buffer (front, back, or aux)
+ *   src_x, src_y      - Source position in buffer
+ *   src_width         - Width of region in pixels
+ *   src_height        - Height of region in pixels
+ *   dst_stride        - Bytes per row in destination buffer
+ *   dst_data          - Pointer to destination buffer
+ *
+ * Returns:
+ *   FXTRUE on success, FXFALSE on failure.
+ *
+ * OUTPUT FORMAT:
+ * Data is always read in the framebuffer's native format (RGB565 in our case).
+ * The application is responsible for format conversion if needed.
+ *
+ * COMMON USES:
+ *   - Screenshots: Read back the front buffer after rendering
+ *   - Feedback effects: Read rendered image for CPU processing
+ *   - Debugging: Verify rendered output
+ *
+ * PERFORMANCE NOTE:
+ * Framebuffer reads are historically slow because:
+ *   - Data flows from GPU to CPU (reverse of normal direction)
+ *   - May require graphics pipeline flush
+ *   - Can stall the CPU waiting for data
+ *
+ * Our software implementation doesn't have these issues, but the API
+ * semantics are preserved.
+ */
+FxBool __stdcall grLfbReadRegion(GrBuffer_t src_buffer, FxU32 src_x, FxU32 src_y,
+                        FxU32 src_width, FxU32 src_height,
+                        FxU32 dst_stride, void *dst_data)
+{
+    LOG_FUNC();
+
+    if (!g_voodoo || !dst_data) return FXFALSE;
+
+    /* Get source buffer */
+    uint16_t *src;
+    switch (src_buffer) {
+    case GR_BUFFER_FRONTBUFFER:
+        src = (uint16_t*)(g_voodoo->fbi.ram +
+                          g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
+        break;
+    case GR_BUFFER_BACKBUFFER:
+        src = (uint16_t*)(g_voodoo->fbi.ram +
+                          g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf]);
+        break;
+    case GR_BUFFER_AUXBUFFER:
+    case GR_BUFFER_DEPTHBUFFER:
+        src = (uint16_t*)(g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs);
+        break;
+    default:
+        return FXFALSE;
+    }
+
+    /* Copy data row by row */
+    uint8_t *dst = (uint8_t*)dst_data;
+    for (FxU32 y = 0; y < src_height; y++) {
+        memcpy(&dst[y * dst_stride],
+               &src[(src_y + y) * g_voodoo->fbi.rowpixels + src_x],
+               src_width * 2);
+    }
+
+    return FXTRUE;
+}

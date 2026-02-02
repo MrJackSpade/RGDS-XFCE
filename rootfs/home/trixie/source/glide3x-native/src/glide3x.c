@@ -3,8 +3,79 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause AND GPL-2.0-or-later
  *
- * This implements the Glide 3.x API by mapping calls to an internal
- * software Voodoo emulator derived from DOSBox-Staging.
+ * =============================================================================
+ * IMPLEMENTATION OVERVIEW
+ * =============================================================================
+ *
+ * This file implements the Glide 3.x API by mapping Glide function calls to
+ * an internal software Voodoo emulator derived from DOSBox-Staging. The goal
+ * is binary compatibility with games that were written for 3dfx Voodoo hardware.
+ *
+ * ARCHITECTURE:
+ *
+ *   [Application]
+ *        |
+ *        v
+ *   [glide3x.dll] <-- This file: API translation layer
+ *        |
+ *        v
+ *   [voodoo_emu.c] -- Software Voodoo emulator (triangle rasterization)
+ *        |
+ *        v
+ *   [display_ddraw.c] -- Display output (DirectDraw or GDI)
+ *
+ * KEY DESIGN DECISIONS:
+ *
+ * 1. SINGLE CONTEXT: Unlike the original Glide which could support multiple
+ *    SST (Scan-line Subsystem) boards, we support only one software context.
+ *    This simplifies state management significantly.
+ *
+ * 2. SYNCHRONOUS RENDERING: Original Voodoo hardware had a FIFO command buffer
+ *    and rendering was asynchronous. Our software renderer is synchronous -
+ *    triangles are rendered immediately in grDrawTriangle().
+ *
+ * 3. 16-BIT FRAMEBUFFER: We use RGB565 format internally, matching the most
+ *    common Voodoo framebuffer configuration. This affects color precision
+ *    and the LFB (Linear Frame Buffer) access format.
+ *
+ * 4. FIXED VERTEX FORMAT: Glide 3.x introduced grVertexLayout() for flexible
+ *    vertex formats. We use a fixed GrVertex structure instead, which covers
+ *    the common case for games like Diablo 2.
+ *
+ * REGISTER MAPPING:
+ *
+ * The Voodoo hardware used memory-mapped registers to control rendering state.
+ * Key registers we emulate:
+ *
+ *   - fbzColorPath: Controls color combine (how vertex color and texture combine)
+ *   - fbzMode: Controls depth buffering, dithering, chromakey, buffer selection
+ *   - alphaMode: Controls alpha blending and alpha testing
+ *   - textureMode: Per-TMU texture format, filtering, and combine settings
+ *   - fogMode/fogColor: Fog table-based atmospheric effects
+ *   - clipLeftRight/clipLowYHighY: Scissor rectangle
+ *
+ * See voodoo_defs.h for register bit field definitions.
+ *
+ * COORDINATE SYSTEMS:
+ *
+ * Glide operates in window coordinates (post-projection). The application is
+ * responsible for transforming vertices from world/view space to screen space.
+ * Vertices include:
+ *   - X, Y: Screen position in pixels (floating point)
+ *   - OOW (1/W): For perspective-correct texture mapping and W-buffering
+ *   - OOZ (1/Z or Z): For Z-buffering
+ *   - RGBA: Vertex colors (0-255 range)
+ *   - SOW, TOW (S/W, T/W): Perspective-divided texture coordinates
+ *
+ * The Y origin can be upper-left (like DirectX) or lower-left (like OpenGL),
+ * controlled by grSstWinOpen() and grSstOrigin().
+ *
+ * REFERENCE: This implementation is based on:
+ *   - 3dfx Glide 3.x SDK (references/glide3x/h5/glide3/src/)
+ *   - DOSBox-Staging Voodoo emulation (references/dosbox-staging/)
+ *   - Original Glide 3.0 Programmer's Guide (not included but referenced)
+ *
+ * =============================================================================
  */
 
 #include <windows.h>
@@ -122,8 +193,33 @@ static void get_resolution(GrScreenResolution_t res, int *width, int *height)
 
 /*************************************
  * Initialization functions
+ *
+ * Glide initialization follows a specific sequence:
+ *   1. grGlideInit() - Initialize the Glide library
+ *   2. grSstQueryHardware() - Detect available hardware
+ *   3. grSstSelect() - Select which board to use (for multi-board systems)
+ *   4. grSstWinOpen() - Open a rendering context/window
+ *
+ * After this sequence, rendering functions can be called.
+ * Shutdown is the reverse: grSstWinClose() then grGlideShutdown().
  *************************************/
 
+/*
+ * grGlideInit - Initialize the Glide library
+ *
+ * From the SDK: "grGlideInit() initializes the Glide library, setting
+ * internal state to known values before any other Glide functions are
+ * called. It should be called once at the beginning of an application
+ * that uses Glide."
+ *
+ * In our implementation:
+ * - Creates the software Voodoo emulator state structure
+ * - Does NOT initialize display output (that happens in grSstWinOpen)
+ * - Idempotent: safe to call multiple times
+ *
+ * Note: Original Glide also registered an atexit() handler to ensure
+ * cleanup. We rely on DLL_PROCESS_DETACH instead.
+ */
 void __stdcall grGlideInit(void)
 {
     debug_log("glide3x: grGlideInit called\n");
@@ -140,6 +236,23 @@ void __stdcall grGlideInit(void)
     debug_log("glide3x: grGlideInit complete\n");
 }
 
+/*
+ * grGlideShutdown - Shutdown the Glide library
+ *
+ * From the SDK: "grGlideShutdown() should be called once, during
+ * application termination. It ensures that the graphics subsystem
+ * is returned to its pre-Glide state."
+ *
+ * In our implementation:
+ * - Closes any open context (calls grSstWinClose if needed)
+ * - Destroys the Voodoo emulator state
+ * - Note: Window destruction moved to DllMain to avoid WndProc issues
+ *
+ * Historical note: On real Voodoo hardware, this function would:
+ * - Restore VGA pass-through mode
+ * - Release memory-mapped register access
+ * - Allow VGA card to take over display again
+ */
 void __stdcall grGlideShutdown(void)
 {
     if (!g_initialized) return;
@@ -150,7 +263,7 @@ void __stdcall grGlideShutdown(void)
     }
 
     /* Explicitly destroy the window now - MOVED TO DllMain */
-    /* display_destroy_window(); */ 
+    /* display_destroy_window(); */
 
     if (g_voodoo) {
         voodoo_destroy(g_voodoo);
@@ -168,8 +281,56 @@ void __stdcall grGlideGetVersion(char version[80])
 
 /*************************************
  * Context management
+ *
+ * A Glide "context" represents an active rendering surface on specific
+ * hardware. Original Voodoo cards operated in full-screen exclusive mode,
+ * taking over the display from the VGA pass-through.
+ *
+ * Glide 3.x added grSstWinOpen() to support windowed rendering on cards
+ * like Voodoo Banshee and Voodoo 3 that had integrated 2D/3D.
  *************************************/
 
+/*
+ * grSstWinOpen - Open a graphics context (rendering window/surface)
+ *
+ * From the SDK: "grSstWinOpen opens a graphics context on the specified
+ * hardware. It allocates the required framebuffer and auxiliary buffer
+ * memory, and configures the display mode."
+ *
+ * Parameters:
+ *   hwnd       - Window handle (HWND on Windows). Voodoo 1/2 ignored this
+ *                since they only supported full-screen. Banshee+ used it
+ *                for windowed mode. We use it for our display window.
+ *
+ *   resolution - One of the GR_RESOLUTION_* constants defining screen size.
+ *                Voodoo 1 maxed out at 640x480, Voodoo 2 added 800x600.
+ *
+ *   refresh    - Refresh rate. Original hardware supported 60Hz-120Hz.
+ *                We ignore this as the OS controls refresh.
+ *
+ *   colorFormat - GR_COLORFORMAT_ARGB or GR_COLORFORMAT_ABGR.
+ *                 Affects how GrColor_t values are interpreted.
+ *                 We default to ARGB (0xAARRGGBB).
+ *
+ *   origin     - GR_ORIGIN_UPPER_LEFT or GR_ORIGIN_LOWER_LEFT.
+ *                Determines whether Y=0 is at the top (DirectX style)
+ *                or bottom (OpenGL style) of the screen.
+ *
+ *   numColorBuffers - 2 for double buffering, 3 for triple buffering.
+ *                     Affects how much framebuffer memory is allocated.
+ *
+ *   numAuxBuffers - 0 or 1. Auxiliary buffer is used for depth (Z/W)
+ *                   and optionally alpha. Most games use 1.
+ *
+ * Returns:
+ *   Non-zero context handle on success, 0 (NULL) on failure.
+ *
+ * Our implementation:
+ * - Always allocates 4MB framebuffer, 2MB per TMU (matching Voodoo 2 spec)
+ * - Creates display window/surface via display_ddraw.c
+ * - Initializes default rendering state
+ * - Only supports one context at a time
+ */
 GrContext_t __stdcall grSstWinOpen(
     FxU32 hwnd,
     GrScreenResolution_t resolution,
@@ -324,10 +485,52 @@ void __stdcall grSstSelect(int which_sst)
 
 /*************************************
  * Buffer operations
+ *
+ * The Voodoo framebuffer system uses multiple buffers:
+ *
+ * 1. COLOR BUFFERS (typically 2 or 3):
+ *    - Front buffer: Currently displayed on screen
+ *    - Back buffer: Being rendered to
+ *    - Optional third buffer for triple buffering
+ *    Each buffer is width * height * 2 bytes (RGB565 format)
+ *
+ * 2. AUXILIARY BUFFER (1):
+ *    - Stores depth (Z or W) values for hidden surface removal
+ *    - Can also store alpha values in some configurations
+ *    - Same dimensions as color buffers
+ *
+ * Buffer addresses are set as byte offsets from the start of framebuffer RAM.
+ * grBufferSwap() exchanges front and back buffer indices.
  *************************************/
 
 static int g_clear_count = 0;
 
+/*
+ * grBufferClear - Clear color and depth buffers
+ *
+ * From the SDK: "grBufferClear clears the buffers indicated by the
+ * current grColorMask and grDepthMask settings. All enabled buffers
+ * are cleared to the specified values."
+ *
+ * Parameters:
+ *   color - 32-bit ARGB color to fill the color buffer with.
+ *           Internally converted to RGB565 for the 16-bit framebuffer.
+ *
+ *   alpha - Alpha value for auxiliary buffer (if alpha storage enabled).
+ *           Typically ignored since most configs store depth, not alpha.
+ *
+ *   depth - Depth value to fill the depth buffer. This is a 32-bit value
+ *           where the upper 16 bits are used for the 16-bit depth buffer.
+ *           For Z-buffering: 0x0000 = near, 0xFFFF = far
+ *           For W-buffering: 0x0000 = far, 0xFFFF = near (inverted!)
+ *
+ * Performance note: On real hardware, buffer clears used a "fastfill"
+ * mode that filled memory extremely quickly via special hardware.
+ * Our software clear is much slower, iterating pixel by pixel.
+ *
+ * Clipping: The SDK states clears are constrained by grClipWindow().
+ * Our implementation clears the entire buffer for simplicity.
+ */
 void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
 {
     g_clear_count++;
@@ -376,6 +579,34 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
 
 static int g_swap_count = 0;
 
+/*
+ * grBufferSwap - Display rendered frame and swap buffers
+ *
+ * From the SDK: "grBufferSwap() makes the back buffer visible by
+ * swapping the roles of the front and back buffers. The actual
+ * buffer swap is synchronized to vertical retrace."
+ *
+ * Parameters:
+ *   swap_interval - Number of vertical retraces to wait before swapping:
+ *                   0 = swap immediately (may cause tearing)
+ *                   1 = wait for next retrace (60fps max at 60Hz)
+ *                   2 = wait for every other retrace (30fps max at 60Hz)
+ *                   etc.
+ *
+ * Historical note: Vsync was important on CRT monitors to prevent
+ * visible "tearing" artifacts. Modern LCD displays and our software
+ * renderer don't have the same issues, so we largely ignore this.
+ *
+ * Our implementation:
+ * - Presents the back buffer to the display
+ * - Swaps the front/back buffer indices
+ * - Ignores swap_interval (always immediate)
+ * - Special case: if LFB writes targeted front buffer, present that instead
+ *
+ * The front/back buffer index swap means rendering continues to the
+ * buffer that was previously displayed, while the freshly rendered
+ * content is now visible. This is classic "page flipping".
+ */
 void __stdcall grBufferSwap(FxU32 swap_interval)
 {
     g_swap_count++;
@@ -414,11 +645,64 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
 }
 
 /*************************************
- * LFB access
+ * LFB (Linear Frame Buffer) access
+ *
+ * LFB provides direct CPU access to the framebuffer memory, allowing
+ * applications to read/write pixels directly without going through
+ * the 3D pipeline. Common uses:
+ *
+ * 1. VIDEO PLAYBACK: Writing movie frames directly to the framebuffer
+ * 2. 2D BLITTING: Copying sprite images without texture mapping overhead
+ * 3. SCREENSHOTS: Reading back the rendered image
+ * 4. SOFTWARE EFFECTS: CPU-based post-processing
+ *
+ * Original Voodoo LFB access was relatively slow compared to 3D rendering
+ * because it went over the PCI bus. Banshee and later improved this with
+ * a combined memory architecture.
+ *
+ * The LFB can be accessed with or without the pixel pipeline:
+ * - Without pipeline: Raw memory access, values written directly
+ * - With pipeline: Writes go through depth test, alpha blend, etc.
  *************************************/
 
 static int g_lfb_lock_count = 0;
 
+/*
+ * grLfbLock - Lock a buffer for direct CPU access
+ *
+ * From the SDK: "grLfbLock() gives the caller direct access to the
+ * specified buffer. The buffer remains locked until grLfbUnlock()
+ * is called. While locked, 3D rendering to the buffer is still possible."
+ *
+ * Parameters:
+ *   type        - GR_LFB_READ_ONLY or GR_LFB_WRITE_ONLY (or both)
+ *                 GR_LFB_IDLE forces graphics idle before locking
+ *
+ *   buffer      - Which buffer to lock:
+ *                 GR_BUFFER_FRONTBUFFER - currently displayed buffer
+ *                 GR_BUFFER_BACKBUFFER - rendering target buffer
+ *                 GR_BUFFER_AUXBUFFER - depth/alpha buffer
+ *
+ *   writeMode   - Pixel format for writes (GR_LFBWRITEMODE_565, etc.)
+ *                 Determines how data written through LFB is interpreted
+ *
+ *   origin      - Y origin for LFB addressing (can differ from 3D origin)
+ *
+ *   pixelPipeline - If FXTRUE, LFB writes go through the pixel pipeline
+ *                   (depth test, alpha blend, etc.)
+ *
+ *   info        - Output: GrLfbInfo_t structure filled with:
+ *                 - lfbPtr: Pointer to start of buffer
+ *                 - strideInBytes: Bytes per row (may include padding)
+ *                 - writeMode, origin: Actual mode in effect
+ *
+ * Returns:
+ *   FXTRUE on success, FXFALSE on failure.
+ *
+ * CRITICAL: After writing through LFB, the buffer won't appear on screen
+ * until grBufferSwap() is called (for back buffer) or the frame completes.
+ * Writing to front buffer appears immediately but may cause tearing.
+ */
 FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t writeMode,
                  GrOriginLocation_t origin, FxBool pixelPipeline, GrLfbInfo_t *info)
 {
@@ -499,9 +783,79 @@ FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
 }
 
 /*************************************
- * Rendering state
+ * Rendering state - Color and Alpha Combine
+ *
+ * The Voodoo "color combine" unit is essentially a programmable pixel shader
+ * from the late 1990s. It determines how the final pixel color is computed
+ * from various sources: vertex colors, texture colors, and constant colors.
+ *
+ * The combine equation (simplified) is:
+ *   output = (A op B) * C + D
+ * where A, B, C, D can be configured independently.
+ *
+ * Common configurations:
+ *
+ * 1. FLAT SHADING (no texture):
+ *    function=LOCAL, local=ITERATED, other=ignored
+ *    Result: output = vertex_color
+ *
+ * 2. DECAL TEXTURE:
+ *    function=LOCAL, local=NONE, other=TEXTURE
+ *    Result: output = texture_color (vertex color ignored)
+ *
+ * 3. MODULATED TEXTURE:
+ *    function=SCALE_OTHER, factor=LOCAL, local=ITERATED, other=TEXTURE
+ *    Result: output = texture_color * vertex_color
+ *    This is the most common mode for textured, lit geometry.
+ *
+ * 4. CONSTANT COLOR:
+ *    function=LOCAL, local=CONSTANT, other=ignored
+ *    Result: output = grConstantColorValue() color
+ *
+ * The alpha combine unit works identically but only for the alpha channel.
+ * It can use different settings than the color combine unit.
  *************************************/
 
+/*
+ * grColorCombine - Configure color combine unit
+ *
+ * From the SDK: "grColorCombine() configures the color combine unit in
+ * the FBI which determines how the final pixel color is computed from
+ * the texture color, iterated vertex color, and constant color."
+ *
+ * Parameters:
+ *   function - The combine operation (GR_COMBINE_FUNCTION_*):
+ *              ZERO: output = 0
+ *              LOCAL: output = local_color
+ *              SCALE_OTHER: output = other_color * factor
+ *              SCALE_OTHER_ADD_LOCAL: output = other_color * factor + local_color
+ *              etc.
+ *
+ *   factor   - Scale factor source (GR_COMBINE_FACTOR_*):
+ *              ZERO, ONE, LOCAL, OTHER_ALPHA, LOCAL_ALPHA, TEXTURE_ALPHA
+ *              Also ONE_MINUS_* variants for (1-x) factors
+ *
+ *   local    - Local color source (GR_COMBINE_LOCAL_*):
+ *              ITERATED: vertex color interpolated across triangle
+ *              CONSTANT: grConstantColorValue() color
+ *
+ *   other    - Other color source (GR_COMBINE_OTHER_*):
+ *              ITERATED: vertex color
+ *              TEXTURE: color from texture mapping unit
+ *              CONSTANT: constant color
+ *
+ *   invert   - If FXTRUE, final output is inverted (1-output)
+ *
+ * Example for modulated texture (the most common case):
+ *   grColorCombine(GR_COMBINE_FUNCTION_SCALE_OTHER,
+ *                  GR_COMBINE_FACTOR_LOCAL,
+ *                  GR_COMBINE_LOCAL_ITERATED,
+ *                  GR_COMBINE_OTHER_TEXTURE,
+ *                  FXFALSE);
+ *
+ * Our implementation maps these parameters to the fbzColorPath register
+ * which the software rasterizer reads during triangle rendering.
+ */
 void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t factor,
                     GrCombineLocal_t local, GrCombineOther_t other, FxBool invert)
 {
@@ -561,6 +915,54 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
     g_voodoo->reg[fbzColorPath].u = val;
 }
 
+/*
+ * grAlphaBlendFunction - Configure alpha blending
+ *
+ * From the SDK: "grAlphaBlendFunction() specifies the blend function used
+ * when alpha blending is enabled. Alpha blending allows for effects like
+ * transparency, particles, and anti-aliased edges."
+ *
+ * Alpha blending equation:
+ *   final_rgb = src_rgb * rgb_sf + dst_rgb * rgb_df
+ *   final_alpha = src_alpha * alpha_sf + dst_alpha * alpha_df
+ *
+ * where:
+ *   src = pixel being rendered (from triangle/texture)
+ *   dst = pixel already in the framebuffer
+ *   sf = source factor, df = destination factor
+ *
+ * Parameters:
+ *   rgb_sf    - Source factor for RGB channels (GR_BLEND_*):
+ *               ZERO, ONE, SRC_ALPHA, ONE_MINUS_SRC_ALPHA, etc.
+ *
+ *   rgb_df    - Destination factor for RGB channels
+ *
+ *   alpha_sf  - Source factor for alpha channel
+ *
+ *   alpha_df  - Destination factor for alpha channel
+ *
+ * Common configurations:
+ *
+ * 1. STANDARD TRANSPARENCY (src over dst):
+ *    rgb_sf=SRC_ALPHA, rgb_df=ONE_MINUS_SRC_ALPHA
+ *    Blends based on source alpha: transparent pixels show through.
+ *
+ * 2. ADDITIVE BLENDING (for particles, fire, glow):
+ *    rgb_sf=SRC_ALPHA, rgb_df=ONE
+ *    Adds source to destination, creating bright glowing effects.
+ *
+ * 3. MULTIPLICATIVE (for shadows, color tinting):
+ *    rgb_sf=ZERO, rgb_df=SRC_COLOR
+ *    Darkens the destination by the source color.
+ *
+ * 4. DISABLED (opaque rendering):
+ *    rgb_sf=ONE, rgb_df=ZERO
+ *    Source completely replaces destination.
+ *
+ * NOTE: On Voodoo 1/2 with 16-bit framebuffer, alpha channel storage
+ * was limited. Alpha blending read src alpha from the combine unit,
+ * not from a stored framebuffer alpha.
+ */
 void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t rgb_df,
                           GrAlphaBlendFnc_t alpha_sf, GrAlphaBlendFnc_t alpha_df)
 {
@@ -583,10 +985,47 @@ void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t 
 
 
 /*************************************
- * Drawing - simplified for now
+ * Drawing functions
+ *
+ * Triangle rendering is the core of Glide (and 3D graphics in general).
+ * The Voodoo hardware was optimized specifically for triangle rendering,
+ * with dedicated hardware for edge walking, texture mapping, and pixel
+ * output.
+ *
+ * TRIANGLE SETUP:
+ * Before a triangle can be rasterized, several setup calculations occur:
+ * 1. Edge equations computed from vertex positions
+ * 2. Parameter gradients (dX/dx, dX/dy) for interpolation
+ * 3. Culling check (optional back-face removal)
+ *
+ * RASTERIZATION:
+ * The triangle is converted to pixels by scanning each row:
+ * 1. Compute Y extent (top to bottom scanline)
+ * 2. For each scanline, compute X extent (left/right edges)
+ * 3. For each pixel, interpolate all parameters and execute pipeline
+ *
+ * PIXEL PIPELINE (per pixel):
+ * 1. Texture lookup (if enabled) with LOD and filtering
+ * 2. Color combine (mix texture, vertex color, constant color)
+ * 3. Alpha combine
+ * 4. Fog application (if enabled)
+ * 5. Alpha test (conditional discard based on alpha)
+ * 6. Depth test (conditional discard based on Z/W)
+ * 7. Alpha blend (mix with existing framebuffer)
+ * 8. Dithering (reduce color banding on 16-bit output)
+ * 9. Write to framebuffer and depth buffer
  *************************************/
 
-/* Helper: compute gradients for parameter interpolation */
+/* Helper: compute gradients for parameter interpolation
+ *
+ * For perspective-correct interpolation, we need to compute how each
+ * parameter changes per-pixel in X and Y. Given a triangle ABC with
+ * parameter values Va, Vb, Vc, we solve for dV/dx and dV/dy using
+ * Cramer's rule on the linear system.
+ *
+ * The area of the triangle is used as a normalizing factor. A zero-area
+ * triangle (degenerate) returns zero gradients.
+ */
 static void compute_gradients(
     float ax, float ay, float bx, float by, float cx, float cy,
     float va, float vb, float vc,
@@ -608,6 +1047,44 @@ static void compute_gradients(
 
 static int g_triangle_count = 0;
 
+/*
+ * grDrawTriangle - Render a single triangle
+ *
+ * From the SDK: "grDrawTriangle() renders a triangle defined by three
+ * vertices. The vertices must be in screen coordinates (post-projection)
+ * with pre-computed 1/W values for perspective correction."
+ *
+ * Parameters:
+ *   a, b, c - Pointers to GrVertex structures defining the triangle.
+ *             These are not copied, so the data must remain valid
+ *             until the function returns.
+ *
+ * Vertex coordinate expectations:
+ *   x, y    - Screen coordinates (0,0 is origin per grSstOrigin)
+ *   oow     - 1/W (one-over-W) for perspective correction.
+ *             W is the homogeneous clip coordinate from projection.
+ *             oow = 1.0 for orthographic, 1/distance for perspective.
+ *   ooz     - Z value for depth buffering (0=near, 65535=far typically)
+ *   r,g,b,a - Vertex color components (0-255 range)
+ *   sow,tow - Texture coordinates divided by W (S/W, T/W)
+ *             These are perspective-divided to enable correct interpolation.
+ *
+ * Winding order and culling:
+ *   By default, no culling occurs. If grCullMode() is set:
+ *   - GR_CULL_POSITIVE: Counterclockwise triangles culled (front-face cull)
+ *   - GR_CULL_NEGATIVE: Clockwise triangles culled (back-face cull)
+ *   Winding is determined by the signed area of the triangle in screen space.
+ *
+ * Our implementation:
+ *   1. Converts float coordinates to fixed-point for the rasterizer
+ *   2. Computes parameter gradients (dP/dx, dP/dy) for interpolation
+ *   3. Handles culling in software (Voodoo 1 had hardware culling)
+ *   4. Calls voodoo_triangle() which does the actual rasterization
+ *
+ * Performance note: On real hardware, grDrawTriangle was very fast because
+ * vertex data was written directly to memory-mapped registers which DMAed
+ * to the hardware. Our software path is considerably slower.
+ */
 void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVertex *c)
 {
     if (!g_voodoo || !g_voodoo->active) return;
@@ -732,6 +1209,51 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
 
 static int g_draw_call_count = 0;
 
+/*
+ * grDrawVertexArray - Draw primitives from an array of vertex pointers
+ *
+ * From the SDK: "grDrawVertexArray() draws primitives defined by an
+ * array of pointers to vertices."
+ *
+ * Parameters:
+ *   mode     - Primitive type (GR_*):
+ *              TRIANGLES: Independent triangles (3 vertices each)
+ *              TRIANGLE_STRIP: Connected strip (shared edges)
+ *              TRIANGLE_FAN: Fan from first vertex
+ *              TRIANGLE_STRIP_CONTINUE: Continue previous strip
+ *              TRIANGLE_FAN_CONTINUE: Continue previous fan
+ *              POINTS, LINES, LINE_STRIP: Non-triangle primitives
+ *
+ *   count    - Number of vertices in the array
+ *
+ *   pointers - Array of (GrVertex *) pointers to vertex data
+ *              Each pointer must point to a valid GrVertex structure.
+ *
+ * Primitive assembly:
+ *
+ * TRIANGLES: Every 3 vertices form an independent triangle
+ *   v0,v1,v2 -> triangle 0
+ *   v3,v4,v5 -> triangle 1
+ *   etc.
+ *
+ * TRIANGLE_STRIP: Each vertex after the first two forms a new triangle
+ *   v0,v1,v2 -> triangle 0
+ *   v1,v2,v3 -> triangle 1 (winding flipped)
+ *   v2,v3,v4 -> triangle 2
+ *   etc.
+ *   Winding alternates to maintain consistent facing.
+ *
+ * TRIANGLE_FAN: First vertex is shared by all triangles
+ *   v0,v1,v2 -> triangle 0
+ *   v0,v2,v3 -> triangle 1
+ *   v0,v3,v4 -> triangle 2
+ *   etc.
+ *   Good for convex polygons (draw from center vertex).
+ *
+ * Strips and fans reduce vertex processing overhead since vertices
+ * are reused. A strip of N triangles needs only N+2 vertices instead
+ * of 3*N for independent triangles.
+ */
 void __stdcall grDrawVertexArray(FxU32 mode, FxU32 count, void *pointers)
 {
     GrVertex **verts = (GrVertex **)pointers;
@@ -843,6 +1365,44 @@ void __stdcall grDrawVertexArrayContiguous(FxU32 mode, FxU32 count, void *vertic
 
 /*************************************
  * Texture management
+ *
+ * Voodoo texture memory is managed explicitly by the application.
+ * Unlike modern GPUs with virtual memory and automatic paging,
+ * the application must:
+ *
+ * 1. Query available texture memory (grTexMinAddress/grTexMaxAddress)
+ * 2. Allocate space manually (usually a simple bump allocator)
+ * 3. Download texture data (grTexDownloadMipMap)
+ * 4. Set the current texture source (grTexSource)
+ *
+ * TEXTURE MEMORY LAYOUT:
+ * Each TMU has its own dedicated texture RAM (typically 2-4MB).
+ * Textures are stored at arbitrary addresses within this space.
+ * Mipmaps are stored contiguously, largest to smallest.
+ *
+ * Example memory layout:
+ *   0x000000 - 0x010000: Texture A (256x256 with mipmaps)
+ *   0x010000 - 0x014000: Texture B (128x128 with mipmaps)
+ *   0x014000 - 0x015000: Texture C (64x64 no mipmaps)
+ *   ...
+ *
+ * TEXTURE FORMATS (bits per texel):
+ *   8-bit:  RGB332, P8 (paletted), Alpha8, Intensity8, AI44
+ *   16-bit: RGB565, ARGB1555, ARGB4444, AI88, AP88
+ *
+ * P8 (paletted) textures use a 256-entry lookup table that maps
+ * 8-bit indices to 32-bit ARGB colors. This allows high color variety
+ * with low memory usage, and was very popular for character sprites.
+ *
+ * MIPMAPPING:
+ * Mipmaps are pre-filtered smaller versions of a texture used to
+ * avoid aliasing when textures are viewed at a distance. Levels are
+ * numbered by log2(size): LOD 0 = 1x1, LOD 8 = 256x256.
+ *
+ * ASPECT RATIO:
+ * Voodoo supports non-square textures with power-of-two aspect ratios
+ * from 8:1 to 1:8. This saves memory for textures that don't need to
+ * be square (e.g., 256x32 for a terrain strip).
  *************************************/
 
 /* Get bytes per texel for a given format */
@@ -917,6 +1477,40 @@ FxU32 __stdcall grTexMaxAddress(GrChipID_t tmu)
     return g_voodoo->tmu[t].mask;
 }
 
+/*
+ * grTexSource - Set the current texture source
+ *
+ * From the SDK: "grTexSource() selects a texture that has been previously
+ * downloaded to TMU memory as the current texture source for rendering."
+ *
+ * Parameters:
+ *   tmu          - Which TMU to configure (GR_TMU0, GR_TMU1, etc.)
+ *                  TMU0 is closest to the framebuffer in the pipeline.
+ *
+ *   startAddress - Byte offset in TMU memory where texture begins.
+ *                  Must match the address used in grTexDownloadMipMap().
+ *
+ *   evenOdd      - Mipmap level mask (GR_MIPMAPLEVELMASK_*):
+ *                  EVEN: use even-numbered LOD levels
+ *                  ODD: use odd-numbered LOD levels
+ *                  BOTH: use all levels (normal operation)
+ *                  Used for trilinear filtering across two TMUs.
+ *
+ *   info         - GrTexInfo structure describing the texture:
+ *                  - smallLodLog2, largeLodLog2: mipmap range
+ *                  - aspectRatioLog2: width:height ratio
+ *                  - format: pixel format (GR_TEXFMT_*)
+ *
+ * Texture coordinate mapping:
+ * The texture size determines how S,T coordinates map to texels:
+ * - S,T = 0.0 maps to left/top edge (texel 0)
+ * - S,T = 255.0 maps to right/bottom edge (texel 255 for 256-wide)
+ *
+ * Our implementation:
+ * - Stores the texture base address and format
+ * - Computes texture dimension masks for wrapping
+ * - Sets up the appropriate lookup table for paletted/special formats
+ */
 void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, GrTexInfo *info)
 {
     LOG_FUNC();
@@ -979,6 +1573,42 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
     ts->regdirty = 1;
 }
 
+/*
+ * grTexDownloadMipMap - Download a texture with all mipmap levels
+ *
+ * From the SDK: "grTexDownloadMipMap() downloads a texture mipmap to
+ * the specified TMU. The texture data pointer and size information
+ * come from the GrTexInfo structure."
+ *
+ * Parameters:
+ *   tmu          - Which TMU to download to (GR_TMU0, GR_TMU1)
+ *
+ *   startAddress - Destination address in TMU memory.
+ *                  The application is responsible for ensuring this
+ *                  doesn't overlap with other textures.
+ *
+ *   evenOdd      - Which mipmap levels to download (usually BOTH).
+ *                  Can download only even or odd levels for trilinear.
+ *
+ *   info         - GrTexInfo structure:
+ *                  - data: Pointer to texture data in system memory
+ *                  - smallLodLog2: Smallest mipmap level (e.g., LOD_1 = 1x1)
+ *                  - largeLodLog2: Largest mipmap level (e.g., LOD_256 = 256x256)
+ *                  - aspectRatioLog2: Texture shape
+ *                  - format: Pixel format
+ *
+ * Memory layout of mipmap data:
+ * The data pointer should point to a contiguous block containing all
+ * mipmap levels from largest to smallest:
+ *   [256x256 data][128x128 data][64x64 data]...[1x1 data]
+ *
+ * Each level is width * height * bytesPerTexel bytes.
+ * Total size can be computed with grTexTextureMemRequired().
+ *
+ * Performance note: On real hardware, texture downloads were one of
+ * the slower operations due to PCI bus bandwidth. Games often downloaded
+ * textures during level loads rather than dynamically.
+ */
 void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, GrTexInfo *info)
 {
     LOG_FUNC();
@@ -1116,6 +1746,54 @@ FxU32 __stdcall grTexTextureMemRequired(FxU32 evenOdd, GrTexInfo *info)
     return total;
 }
 
+/*
+ * grTexCombine - Configure texture combine for a TMU
+ *
+ * From the SDK: "grTexCombine() configures how a TMU combines its texture
+ * output with the input from the downstream TMU (or iteration for TMU0)."
+ *
+ * TMU PIPELINE (for multi-TMU systems like Voodoo 2):
+ *   Iteration (vertex color) -> TMU1 -> TMU0 -> Color Combine -> Framebuffer
+ *
+ * Each TMU can:
+ * - Output its own texture color directly (DECAL mode)
+ * - Pass through upstream color unchanged (OTHER mode)
+ * - Blend its texture with upstream color (various SCALE/ADD modes)
+ * - Multiply textures together (for detail textures, lightmaps, etc.)
+ *
+ * Parameters:
+ *   tmu            - Which TMU to configure
+ *
+ *   rgb_function   - How to combine RGB (GR_COMBINE_FUNCTION_*):
+ *                    ZERO: output = 0
+ *                    DECAL: output = this_texture
+ *                    OTHER: output = upstream (pass-through)
+ *                    MULTIPLY: output = this_texture * upstream
+ *                    ADD: output = this_texture + upstream
+ *
+ *   rgb_factor     - Scale factor for SCALE_* functions
+ *
+ *   alpha_function - How to combine alpha (same options as rgb)
+ *
+ *   alpha_factor   - Scale factor for alpha
+ *
+ *   rgb_invert     - If FXTRUE, invert RGB output
+ *
+ *   alpha_invert   - If FXTRUE, invert alpha output
+ *
+ * Common multi-texture configurations:
+ *
+ * 1. SINGLE TEXTURE (TMU0 only):
+ *    TMU0: DECAL - output texture directly
+ *
+ * 2. DETAIL TEXTURE (fine detail overlaid on base):
+ *    TMU1: DECAL - base texture
+ *    TMU0: DETAIL - blend detail based on LOD
+ *
+ * 3. LIGHTMAP (pre-baked lighting):
+ *    TMU1: DECAL - diffuse texture
+ *    TMU0: MULTIPLY - lightmap multiplies diffuse
+ */
 void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
                   GrCombineFactor_t rgb_factor, GrCombineFunction_t alpha_function,
                   GrCombineFactor_t alpha_factor, FxBool rgb_invert, FxBool alpha_invert)
@@ -1294,9 +1972,45 @@ float __stdcall grSstScreenHeight(void)
 }
 
 /*************************************
- * Fog - stubs
+ * Fog functions
+ *
+ * Fog (or "atmospheric effects") simulates light scattering through
+ * the atmosphere. Objects fade toward a fog color as they get farther
+ * from the camera, adding depth perception and hiding the far clip plane.
+ *
+ * Voodoo fog uses a 64-entry lookup table that maps depth (or a fog
+ * coordinate) to a blend factor. The final color is:
+ *   output = lerp(pixel_color, fog_color, fog_factor)
+ *
+ * Fog sources:
+ *   WITH_TABLE_ON_W: Use 1/W (perspective depth) for fog
+ *   WITH_TABLE_ON_Q: Use Q (texture coordinate W) for fog
+ *   WITH_ITERATED_Z: Use interpolated Z value for fog
+ *   WITH_ITERATED_ALPHA: Use vertex alpha as fog factor (special effect)
+ *   WITH_TABLE_ON_FOGCOORD: Use explicit fog coordinate from vertex
+ *
+ * Most games use W-based fog since it matches the perspective depth
+ * and requires no extra vertex data.
  *************************************/
 
+/*
+ * grFogMode - Enable/disable and configure fog
+ *
+ * From the SDK: "grFogMode() enables table-based fog and specifies
+ * how the fog table index is derived."
+ *
+ * Parameters:
+ *   mode - Fog mode (GR_FOG_*):
+ *          DISABLE: No fog
+ *          WITH_TABLE_ON_W: Index fog table by 1/W
+ *          WITH_TABLE_ON_FOGCOORD_EXT: Index by explicit fog coord
+ *          WITH_ITERATED_Z: Index by Z value
+ *          WITH_ITERATED_ALPHA_EXT: Use alpha as fog blend factor
+ *
+ * The fog table (set by grFogTable) maps the fog index to a blend
+ * factor (0-255). The guFogGenerateExp/Exp2/Linear utility functions
+ * generate common fog table patterns.
+ */
 void __stdcall grFogMode(GrFogMode_t mode)
 {
     LOG_FUNC();
@@ -1311,6 +2025,39 @@ void __stdcall grFogColorValue(GrColor_t fogcolor)
     g_voodoo->reg[fogColor].u = fogcolor;
 }
 
+/*
+ * grFogTable - Download fog blend table
+ *
+ * From the SDK: "grFogTable() downloads a 64-entry table that maps
+ * depth indices to fog blend factors."
+ *
+ * Parameters:
+ *   ft - Array of 64 GrFog_t (uint8_t) values:
+ *        Entry 0: fog factor for nearest depth
+ *        Entry 63: fog factor for farthest depth
+ *        Each value is 0-255:
+ *        0 = no fog (full pixel color)
+ *        255 = full fog (fog color replaces pixel)
+ *
+ * Table index computation:
+ * The fog table is indexed by the selected fog source (W, Z, etc.)
+ * normalized to 0-63. The exact mapping depends on the fog mode
+ * and whether the table has been scaled via guFogTableIndexToW().
+ *
+ * Common fog patterns:
+ *
+ * 1. LINEAR FOG: Fog increases linearly with distance
+ *    for(i=0; i<64; i++) table[i] = i * 4;
+ *
+ * 2. EXPONENTIAL FOG (more realistic):
+ *    for(i=0; i<64; i++) table[i] = 255 * (1 - exp(-density * i));
+ *
+ * 3. EXPONENTIAL SQUARED (thicker):
+ *    for(i=0; i<64; i++) table[i] = 255 * (1 - exp(-pow(density*i, 2)));
+ *
+ * The Glide utility functions (guFogGenerateExp, etc.) generate these
+ * patterns automatically with appropriate W-to-index scaling.
+ */
 void __stdcall grFogTable(const GrFog_t ft[])
 {
     LOG_FUNC();
@@ -1383,17 +2130,57 @@ static void log_gamma_table(const char* func, int num_entries, const FxU32 *tabl
     debug_log(buf);
 }
 
+/*
+ * grAlphaTestFunction - Set alpha test comparison function
+ *
+ * From the SDK: "grAlphaTestFunction() sets the function used to compare
+ * the alpha value of the pixel being rendered against the alpha reference
+ * value set by grAlphaTestReferenceValue()."
+ *
+ * Parameters:
+ *   function - Comparison function (GR_CMP_*):
+ *              NEVER:   Always discard (useful for debugging)
+ *              ALWAYS:  Always pass (alpha test disabled)
+ *              LESS:    Pass if alpha < reference
+ *              LEQUAL:  Pass if alpha <= reference
+ *              EQUAL:   Pass if alpha == reference
+ *              GEQUAL:  Pass if alpha >= reference (common for masking)
+ *              GREATER: Pass if alpha > reference
+ *              NOTEQUAL: Pass if alpha != reference
+ *
+ * Alpha testing vs Alpha blending:
+ * - Alpha TEST: Binary accept/reject decision. Pixel is either drawn
+ *   fully or not at all. Used for hard-edged transparency (grass, fences).
+ * - Alpha BLEND: Proportional mixing with framebuffer. Used for soft
+ *   transparency (glass, smoke, particles).
+ *
+ * Common use cases:
+ *
+ * 1. BILLBOARD SPRITES (trees, particles):
+ *    grAlphaTestFunction(GR_CMP_GEQUAL);
+ *    grAlphaTestReferenceValue(128);
+ *    Pixels with alpha >= 128 are drawn, others discarded.
+ *    This gives clean edges without needing sorted draw order.
+ *
+ * 2. DECAL CUTOUTS:
+ *    grAlphaTestFunction(GR_CMP_NOTEQUAL);
+ *    grAlphaTestReferenceValue(0);
+ *    Only draw pixels with non-zero alpha.
+ *
+ * Performance: Alpha test happens before the expensive alpha blend step
+ * and framebuffer write, so discarding pixels early saves bandwidth.
+ */
 void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
 {
     LOG("grAlphaTestFunction(%d)", function);
     if (!g_voodoo) return;
-    
+
     uint32_t val = g_voodoo->reg[alphaMode].u;
-    
+
     /* Bits 1-3: Alpha Function */
     val &= ~(7 << 1);
     val |= ((function & 7) << 1);
-    
+
     g_voodoo->reg[alphaMode].u = val;
 }
 
@@ -1460,41 +2247,102 @@ void __stdcall grDepthMask(FxBool mask)
     g_voodoo->reg[fbzMode].u = val;
 }
 
+/*
+ * grDepthBufferMode - Configure depth buffer operation
+ *
+ * From the SDK: "grDepthBufferMode() configures the depth buffer mode.
+ * The depth buffer is used for hidden surface removal."
+ *
+ * Parameters:
+ *   mode - One of GR_DEPTHBUFFER_*:
+ *          DISABLE: No depth testing/writing
+ *          ZBUFFER: Standard Z-buffering (linear depth)
+ *          WBUFFER: W-buffering (1/Z, better precision distribution)
+ *          ZBUFFER_COMPARE_TO_BIAS: Z with constant bias for decals
+ *          WBUFFER_COMPARE_TO_BIAS: W with constant bias
+ *
+ * Z-BUFFERING vs W-BUFFERING:
+ *
+ * Z-buffer stores linear depth values. After perspective divide, Z values
+ * are distributed non-linearly: lots of precision near the far plane,
+ * not much near the camera. This can cause "Z-fighting" for distant objects.
+ *
+ * W-buffer stores the clip-space W coordinate (essentially 1/Z in eye space).
+ * This gives more uniform precision distribution, reducing Z-fighting
+ * for large scenes. However, it requires more setup (providing valid W).
+ *
+ * Voodoo supported both modes. Most games used Z-buffering for simplicity.
+ *
+ * DEPTH BIAS:
+ * The "compare to bias" modes compare against grDepthBiasLevel() value
+ * instead of the stored depth. This allows "decals" (coplanar polygons)
+ * to render without Z-fighting.
+ */
 void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
 {
     LOG("grDepthBufferMode(%d)", mode);
     if (!g_voodoo) return;
-    
+
     uint32_t val = g_voodoo->reg[fbzMode].u;
-    
+
     /* Bit 4: Enable Depth Buffer */
     if (mode == GR_DEPTHBUFFER_DISABLE) {
         val &= ~(1 << 4);
     } else {
         val |= (1 << 4);
     }
-    
+
     /* Bit 3: W-Buffer Select (1=W, 0=Z) */
     if (mode == GR_DEPTHBUFFER_WBUFFER) {
         val |= (1 << 3);
     } else {
         val &= ~(1 << 3);
     }
-    
+
     g_voodoo->reg[fbzMode].u = val;
 }
 
+/*
+ * grDepthBufferFunction - Set depth comparison function
+ *
+ * From the SDK: "grDepthBufferFunction() sets the function used to
+ * compare incoming depth values against values in the depth buffer."
+ *
+ * Parameters:
+ *   func - Comparison function (GR_CMP_*):
+ *          NEVER:    Never pass (always discard)
+ *          LESS:     Pass if incoming < buffer (standard, closer wins)
+ *          EQUAL:    Pass if incoming == buffer (rare)
+ *          LEQUAL:   Pass if incoming <= buffer (common default)
+ *          GREATER:  Pass if incoming > buffer (reverse depth)
+ *          NOTEQUAL: Pass if incoming != buffer (rare)
+ *          GEQUAL:   Pass if incoming >= buffer (reverse depth)
+ *          ALWAYS:   Always pass (depth test disabled effectively)
+ *
+ * Depth comparison semantics:
+ *   incoming - depth value of the pixel being rendered
+ *   buffer   - depth value already stored in the depth buffer
+ *
+ * For standard Z-buffering (small Z = near, large Z = far):
+ *   Use GR_CMP_LESS or GR_CMP_LEQUAL so nearer objects win.
+ *
+ * For W-buffering or reverse-Z (large = near):
+ *   Use GR_CMP_GREATER or GR_CMP_GEQUAL.
+ *
+ * LEQUAL is more common than LESS because it handles the case where
+ * the same geometry is drawn twice (e.g., multi-pass rendering).
+ */
 void __stdcall grDepthBufferFunction(GrCmpFnc_t func)
 {
     LOG("grDepthBufferFunction(%d)", func);
     if (!g_voodoo) return;
-    
+
     uint32_t val = g_voodoo->reg[fbzMode].u;
-    
+
     /* Bits 5-7: Depth Function */
     val &= ~(7 << 5);
     val |= ((func & 7) << 5);
-    
+
     g_voodoo->reg[fbzMode].u = val;
 }
 
@@ -1586,6 +2434,43 @@ void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
     }
 }
 
+/*
+ * grCullMode - Set back-face culling mode
+ *
+ * From the SDK: "grCullMode() enables or disables culling of back-facing
+ * or front-facing triangles."
+ *
+ * Parameters:
+ *   mode - Culling mode (GR_CULL_*):
+ *          DISABLE:  Draw all triangles regardless of winding
+ *          NEGATIVE: Cull triangles with negative (clockwise) winding
+ *          POSITIVE: Cull triangles with positive (counterclockwise) winding
+ *
+ * Winding and face determination:
+ * Triangle winding is determined by the signed area in screen space.
+ * Given vertices A->B->C:
+ *   Positive area = counterclockwise (CCW) when viewed
+ *   Negative area = clockwise (CW) when viewed
+ *
+ * Conventions:
+ * - OpenGL: CCW is front-facing by default
+ * - DirectX: CW is front-facing by default
+ * - Glide: Application chooses via culling mode
+ *
+ * For a closed 3D object, one face of each triangle is "outside" (front)
+ * and one is "inside" (back). If we only ever see the outside, we can
+ * skip drawing back-faces entirely - this is back-face culling.
+ *
+ * Performance: Culling eliminates ~50% of triangles for closed objects.
+ * On original Voodoo hardware, culling happened very early, before
+ * expensive rasterization. Our software culling is also early, in
+ * grDrawTriangle() before gradient computation.
+ *
+ * Note: Culling should be disabled for:
+ * - 2D sprites (both sides visible)
+ * - Transparent/double-sided surfaces
+ * - Debugging (to see inside-out geometry)
+ */
 void __stdcall grCullMode(GrCullMode_t mode)
 {
     LOG("grCullMode(%d)", mode);
@@ -1701,6 +2586,33 @@ void __stdcall grVertexLayout(FxU32 param, FxI32 offset, FxU32 mode)
     (void)mode;
 }
 
+/*
+ * grGet - Query Glide state and capabilities
+ *
+ * From the SDK: "grGet() returns information about the current Glide
+ * state and the capabilities of the graphics hardware."
+ *
+ * Parameters:
+ *   pname   - Which value to query (GR_* constants)
+ *   plength - Size of params buffer in bytes
+ *   params  - Output buffer to receive the value(s)
+ *
+ * Returns:
+ *   Number of bytes written to params, or 0 on error.
+ *
+ * Common queries and our responses:
+ *   GR_NUM_BOARDS      -> 1 (we emulate one board)
+ *   GR_NUM_TMU         -> 3 (for compatibility with D2GL)
+ *   GR_MEMORY_FB       -> 4MB framebuffer
+ *   GR_MEMORY_TMU      -> 2MB per TMU
+ *   GR_MAX_TEXTURE_SIZE -> 256 (standard Voodoo limit)
+ *   GR_BITS_DEPTH      -> 16 (16-bit Z/W buffer)
+ *   GR_BITS_RGBA       -> 5,6,5,0 (RGB565 format)
+ *
+ * Applications use this to determine hardware capabilities and
+ * adjust quality settings accordingly. We report values matching
+ * a well-equipped Voodoo 2 configuration.
+ */
 FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
 {
     char dbg[128];

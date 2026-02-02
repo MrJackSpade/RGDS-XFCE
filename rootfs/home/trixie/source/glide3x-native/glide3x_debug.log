@@ -2409,3 +2409,19 @@ glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
