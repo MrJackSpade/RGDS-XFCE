@@ -233,6 +233,19 @@ typedef struct {
     /* Clip rectangle */
     int32_t     clip_left, clip_right;
     int32_t     clip_top, clip_bottom;
+
+    /* Software renderer state (not in hardware regs) */
+    int32_t     vp_x, vp_y;
+    int32_t     vp_width, vp_height;
+    int32_t     cull_mode;
+    uint32_t    gamma_table[32];  /* Simple gamma table storage */
+    
+    /* Extra state for primitives */
+    float       vertex_layout_offset; /* For grVertexLayout */
+    
+    /* Shadow state for shared registers */
+    bool        alpha_mask;
+    bool        depth_mask;
 } voodoo_state;
 
 /*************************************

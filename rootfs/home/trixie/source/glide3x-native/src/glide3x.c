@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "glide3x.h"
 #include "voodoo_state.h"
@@ -38,6 +39,16 @@ static void debug_log(const char *msg)
         debug_log(_dbg); \
     } \
 } while(0)
+
+/* Simple logging macro */
+#define LOG(fmt, ...) do { \
+    char _dbg[256]; \
+    snprintf(_dbg, sizeof(_dbg), "glide3x: " fmt "\n", ##__VA_ARGS__); \
+    debug_log(_dbg); \
+} while(0)
+
+/* Global counters */
+static int g_lfb_write_count = 0;
 
 /*************************************
  * Global state
@@ -236,6 +247,17 @@ GrContext_t __stdcall grSstWinOpen(
 
     g_voodoo->active = true;
     g_context = (GrContext_t)g_voodoo;
+
+    /* Initialize Viewport to full screen */
+    g_voodoo->vp_x = 0;
+    g_voodoo->vp_y = 0;
+    g_voodoo->vp_width = g_screen_width;
+    g_voodoo->vp_height = g_screen_height;
+    
+    /* Initialize default state */
+    g_voodoo->cull_mode = GR_CULL_DISABLE;
+    g_voodoo->alpha_mask = false; /* Default: alpha writes disabled? */
+    g_voodoo->depth_mask = true;  /* Default: depth writes enabled */
 
     /* Set default render buffer to back buffer */
     g_render_buffer = 1;
@@ -553,69 +575,7 @@ void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t 
     g_voodoo->reg[alphaMode].u = val;
 }
 
-void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
-{
-    LOG_FUNC();
-    if (!g_voodoo) return;
 
-    uint32_t val = g_voodoo->reg[alphaMode].u;
-    val &= ~0xF;
-    val |= (1 << 0);  /* Enable alpha test */
-    val |= ((function & 7) << 1);
-    g_voodoo->reg[alphaMode].u = val;
-}
-
-void __stdcall grAlphaTestReferenceValue(GrAlpha_t value)
-{
-    LOG_FUNC();
-    if (!g_voodoo) return;
-
-    uint32_t val = g_voodoo->reg[alphaMode].u;
-    val &= ~(0xFF << 24);
-    val |= (value << 24);
-    g_voodoo->reg[alphaMode].u = val;
-}
-
-void __stdcall grDepthBufferMode(GrCmpFnc_t mode)
-{
-    LOG_FUNC();
-    if (!g_voodoo) return;
-
-    uint32_t val = g_voodoo->reg[fbzMode].u;
-
-    if (mode == GR_CMP_ALWAYS) {
-        val &= ~(1 << 4);  /* Disable depth buffer */
-    } else {
-        val |= (1 << 4);   /* Enable depth buffer */
-    }
-
-    g_voodoo->reg[fbzMode].u = val;
-}
-
-void __stdcall grDepthBufferFunction(GrCmpFnc_t function)
-{
-    LOG_FUNC();
-    if (!g_voodoo) return;
-
-    uint32_t val = g_voodoo->reg[fbzMode].u;
-    val &= ~(7 << 5);
-    val |= ((function & 7) << 5);
-    g_voodoo->reg[fbzMode].u = val;
-}
-
-void __stdcall grDepthMask(FxBool mask)
-{
-    LOG_FUNC();
-    if (!g_voodoo) return;
-
-    uint32_t val = g_voodoo->reg[fbzMode].u;
-    if (mask) {
-        val |= (1 << 10);   /* Enable aux buffer write */
-    } else {
-        val &= ~(1 << 10);
-    }
-    g_voodoo->reg[fbzMode].u = val;
-}
 
 /*************************************
  * Drawing - simplified for now
@@ -672,6 +632,19 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
 
     /* Compute color gradients (dpdx, dpdy) */
     float drdx, drdy, dgdx, dgdy, dbdx, dbdy, dadx, dady;
+
+    /* Apply viewport offset if needed */
+    /* D2 passes relative coordinates that need to be offset by the viewport origin */
+    ax += (float)g_voodoo->vp_x; ay += (float)g_voodoo->vp_y;
+    bx += (float)g_voodoo->vp_x; by += (float)g_voodoo->vp_y;
+    cx += (float)g_voodoo->vp_x; cy += (float)g_voodoo->vp_y;
+    
+    /* Software Culling */
+    if (g_voodoo->cull_mode != GR_CULL_DISABLE) {
+        float area = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay);
+        if (g_voodoo->cull_mode == GR_CULL_POSITIVE && area > 0) return; /* Cull CCW */
+        if (g_voodoo->cull_mode == GR_CULL_NEGATIVE && area < 0) return; /* Cull CW */
+    }
 
     compute_gradients(ax, ay, bx, by, cx, cy, a->r, b->r, c->r, &drdx, &drdy);
     compute_gradients(ax, ay, bx, by, cx, cy, a->g, b->g, c->g, &dgdx, &dgdy);
@@ -1395,14 +1368,229 @@ void __stdcall grChromakeyValue(GrColor_t value)
     g_voodoo->reg[chromaKey].u = value;
 }
 
-void __stdcall grCullMode(GrCullMode_t mode)
-{
-    LOG_FUNC();
-    /* Culling is handled at a higher level in most games */
-    (void)mode;
+/* 
+ * Helper for logging gamma tables 
+ */
+static void log_gamma_table(const char* func, int num_entries, const FxU32 *table) {
+    if (g_lfb_write_count < 10) { /* Limit spam */
+        char buf[256];
+        snprintf(buf, sizeof(buf), "%s: First entry 0x%08X, Last entry 0x%08X\n", 
+                 func, table[0], table[num_entries-1]);
+        debug_log(buf);
+    }
 }
 
-static int g_lfb_write_count = 0;
+void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
+{
+    LOG("grAlphaTestFunction(%d)", function);
+    if (!g_voodoo) return;
+    
+    uint32_t val = g_voodoo->reg[alphaMode].u;
+    
+    /* Bits 1-3: Alpha Function */
+    val &= ~(7 << 1);
+    val |= ((function & 7) << 1);
+    
+    g_voodoo->reg[alphaMode].u = val;
+}
+
+void __stdcall grAlphaTestReferenceValue(GrAlpha_t value)
+{
+    LOG("grAlphaTestReferenceValue(%d)", value);
+    if (!g_voodoo) return;
+
+    uint32_t val = g_voodoo->reg[alphaMode].u;
+    
+    /* Bits 24-31: Alpha Reference Value */
+    val &= ~(0xFF << 24);
+    val |= ((value & 0xFF) << 24);
+    
+    g_voodoo->reg[alphaMode].u = val;
+}
+
+void __stdcall grColorMask(FxBool rgb, FxBool alpha)
+{
+    LOG("grColorMask(rgb=%d, alpha=%d)", rgb, alpha);
+    if (!g_voodoo) return;
+
+    /* Update shadow state */
+    g_voodoo->alpha_mask = alpha;
+
+    uint32_t val = g_voodoo->reg[fbzMode].u;
+    
+    /* RGB Mask (Bit 9: 1=Disable) */
+    if (rgb) {
+        val &= ~(1 << 9); 
+    } else {
+        val |= (1 << 9);
+    }
+    
+    /* Aux Mask (Bit 10: 1=Disable) - Shared by Alpha and Depth */
+    /* Enable writes if EITHER alpha OR depth is enabled */
+    if (g_voodoo->alpha_mask || g_voodoo->depth_mask) {
+        val &= ~(1 << 10); /* Enable Aux writes */
+    } else {
+        val |= (1 << 10);  /* Disable Aux writes */
+    }
+    
+    g_voodoo->reg[fbzMode].u = val;
+    LOG("  fbzMode updated: 0x%08X", val);
+}
+
+void __stdcall grDepthMask(FxBool mask)
+{
+    LOG("grDepthMask(%d)", mask);
+    if (!g_voodoo) return;
+    
+    /* Update shadow state */
+    g_voodoo->depth_mask = mask;
+    
+    uint32_t val = g_voodoo->reg[fbzMode].u;
+    
+    /* Aux Mask (Bit 10: 1=Disable) - Shared by Alpha and Depth */
+    if (g_voodoo->alpha_mask || g_voodoo->depth_mask) {
+        val &= ~(1 << 10); /* Enable Aux writes */
+    } else {
+        val |= (1 << 10);  /* Disable Aux writes */
+    }
+    
+    g_voodoo->reg[fbzMode].u = val;
+}
+
+void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
+{
+    LOG("grDepthBufferMode(%d)", mode);
+    if (!g_voodoo) return;
+    
+    uint32_t val = g_voodoo->reg[fbzMode].u;
+    
+    /* Bit 4: Enable Depth Buffer */
+    if (mode == GR_DEPTHBUFFER_DISABLE) {
+        val &= ~(1 << 4);
+    } else {
+        val |= (1 << 4);
+    }
+    
+    /* Bit 3: W-Buffer Select (1=W, 0=Z) */
+    if (mode == GR_DEPTHBUFFER_WBUFFER) {
+        val |= (1 << 3);
+    } else {
+        val &= ~(1 << 3);
+    }
+    
+    g_voodoo->reg[fbzMode].u = val;
+}
+
+void __stdcall grDepthBufferFunction(GrCmpFnc_t func)
+{
+    LOG("grDepthBufferFunction(%d)", func);
+    if (!g_voodoo) return;
+    
+    uint32_t val = g_voodoo->reg[fbzMode].u;
+    
+    /* Bits 5-7: Depth Function */
+    val &= ~(7 << 5);
+    val |= ((func & 7) << 5);
+    
+    g_voodoo->reg[fbzMode].u = val;
+}
+
+void __stdcall grLoadGammaTable(FxU32 nentries, FxU32 *red, FxU32 *green, FxU32 *blue)
+{
+    LOG("grLoadGammaTable(entries=%d)", nentries);
+    if (!g_voodoo) return;
+    
+    if (nentries > 32) nentries = 32; /* Clamp to typical size */
+    
+    for (uint32_t i = 0; i < nentries; i++) {
+        /* Pack into ARGB 8888 or similar storage ? */
+        /* For now, just taking Green as representative or packing ? */
+        /* Hardware usually has separate tables. We'll store a packed representation */
+        uint32_t r = red[i] & 0xFF;
+        uint32_t g = green[i] & 0xFF;
+        uint32_t b = blue[i] & 0xFF;
+        g_voodoo->gamma_table[i] = (r << 16) | (g << 8) | b;
+    }
+    log_gamma_table("grLoadGammaTable", nentries, g_voodoo->gamma_table);
+}
+
+void __stdcall guGammaCorrectionRGB(float red, float green, float blue)
+{
+    LOG("guGammaCorrectionRGB(%.2f, %.2f, %.2f)", red, green, blue);
+    
+    FxU32 r_table[32], g_table[32], b_table[32];
+    
+    for (int i = 0; i < 32; i++) {
+        float i_f = (float)i / 31.0f;
+        
+        /* Simple gamma calc: val = input ^ (1/gamma) */
+        /* Avoid pow(0, neg) */
+        
+        float r_val = (red > 0.0f) ? powf(i_f, 1.0f / red) : i_f;
+        float g_val = (green > 0.0f) ? powf(i_f, 1.0f / green) : i_f;
+        float b_val = (blue > 0.0f) ? powf(i_f, 1.0f / blue) : i_f;
+        
+        r_table[i] = (FxU32)(r_val * 255.0f);
+        g_table[i] = (FxU32)(g_val * 255.0f);
+        b_table[i] = (FxU32)(b_val * 255.0f);
+    }
+    
+    grLoadGammaTable(32, r_table, g_table, b_table);
+}
+
+void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
+{
+    LOG_FUNC();
+    if (!g_voodoo || !data) return;
+    
+    LOG("  type=%d", type);
+    
+    /* Apply to all TMUs */
+    for (int t = 0; t < 2; t++) {
+        tmu_state *ts = &g_voodoo->tmu[t];
+        
+        switch (type) {
+            case GR_TEXTABLE_NCC0:
+            case GR_TEXTABLE_NCC1: 
+                {
+                    if (t == 0) { /* Log only once */
+                        LOG("  WARNING: NCC Table download is complex. Logging first words:");
+                        const uint32_t* d = (const uint32_t*)data;
+                        LOG("  [0]=0x%08X [1]=0x%08X", d[0], d[1]);
+                    }
+                }
+                break;
+                
+            case GR_TEXTABLE_PALETTE:
+            case GR_TEXTABLE_PALETTE_6666_EXT:
+                {
+                    const uint32_t* pal = (const uint32_t*)data;
+                    for (int i = 0; i < 256; i++) {
+                        ts->palette[i] = pal[i];
+                    }
+                    if (t == 0) {
+                        LOG("  Palette downloaded. Entry 0: 0x%08X, 255: 0x%08X", pal[0], pal[255]);
+                    }
+                }
+                break;
+                
+            default:
+                if (t == 0) LOG("  Unknown table type %d", type);
+                break;
+        }
+        
+        ts->regdirty = 1;
+    }
+}
+
+void __stdcall grCullMode(GrCullMode_t mode)
+{
+    LOG("grCullMode(%d)", mode);
+    if (!g_voodoo) return;
+    g_voodoo->cull_mode = mode;
+}
+
+
 
 FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_y,
                          GrLfbSrcFmt_t src_format, FxU32 src_width, FxU32 src_height,
@@ -1701,22 +1889,20 @@ void __stdcall grErrorSetCallback(void (*fnc)(const char *string, FxBool fatal))
     /* Ignored - we don't report errors this way */
 }
 
-void __stdcall grColorMask(FxBool rgb, FxBool a)
-{
-    LOG_FUNC();
-    (void)rgb;
-    (void)a;
-    /* TODO: Implement color write mask */
-}
+
 
 void __stdcall grViewport(FxI32 x, FxI32 y, FxI32 width, FxI32 height)
 {
     LOG_FUNC();
-    (void)x;
-    (void)y;
-    (void)width;
-    (void)height;
-    /* Viewport is handled by clip window */
+    if (!g_voodoo) return;
+    
+    g_voodoo->vp_x = x;
+    g_voodoo->vp_y = y;
+    g_voodoo->vp_width = width;
+    g_voodoo->vp_height = height;
+    
+    /* Also update clip window */
+    grClipWindow(x, y, x + width, y + height);
 }
 
 void __stdcall grEnable(GrEnableMode_t mode)
@@ -1749,16 +1935,39 @@ void __stdcall grDisable(GrEnableMode_t mode)
 void __stdcall grDrawPoint(const void *pt)
 {
     LOG_FUNC();
-    (void)pt;
-    /* TODO: Implement point drawing */
+    const GrVertex *v = (const GrVertex*)pt;
+    if (!v) return;
+    
+    /* Draw as a small triangle/rect */
+    /* Reuse grDrawTriangle for simplicity */
+    GrVertex v1 = *v;
+    GrVertex v2 = *v;
+    GrVertex v3 = *v;
+    
+    v2.x += 1.0f;
+    v3.y += 1.0f;
+    
+    grDrawTriangle(&v1, &v2, &v3);
 }
 
-void __stdcall grDrawLine(const void *v1, const void *v2)
+void __stdcall grDrawLine(const void *v1_in, const void *v2_in)
 {
     LOG_FUNC();
-    (void)v1;
-    (void)v2;
-    /* TODO: Implement line drawing */
+    const GrVertex *v1 = (const GrVertex*)v1_in;
+    const GrVertex *v2 = (const GrVertex*)v2_in;
+    
+    if (!v1 || !v2) return;
+    
+    /* Draw as a thin triangle */
+    GrVertex a = *v1;
+    GrVertex b = *v2;
+    GrVertex c = *v2;
+    
+    /* Very naive line drawing - shift C slightly to make a triangle */
+    c.x += 0.5f;
+    c.y += 0.5f;
+    
+    grDrawTriangle(&a, &b, &c);
 }
 
 void __stdcall grAADrawTriangle(const void *a, const void *b, const void *c,
@@ -1772,29 +1981,4 @@ void __stdcall grAADrawTriangle(const void *a, const void *b, const void *c,
     grDrawTriangle(a, b, c);
 }
 
-void __stdcall grLoadGammaTable(FxU32 nentries, FxU32 *red, FxU32 *green, FxU32 *blue)
-{
-    LOG_FUNC();
-    (void)nentries;
-    (void)red;
-    (void)green;
-    (void)blue;
-    /* Ignored - we don't do gamma correction */
-}
 
-void __stdcall guGammaCorrectionRGB(float red, float green, float blue)
-{
-    LOG_FUNC();
-    (void)red;
-    (void)green;
-    (void)blue;
-    /* Ignored - we don't do gamma correction */
-}
-
-void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
-{
-    LOG_FUNC();
-    (void)type;
-    (void)data;
-    /* TODO: Implement palette/NCC table download */
-}

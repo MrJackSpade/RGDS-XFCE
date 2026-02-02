@@ -141,8 +141,24 @@ int main(int argc, char *argv[])
         v3.b = 255.0f;
         v3.a = 255.0f;
 
-        /* Draw the triangle */
+        /* Draw the first triangle */
         grDrawTriangle(&v1, &v2, &v3);
+
+        /* Test Viewport Offset (Fix for D2 "ZARD" issue) */
+        /* Set viewport to offset by 50 pixels X and Y */
+        grViewport(50, 50, 640, 480);
+        
+        /* Draw a smaller red triangle at (0,0) in local coords */
+        /* Should appear at (50,50) on screen */
+        GrVertex t1 = v1, t2 = v2, t3 = v3;
+        t1.x = 0; t1.y = 0; t1.r = 255; t1.g = 0; t1.b = 0;
+        t2.x = 0; t2.y = 50; t2.r = 255; t2.g = 0; t2.b = 0;
+        t3.x = 50; t3.y = 0; t3.r = 255; t3.g = 0; t3.b = 0;
+        
+        grDrawTriangle(&t1, &t2, &t3);
+        
+        /* Reset viewport */
+        grViewport(0, 0, 640, 480);
 
         /* Swap buffers */
         grBufferSwap(1);

@@ -1,0 +1,301 @@
+glide3x: DLL_PROCESS_ATTACH
+glide3x: grGet(pname=15, plength=4)
+glide3x: grGlideInit called
+glide3x: grGlideInit complete
+glide3x: grSstSelect
+glide3x: grSstWinOpen(res=8, origin=0)
+glide3x: grSstWinOpen - resolution 800x600
+glide3x: grSstWinOpen - init FBI
+glide3x: grSstWinOpen - FBI done
+glide3x: grSstWinOpen - init TMUs
+glide3x: grSstWinOpen - TMUs done
+glide3x: grSstWinOpen - init display
+glide3x: grSstWinOpen - display done
+glide3x: grGet(pname=10, plength=4)
+glide3x: grGet(pname=11, plength=4)
+glide3x: grGet(pname=17, plength=4)
+glide3x: grGet(pname=19, plength=4)
+glide3x: grGet(pname=36, plength=4)
+glide3x: grGet(pname=14, plength=4)
+glide3x: grCoordinateSpace
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grDepthMask(0)
+glide3x: grColorMask(rgb=1, alpha=0)
+glide3x:   fbzMode updated: 0x00004400
+glide3x: grTexCombine
+glide3x: grTexFilterMode
+glide3x: grTexCombine
+glide3x: grTexFilterMode
+glide3x: grTexCombine
+glide3x: grChromakeyValue
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
+glide3x: grBufferSwap #1 (lfb_locked=-1, frontbuf=0, backbuf=1)
+glide3x: guGammaCorrectionRGB(1.55, 1.55, 1.55)
+glide3x: grLoadGammaTable(entries=32)
+grLoadGammaTable: First entry 0x00000000, Last entry 0x00FFFFFF
+glide3x: grTexDownloadTable
+glide3x:   type=2
+glide3x:   Palette downloaded. Entry 0: 0xFF000000, 255: 0xFFFFFFFF
+glide3x: grTexDownloadTable
+glide3x:   type=2
+glide3x:   Palette downloaded. Entry 0: 0xFF000000, 255: 0xFFFFFFFF
+glide3x: grFinish
+glide3x: grSstWinClose
+glide3x: grGlideInit called
+glide3x: grGlideInit complete
+glide3x: grSstSelect
+glide3x: grSstWinOpen(res=8, origin=0)
+glide3x: grSstWinOpen - resolution 800x600
+glide3x: grSstWinOpen - init FBI
+glide3x: grSstWinOpen - FBI done
+glide3x: grSstWinOpen - init TMUs
+glide3x: grSstWinOpen - TMUs done
+glide3x: grSstWinOpen - init display
+glide3x: grSstWinOpen - display done
+glide3x: grCoordinateSpace
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grDepthMask(0)
+glide3x: grColorMask(rgb=1, alpha=0)
+glide3x:   fbzMode updated: 0x00004400
+glide3x: grTexFilterMode
+glide3x: grTexCombine
+glide3x: grTexFilterMode
+glide3x: grTexCombine
+glide3x: grChromakeyValue
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
+glide3x: grBufferSwap #2 (lfb_locked=-1, frontbuf=0, backbuf=1)
+glide3x: guGammaCorrectionRGB(1.55, 1.55, 1.55)
+glide3x: grLoadGammaTable(entries=32)
+grLoadGammaTable: First entry 0x00000000, Last entry 0x00FFFFFF
+glide3x: grTexDownloadTable
+glide3x:   type=2
+glide3x:   Palette downloaded. Entry 0: 0xFF000000, 255: 0xFFFFFFFF
+glide3x: grFinish
+glide3x: grSstWinClose
+glide3x: grGlideInit called
+glide3x: grGlideInit complete
+glide3x: grSstSelect
+glide3x: grSstWinOpen(res=7, origin=0)
+glide3x: grSstWinOpen - resolution 640x480
+glide3x: grSstWinOpen - init FBI
+glide3x: grSstWinOpen - FBI done
+glide3x: grSstWinOpen - init TMUs
+glide3x: grSstWinOpen - TMUs done
+glide3x: grSstWinOpen - init display
+glide3x: grSstWinOpen - display done
+glide3x: grCoordinateSpace
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grVertexLayout
+glide3x: grDepthMask(0)
+glide3x: grColorMask(rgb=1, alpha=0)
+glide3x:   fbzMode updated: 0x00004400
+glide3x: grTexFilterMode
+glide3x: grTexCombine
+glide3x: grTexFilterMode
+glide3x: grTexCombine
+glide3x: grChromakeyValue
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grTexMinAddress
+glide3x: grTexMaxAddress
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
+glide3x: grBufferSwap #3 (lfb_locked=-1, frontbuf=0, backbuf=1)
+glide3x: guGammaCorrectionRGB(1.00, 1.00, 1.00)
+glide3x: grLoadGammaTable(entries=32)
+grLoadGammaTable: First entry 0x00000000, Last entry 0x00FFFFFF
+glide3x: grBufferSwap #4 (lfb_locked=-1, frontbuf=1, backbuf=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+display_present #9: 640x480 fb=02740020
+display_present #10: 640x480 fb=02740020
+display_present #11: 640x480 fb=02740020
+display_present #12: 640x480 fb=02740020
+display_present #13: 640x480 fb=02740020
+display_present #14: 640x480 fb=02740020
+display_present #15: 640x480 fb=02740020
+display_present #16: 640x480 fb=02740020
+display_present #17: 640x480 fb=02740020
+display_present #18: 640x480 fb=02740020
+display_present #19: 640x480 fb=02740020
+display_present #20: 640x480 fb=02740020

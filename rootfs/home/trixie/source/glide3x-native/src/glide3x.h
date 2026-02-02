@@ -478,7 +478,15 @@ FX_ENTRY void FX_CALL grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlen
                           GrAlphaBlendFnc_t alpha_sf, GrAlphaBlendFnc_t alpha_df);
 FX_ENTRY void FX_CALL grAlphaTestFunction(GrCmpFnc_t function);
 FX_ENTRY void FX_CALL grAlphaTestReferenceValue(GrAlpha_t value);
-FX_ENTRY void FX_CALL grDepthBufferMode(GrCmpFnc_t mode);
+
+typedef FxI32 GrDepthBufferMode_t;
+#define GR_DEPTHBUFFER_DISABLE      0x0
+#define GR_DEPTHBUFFER_ZBUFFER      0x1
+#define GR_DEPTHBUFFER_WBUFFER      0x2
+#define GR_DEPTHBUFFER_ZBUFFER_COMPARE_ONLY 0x3
+#define GR_DEPTHBUFFER_WBUFFER_COMPARE_ONLY 0x4
+
+FX_ENTRY void FX_CALL grDepthBufferMode(GrDepthBufferMode_t mode);
 FX_ENTRY void FX_CALL grDepthBufferFunction(GrCmpFnc_t function);
 FX_ENTRY void FX_CALL grDepthMask(FxBool mask);
 FX_ENTRY void FX_CALL grDepthBiasLevel(FxI32 level);
