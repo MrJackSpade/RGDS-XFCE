@@ -22,16 +22,13 @@ static int g_width = 0;
 static int g_height = 0;
 
 /* Debug logging - write to same log file as glide3x.c */
-static FILE *g_display_log = NULL;
+/* Shared debug logging from glide3x.c */
+extern void debug_log(const char *msg);
+
 static void display_log(const char *msg)
 {
-    if (!g_display_log) {
-        g_display_log = fopen("C:\\glide3x_debug.log", "a");
-    }
-    if (g_display_log) {
-        fputs(msg, g_display_log);
-        fflush(g_display_log);
-    }
+    fprintf(stderr, "%s", msg); /* Force stderr output */
+    debug_log(msg);
 }
 
 /* Forward declaration */
@@ -73,19 +70,50 @@ static HWND create_window(int width, int height)
     /* Compute window size for client area */
     RECT rect = {0, 0, width, height};
     AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+    
+    int win_width = rect.right - rect.left;
+    int win_height = rect.bottom - rect.top;
+    
+    char dbg[128];
+    snprintf(dbg, sizeof(dbg), "display_ddraw: create_window requesting %dx%d (client %dx%d)\n", 
+             win_width, win_height, width, height);
+    display_log(dbg);
 
+    /* Use 0,0 explicitly instead of CW_USEDEFAULT to avoid weird placement/sizing logic on some Wine setups */
     HWND hwnd = CreateWindow(
         "Glide3xWindow",
         "Glide3x Software Renderer",
         WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        rect.right - rect.left, rect.bottom - rect.top,
+        0, 0,
+        win_width, win_height,
         NULL, NULL, GetModuleHandle(NULL), NULL
     );
 
     if (hwnd) {
         ShowWindow(hwnd, SW_SHOW);
         UpdateWindow(hwnd);
+        
+        /* Verify actual size */
+        RECT client_rect;
+        GetClientRect(hwnd, &client_rect);
+        snprintf(dbg, sizeof(dbg), "display_ddraw: Created window client rect %ldx%ld\n", 
+                 client_rect.right - client_rect.left, client_rect.bottom - client_rect.top);
+        display_log(dbg);
+        
+        /* Force resize if mismatch */
+        if ((client_rect.right - client_rect.left) != width || (client_rect.bottom - client_rect.top) != height) {
+            display_log("display_ddraw: Window size mismatch, attempting to force resize...\n");
+            if (!SetWindowPos(hwnd, NULL, 0, 0, win_width, win_height, SWP_NOMOVE | SWP_NOZORDER)) {
+                snprintf(dbg, sizeof(dbg), "display_ddraw: SetWindowPos failed (Error %ld)\n", GetLastError());
+                display_log(dbg);
+            } else {
+                display_log("display_ddraw: SetWindowPos succeeded. Re-verifying...\n");
+                GetClientRect(hwnd, &client_rect);
+                snprintf(dbg, sizeof(dbg), "display_ddraw: New client rect %ldx%ld\n", 
+                         client_rect.right - client_rect.left, client_rect.bottom - client_rect.top);
+                display_log(dbg);
+            }
+        }
     }
 
     return hwnd;
@@ -232,22 +260,48 @@ void display_present(uint16_t *framebuffer, int width, int height)
 
     /* Copy RGB565 data */
     uint16_t *dst = (uint16_t*)ddsd.lpSurface;
-    int dst_pitch = ddsd.lPitch / 2;  /* pitch in 16-bit words */
+    int dst_pitch_pixels = ddsd.lPitch / 2;  /* pitch in 16-bit words */
+
+    /* Debug pitch mismatch once */
+    if (g_present_count == 1 || dst_pitch_pixels < width) {
+        char dbg[128];
+        snprintf(dbg, sizeof(dbg), "display_present: width=%d, pitch_pixels=%d (bytes=%ld)\n", 
+                 width, dst_pitch_pixels, ddsd.lPitch);
+        display_log(dbg);
+    }
+
+    /* Clamp copy to prevent wrapping ("ZARDBLIZ" fix) */
+    int copy_width = (width < dst_pitch_pixels) ? width : dst_pitch_pixels;
 
     for (int y = 0; y < height; y++) {
-        memcpy(&dst[y * dst_pitch], &framebuffer[y * width], width * 2);
+        memcpy(&dst[y * dst_pitch_pixels], &framebuffer[y * width], copy_width * 2);
     }
 
     IDirectDrawSurface7_Unlock(g_backbuf, NULL);
 
-    /* Use GDI BitBlt instead of DirectDraw Blt */
+    /* Use GDI StretchBlt to handle window resizing/mismatches */
     {
         HDC hdcSurf, hdcWnd;
         hr = IDirectDrawSurface7_GetDC(g_backbuf, &hdcSurf);
         if (SUCCEEDED(hr)) {
             hdcWnd = GetDC(g_hwnd);
             if (hdcWnd) {
-                BitBlt(hdcWnd, 0, 0, width, height, hdcSurf, 0, 0, SRCCOPY);
+                RECT client_rect;
+                GetClientRect(g_hwnd, &client_rect);
+                int client_w = client_rect.right - client_rect.left;
+                int client_h = client_rect.bottom - client_rect.top;
+
+                /* Log only on size change or periodically to avoid spam */
+                if (width != client_w || height != client_h) {
+                     if (g_present_count % 60 == 0) { /* Log once every 60 frames if scaling */
+                         char dbg[256];
+                         snprintf(dbg, sizeof(dbg), "display_present: Scaling %dx%d -> %dx%d\n", width, height, client_w, client_h);
+                         display_log(dbg);
+                     }
+                     SetStretchBltMode(hdcWnd, COLORONCOLOR); /* Better quality for shrinking? or HALFTONE? COLORONCOLOR is faster */
+                }
+
+                StretchBlt(hdcWnd, 0, 0, client_w, client_h, hdcSurf, 0, 0, width, height, SRCCOPY);
                 ReleaseDC(g_hwnd, hdcWnd);
             }
             IDirectDrawSurface7_ReleaseDC(g_backbuf, hdcSurf);

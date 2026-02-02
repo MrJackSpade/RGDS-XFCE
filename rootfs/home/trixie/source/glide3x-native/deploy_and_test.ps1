@@ -42,8 +42,8 @@ $Job = Start-Job -ScriptBlock {
     & "C:\Windows\System32\OpenSSH\ssh.exe" "${User}@${RemoteHostAddr}" $Cmd
 } -ArgumentList $RemoteUser, $RemoteHost, $RunCmd
 
-Write-Host "Game started. Waiting 20 seconds..."
-Start-Sleep -Seconds 20
+Write-Host "Game started. Waiting 30 seconds..."
+Start-Sleep -Seconds 30
 
 Write-Host "Killing Diablo II..."
 & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "pkill -f iabl"

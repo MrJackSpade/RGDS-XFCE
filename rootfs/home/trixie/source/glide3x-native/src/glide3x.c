@@ -19,7 +19,7 @@
 static FILE *g_debug_log = NULL;
 static int g_call_count = 0;
 
-static void debug_log(const char *msg)
+void debug_log(const char *msg)
 {
     if (!g_debug_log) {
         g_debug_log = fopen("C:\\glide3x_debug.log", "w");
@@ -32,12 +32,11 @@ static void debug_log(const char *msg)
 }
 
 /* Log all function calls (first N only to avoid spam) */
+/* Log all function calls */
 #define LOG_FUNC() do { \
-    if (++g_call_count <= 200) { \
-        char _dbg[128]; \
-        snprintf(_dbg, sizeof(_dbg), "glide3x: %s\n", __func__); \
-        debug_log(_dbg); \
-    } \
+    char _dbg[128]; \
+    snprintf(_dbg, sizeof(_dbg), "glide3x: %s\n", __func__); \
+    debug_log(_dbg); \
 } while(0)
 
 /* Simple logging macro */
@@ -326,7 +325,7 @@ static int g_clear_count = 0;
 void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
 {
     g_clear_count++;
-    if (g_clear_count <= 3) {
+    {
         char dbg[128];
         snprintf(dbg, sizeof(dbg), "glide3x: grBufferClear(color=0x%08X, alpha=%u, depth=0x%08X)\n", color, alpha, depth);
         debug_log(dbg);
@@ -374,7 +373,7 @@ static int g_swap_count = 0;
 void __stdcall grBufferSwap(FxU32 swap_interval)
 {
     g_swap_count++;
-    if (g_swap_count <= 10) {
+    {
         char dbg[128];
         snprintf(dbg, sizeof(dbg), "glide3x: grBufferSwap #%d (lfb_locked=%d, frontbuf=%d, backbuf=%d)\n",
                  g_swap_count, g_lfb_buffer_locked, g_voodoo ? g_voodoo->fbi.frontbuf : -1,
@@ -418,7 +417,7 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
                  GrOriginLocation_t origin, FxBool pixelPipeline, GrLfbInfo_t *info)
 {
     g_lfb_lock_count++;
-    if (g_lfb_lock_count <= 5) {
+    {
         char dbg[128];
         snprintf(dbg, sizeof(dbg), "glide3x: grLfbLock(type=%d, buffer=%d, writeMode=%d)\n", type, buffer, writeMode);
         debug_log(dbg);
@@ -456,7 +455,7 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
     info->writeMode = GR_LFBWRITEMODE_565;
     info->origin = GR_ORIGIN_UPPER_LEFT;
 
-    if (g_lfb_lock_count <= 5) {
+    {
         char dbg[128];
         snprintf(dbg, sizeof(dbg), "glide3x: grLfbLock returning lfbPtr=%p stride=%d frontbuf=%d\n",
                  bufptr, info->strideInBytes, g_voodoo->fbi.frontbuf);
@@ -471,7 +470,7 @@ static int g_lfb_unlock_count = 0;
 FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
 {
     g_lfb_unlock_count++;
-    if (g_lfb_unlock_count <= 5) {
+    {
         char dbg[128];
         snprintf(dbg, sizeof(dbg), "glide3x: grLfbUnlock(type=%d, buffer=%d)\n", type, buffer);
         debug_log(dbg);
@@ -481,7 +480,7 @@ FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
     if (type == GR_LFB_WRITE_ONLY && buffer == GR_BUFFER_FRONTBUFFER && g_voodoo) {
         uint16_t *frontbuf = (uint16_t*)(g_voodoo->fbi.ram +
                                           g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
-        if (g_lfb_unlock_count <= 5) {
+        {
             char dbg[128];
             snprintf(dbg, sizeof(dbg), "glide3x: grLfbUnlock presenting from %p (rgboffs[%d]=%u)\n",
                      frontbuf, g_voodoo->fbi.frontbuf, g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
@@ -608,7 +607,7 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
     if (!g_voodoo || !g_voodoo->active) return;
 
     g_triangle_count++;
-    if (g_triangle_count <= 5) {
+    {
         char dbg[256];
         snprintf(dbg, sizeof(dbg), "glide3x: grDrawTriangle #%d a=(%.1f,%.1f) b=(%.1f,%.1f) c=(%.1f,%.1f) r=%.0f g=%.0f b=%.0f\n",
                  g_triangle_count, a->x, a->y, b->x, b->y, c->x, c->y, a->r, a->g, a->b);
@@ -733,7 +732,7 @@ void __stdcall grDrawVertexArray(FxU32 mode, FxU32 count, void *pointers)
     FxU32 i;
 
     g_draw_call_count++;
-    if (g_draw_call_count <= 3) {
+    {
         char dbg[128];
         snprintf(dbg, sizeof(dbg), "glide3x: grDrawVertexArray(mode=%u, count=%u)\n", mode, count);
         debug_log(dbg);
@@ -782,7 +781,7 @@ void __stdcall grDrawVertexArrayContiguous(FxU32 mode, FxU32 count, void *vertic
     FxU32 i;
 
     g_draw_call_count++;
-    if (g_draw_call_count <= 3) {
+    {
         char dbg[128];
         snprintf(dbg, sizeof(dbg), "glide3x: grDrawVertexArrayContiguous(mode=%u, count=%u, stride=%u)\n", mode, count, stride);
         debug_log(dbg);
@@ -1372,12 +1371,10 @@ void __stdcall grChromakeyValue(GrColor_t value)
  * Helper for logging gamma tables 
  */
 static void log_gamma_table(const char* func, int num_entries, const FxU32 *table) {
-    if (g_lfb_write_count < 10) { /* Limit spam */
-        char buf[256];
-        snprintf(buf, sizeof(buf), "%s: First entry 0x%08X, Last entry 0x%08X\n", 
-                 func, table[0], table[num_entries-1]);
-        debug_log(buf);
-    }
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s: First entry 0x%08X, Last entry 0x%08X\n", 
+             func, table[0], table[num_entries-1]);
+    debug_log(buf);
 }
 
 void __stdcall grAlphaTestFunction(GrCmpFnc_t function)

@@ -261,11 +261,69 @@ glide3x: grTexDownloadMipMap
 glide3x: grTexDownloadMipMap
 glide3x: grTexDownloadMipMap
 glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
+glide3x: grTexDownloadMipMap
 glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
 glide3x: grBufferSwap #3 (lfb_locked=-1, frontbuf=0, backbuf=1)
 glide3x: guGammaCorrectionRGB(1.00, 1.00, 1.00)
 glide3x: grLoadGammaTable(entries=32)
 grLoadGammaTable: First entry 0x00000000, Last entry 0x00FFFFFF
+glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
 glide3x: grBufferSwap #4 (lfb_locked=-1, frontbuf=1, backbuf=0)
 glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
@@ -287,15 +345,1975 @@ glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
 glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
 glide3x: grLfbUnlock(type=1, buffer=0)
 glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
-display_present #9: 640x480 fb=02740020
-display_present #10: 640x480 fb=02740020
-display_present #11: 640x480 fb=02740020
-display_present #12: 640x480 fb=02740020
-display_present #13: 640x480 fb=02740020
-display_present #14: 640x480 fb=02740020
-display_present #15: 640x480 fb=02740020
-display_present #16: 640x480 fb=02740020
-display_present #17: 640x480 fb=02740020
-display_present #18: 640x480 fb=02740020
-display_present #19: 640x480 fb=02740020
-display_present #20: 640x480 fb=02740020
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=02740020 stride=1280 frontbuf=0
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 02740020 (rgboffs[0]=0)
+glide3x: grBufferClear(color=0x00000000, alpha=0, depth=0x00000000)
+glide3x: grBufferSwap #5 (lfb_locked=0, frontbuf=0, backbuf=1)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
+glide3x: grLfbUnlock(type=1, buffer=0)
+glide3x: grLfbUnlock presenting from 027d6020 (rgboffs[1]=614400)
+glide3x: grLfbLock(type=1, buffer=0, writeMode=5)
+glide3x: grLfbLock returning lfbPtr=027d6020 stride=1280 frontbuf=1
