@@ -108,6 +108,88 @@
 #include <math.h>
 
 /*
+ * Unpacked vertex data - read from raw vertex using layout offsets
+ */
+typedef struct {
+    float x, y;
+    float ooz, oow;
+    float r, g, b, a;
+    float sow, tow;
+} UnpackedVertex;
+
+/*
+ * read_vertex_from_layout - Read vertex data using grVertexLayout offsets
+ *
+ * This reads vertex attributes from raw vertex data based on the offsets
+ * configured by grVertexLayout(). If a particular attribute wasn't configured,
+ * a default value is used.
+ */
+static void read_vertex_from_layout(const uint8_t *raw, UnpackedVertex *v)
+{
+    /* Defaults */
+    v->x = v->y = 0.0f;
+    v->ooz = 0.0f;
+    v->oow = 1.0f;
+    v->r = v->g = v->b = 255.0f;
+    v->a = 255.0f;
+    v->sow = v->tow = 0.0f;
+
+    if (!g_voodoo) return;
+
+    /* XY position (always 2 floats) */
+    if (g_voodoo->vl_xy_offset >= 0) {
+        const float *xy = (const float *)(raw + g_voodoo->vl_xy_offset);
+        v->x = xy[0];
+        v->y = xy[1];
+    }
+
+    /* Packed ARGB color (uint32) */
+    if (g_voodoo->vl_pargb_offset >= 0) {
+        uint32_t pargb = *(const uint32_t *)(raw + g_voodoo->vl_pargb_offset);
+        v->a = (float)((pargb >> 24) & 0xFF);
+        v->r = (float)((pargb >> 16) & 0xFF);
+        v->g = (float)((pargb >> 8) & 0xFF);
+        v->b = (float)(pargb & 0xFF);
+    }
+    /* RGB as separate floats */
+    else if (g_voodoo->vl_rgb_offset >= 0) {
+        const float *rgb = (const float *)(raw + g_voodoo->vl_rgb_offset);
+        v->r = rgb[0];
+        v->g = rgb[1];
+        v->b = rgb[2];
+    }
+
+    /* Alpha as separate float */
+    if (g_voodoo->vl_a_offset >= 0) {
+        v->a = *(const float *)(raw + g_voodoo->vl_a_offset);
+    }
+
+    /* Q (1/W) for perspective - can be Q or Q0 */
+    if (g_voodoo->vl_q0_offset >= 0) {
+        v->oow = *(const float *)(raw + g_voodoo->vl_q0_offset);
+    } else if (g_voodoo->vl_q_offset >= 0) {
+        v->oow = *(const float *)(raw + g_voodoo->vl_q_offset);
+    } else if (g_voodoo->vl_w_offset >= 0) {
+        float w = *(const float *)(raw + g_voodoo->vl_w_offset);
+        v->oow = (w != 0.0f) ? 1.0f / w : 1.0f;
+    }
+
+    /* Z for depth buffer */
+    if (g_voodoo->vl_z_offset >= 0) {
+        v->ooz = *(const float *)(raw + g_voodoo->vl_z_offset);
+    }
+
+    /* Texture coordinates S,T (2 floats) - use ST0 or ST1 based on active TMU */
+    int32_t st_offset = (g_active_tmu == 0) ? g_voodoo->vl_st0_offset : g_voodoo->vl_st1_offset;
+    if (st_offset < 0) st_offset = g_voodoo->vl_st0_offset;  /* Fallback to ST0 */
+    if (st_offset >= 0) {
+        const float *st = (const float *)(raw + st_offset);
+        v->sow = st[0];
+        v->tow = st[1];
+    }
+}
+
+/*
  * compute_gradients - Compute parameter gradients for interpolation
  *
  * For perspective-correct interpolation, we need to know how each
@@ -169,23 +251,50 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
     if (!g_voodoo || !g_voodoo->active) return;
 
     g_triangle_count++;
+
+    fbi_state *fbi = &g_voodoo->fbi;
+
+    /* Read vertices using layout offsets if configured, otherwise use GrVertex struct */
+    UnpackedVertex va, vb, vc;
+
+    if (g_voodoo->vl_xy_offset >= 0) {
+        /* Use layout-based reading */
+        read_vertex_from_layout((const uint8_t *)a, &va);
+        read_vertex_from_layout((const uint8_t *)b, &vb);
+        read_vertex_from_layout((const uint8_t *)c, &vc);
+    } else {
+        /* Use GrVertex struct directly */
+        va.x = a->x; va.y = a->y;
+        va.ooz = a->ooz; va.oow = a->oow;
+        va.r = a->r; va.g = a->g; va.b = a->b; va.a = a->a;
+        va.sow = a->sow; va.tow = a->tow;
+
+        vb.x = b->x; vb.y = b->y;
+        vb.ooz = b->ooz; vb.oow = b->oow;
+        vb.r = b->r; vb.g = b->g; vb.b = b->b; vb.a = b->a;
+        vb.sow = b->sow; vb.tow = b->tow;
+
+        vc.x = c->x; vc.y = c->y;
+        vc.ooz = c->ooz; vc.oow = c->oow;
+        vc.r = c->r; vc.g = c->g; vc.b = c->b; vc.a = c->a;
+        vc.sow = c->sow; vc.tow = c->tow;
+    }
+
     {
         char dbg[256];
         snprintf(dbg, sizeof(dbg),
                  "glide3x: grDrawTriangle #%d a=(%.1f,%.1f) b=(%.1f,%.1f) c=(%.1f,%.1f)\n",
-                 g_triangle_count, a->x, a->y, b->x, b->y, c->x, c->y);
+                 g_triangle_count, va.x, va.y, vb.x, vb.y, vc.x, vc.y);
         debug_log(dbg);
     }
 
-    fbi_state *fbi = &g_voodoo->fbi;
-
     /* Get vertex positions with viewport offset */
-    float ax = a->x + (float)g_voodoo->vp_x;
-    float ay = a->y + (float)g_voodoo->vp_y;
-    float bx = b->x + (float)g_voodoo->vp_x;
-    float by = b->y + (float)g_voodoo->vp_y;
-    float cx = c->x + (float)g_voodoo->vp_x;
-    float cy = c->y + (float)g_voodoo->vp_y;
+    float ax = va.x + (float)g_voodoo->vp_x;
+    float ay = va.y + (float)g_voodoo->vp_y;
+    float bx = vb.x + (float)g_voodoo->vp_x;
+    float by = vb.y + (float)g_voodoo->vp_y;
+    float cx = vc.x + (float)g_voodoo->vp_x;
+    float cy = vc.y + (float)g_voodoo->vp_y;
 
     /* Culling check */
     if (g_voodoo->cull_mode != GR_CULL_DISABLE) {
@@ -204,16 +313,16 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
 
     /* Compute color gradients */
     float drdx, drdy, dgdx, dgdy, dbdx, dbdy, dadx, dady;
-    compute_gradients(ax, ay, bx, by, cx, cy, a->r, b->r, c->r, &drdx, &drdy);
-    compute_gradients(ax, ay, bx, by, cx, cy, a->g, b->g, c->g, &dgdx, &dgdy);
-    compute_gradients(ax, ay, bx, by, cx, cy, a->b, b->b, c->b, &dbdx, &dbdy);
-    compute_gradients(ax, ay, bx, by, cx, cy, a->a, b->a, c->a, &dadx, &dady);
+    compute_gradients(ax, ay, bx, by, cx, cy, va.r, vb.r, vc.r, &drdx, &drdy);
+    compute_gradients(ax, ay, bx, by, cx, cy, va.g, vb.g, vc.g, &dgdx, &dgdy);
+    compute_gradients(ax, ay, bx, by, cx, cy, va.b, vb.b, vc.b, &dbdx, &dbdy);
+    compute_gradients(ax, ay, bx, by, cx, cy, va.a, vb.a, vc.a, &dadx, &dady);
 
     /* Set up start values and gradients in 12.12 fixed point */
-    fbi->startr = (int32_t)(a->r * 4096.0f);
-    fbi->startg = (int32_t)(a->g * 4096.0f);
-    fbi->startb = (int32_t)(a->b * 4096.0f);
-    fbi->starta = (int32_t)(a->a * 4096.0f);
+    fbi->startr = (int32_t)(va.r * 4096.0f);
+    fbi->startg = (int32_t)(va.g * 4096.0f);
+    fbi->startb = (int32_t)(va.b * 4096.0f);
+    fbi->starta = (int32_t)(va.a * 4096.0f);
 
     fbi->drdx = (int32_t)(drdx * 4096.0f);
     fbi->dgdx = (int32_t)(dgdx * 4096.0f);
@@ -227,26 +336,27 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
 
     /* Set up Z/W gradients */
     float dzdx_f, dzdy_f;
-    compute_gradients(ax, ay, bx, by, cx, cy, a->ooz, b->ooz, c->ooz, &dzdx_f, &dzdy_f);
+    compute_gradients(ax, ay, bx, by, cx, cy, va.ooz, vb.ooz, vc.ooz, &dzdx_f, &dzdy_f);
 
-    fbi->startz = (int32_t)(a->ooz * 4096.0f);
+    fbi->startz = (int32_t)(va.ooz * 4096.0f);
     fbi->dzdx = (int32_t)(dzdx_f * 4096.0f);
     fbi->dzdy = (int32_t)(dzdy_f * 4096.0f);
 
     /* W in 16.32 fixed point */
     float dwdx_f, dwdy_f;
-    compute_gradients(ax, ay, bx, by, cx, cy, a->oow, b->oow, c->oow, &dwdx_f, &dwdy_f);
-    fbi->startw = (int64_t)(a->oow * 4294967296.0);
+    compute_gradients(ax, ay, bx, by, cx, cy, va.oow, vb.oow, vc.oow, &dwdx_f, &dwdy_f);
+    fbi->startw = (int64_t)(va.oow * 4294967296.0);
     fbi->dwdx = (int64_t)(dwdx_f * 4294967296.0);
     fbi->dwdy = (int64_t)(dwdy_f * 4294967296.0);
 
     /* Set up texture coordinates if texturing enabled */
     if (FBZCP_TEXTURE_ENABLE(g_voodoo->reg[fbzColorPath].u)) {
-        tmu_state *tmu0 = &g_voodoo->tmu[0];
+        /* Use the active TMU (set by grTexSource) for texture coordinates */
+        tmu_state *tmu0 = &g_voodoo->tmu[g_active_tmu];
 
-        float s0a = a->sow, t0a = a->tow, w0a = a->oow;
-        float s0b = b->sow, t0b = b->tow, w0b = b->oow;
-        float s0c = c->sow, t0c = c->tow, w0c = c->oow;
+        float s0a = va.sow, t0a = va.tow, w0a = va.oow;
+        float s0b = vb.sow, t0b = vb.tow, w0b = vb.oow;
+        float s0c = vc.sow, t0c = vc.tow, w0c = vc.oow;
 
         float ds0dx, ds0dy, dt0dx, dt0dy, dw0dx, dw0dy;
         compute_gradients(ax, ay, bx, by, cx, cy, s0a, s0b, s0c, &ds0dx, &ds0dy);
@@ -265,6 +375,20 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
         tmu0->dsdy = (int64_t)(ds0dy * 262144.0);
         tmu0->dtdy = (int64_t)(dt0dy * 262144.0);
         tmu0->dwdy = (int64_t)(dw0dy * 1073741824.0);
+
+        /* Debug: log texture coordinate setup */
+        {
+            char dbg[256];
+            snprintf(dbg, sizeof(dbg),
+                     "TEXSETUP: sow=(%f,%f,%f) tow=(%f,%f,%f) oow=(%f,%f,%f)\n",
+                     s0a, s0b, s0c, t0a, t0b, t0c, w0a, w0b, w0c);
+            debug_log(dbg);
+            snprintf(dbg, sizeof(dbg),
+                     "TEXSETUP: starts=%lld startt=%lld dsdx=%lld dtdx=%lld\n",
+                     (long long)tmu0->starts, (long long)tmu0->startt,
+                     (long long)tmu0->dsdx, (long long)tmu0->dtdx);
+            debug_log(dbg);
+        }
     }
 
     /* Call the software rasterizer */

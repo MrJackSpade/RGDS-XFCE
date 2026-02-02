@@ -240,8 +240,18 @@ typedef struct {
     int32_t     cull_mode;
     uint32_t    gamma_table[32];  /* Simple gamma table storage */
     
-    /* Extra state for primitives */
-    float       vertex_layout_offset; /* For grVertexLayout */
+    /* Vertex layout offsets (set by grVertexLayout) */
+    int32_t     vl_xy_offset;      /* GR_PARAM_XY (1) - x,y position */
+    int32_t     vl_z_offset;       /* GR_PARAM_Z (2) - z coordinate */
+    int32_t     vl_w_offset;       /* GR_PARAM_W (3) - w coordinate */
+    int32_t     vl_q_offset;       /* GR_PARAM_Q (4) - 1/w */
+    int32_t     vl_a_offset;       /* GR_PARAM_A (16) - alpha */
+    int32_t     vl_rgb_offset;     /* GR_PARAM_RGB (32) - r,g,b floats */
+    int32_t     vl_pargb_offset;   /* GR_PARAM_PARGB (48) - packed ARGB */
+    int32_t     vl_st0_offset;     /* GR_PARAM_ST0 (64) - s,t for TMU0 */
+    int32_t     vl_st1_offset;     /* GR_PARAM_ST1 (65) - s,t for TMU1 */
+    int32_t     vl_q0_offset;      /* GR_PARAM_Q0 (80) - 1/w for TMU0 */
+    int32_t     vl_q1_offset;      /* GR_PARAM_Q1 (81) - 1/w for TMU1 */
     
     /* Shadow state for shared registers */
     bool        alpha_mask;

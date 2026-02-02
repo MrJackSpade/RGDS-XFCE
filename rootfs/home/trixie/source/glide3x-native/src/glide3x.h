@@ -339,15 +339,15 @@ typedef FxI32 GrTextureFormat_t;
  * improves cache efficiency by accessing smaller texture data.
  */
 typedef FxI32 GrLOD_t;
-#define GR_LOD_LOG2_256     0x0   /* 256 pixels (largest) */
-#define GR_LOD_LOG2_128     0x1   /* 128 pixels */
-#define GR_LOD_LOG2_64      0x2   /* 64 pixels */
-#define GR_LOD_LOG2_32      0x3   /* 32 pixels */
-#define GR_LOD_LOG2_16      0x4   /* 16 pixels */
-#define GR_LOD_LOG2_8       0x5   /* 8 pixels */
-#define GR_LOD_LOG2_4       0x6   /* 4 pixels */
-#define GR_LOD_LOG2_2       0x7   /* 2 pixels */
-#define GR_LOD_LOG2_1       0x8   /* 1 pixel (smallest) */
+#define GR_LOD_LOG2_256     0x8   /* 256 pixels (largest) - log2(256)=8 */
+#define GR_LOD_LOG2_128     0x7   /* 128 pixels - log2(128)=7 */
+#define GR_LOD_LOG2_64      0x6   /* 64 pixels - log2(64)=6 */
+#define GR_LOD_LOG2_32      0x5   /* 32 pixels - log2(32)=5 */
+#define GR_LOD_LOG2_16      0x4   /* 16 pixels - log2(16)=4 */
+#define GR_LOD_LOG2_8       0x3   /* 8 pixels - log2(8)=3 */
+#define GR_LOD_LOG2_4       0x2   /* 4 pixels - log2(4)=2 */
+#define GR_LOD_LOG2_2       0x1   /* 2 pixels - log2(2)=1 */
+#define GR_LOD_LOG2_1       0x0   /* 1 pixel (smallest) - log2(1)=0 */
 
 /*
  * Aspect Ratio - Non-square texture support

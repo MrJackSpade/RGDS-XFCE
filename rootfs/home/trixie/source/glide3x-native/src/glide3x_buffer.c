@@ -186,6 +186,18 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
                                  g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf]);
     }
 
+    /* Log buffer pointers for debugging */
+    {
+        char dbg[256];
+        uint32_t draw_buf_setting = (g_voodoo->reg[fbzMode].u >> 14) & 3;
+        snprintf(dbg, sizeof(dbg),
+                 "grBufferSwap: presenting buf=%p (backbuf=%d offset=0x%X) DRAW_BUFFER=%d ram=%p\n",
+                 (void*)presentbuf, g_voodoo->fbi.backbuf,
+                 g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf],
+                 draw_buf_setting, (void*)g_voodoo->fbi.ram);
+        debug_log(dbg);
+    }
+
     /* Send to display */
     display_present(presentbuf, g_voodoo->fbi.width, g_voodoo->fbi.height);
 

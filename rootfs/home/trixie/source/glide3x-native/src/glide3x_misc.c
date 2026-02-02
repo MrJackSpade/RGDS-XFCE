@@ -197,14 +197,34 @@ void __stdcall grCoordinateSpace(GrCoordinateSpaceMode_t mode)
  * grVertexLayout - Configure vertex attribute layout
  *
  * Glide 3.x allowed flexible vertex formats via this function.
- * Our implementation uses a fixed GrVertex structure, so this is a no-op.
+ * Games call this to specify where each attribute (x, y, z, color, texcoords)
+ * is located within their vertex structure.
+ *
+ * GR_PARAM values:
+ *   1 = XY, 2 = Z, 3 = W, 4 = Q, 16 = A, 32 = RGB, 48 = PARGB
+ *   64 = ST0, 65 = ST1, 80 = Q0, 81 = Q1
  */
 void __stdcall grVertexLayout(FxU32 param, FxI32 offset, FxU32 mode)
 {
-    LOG_FUNC();
-    (void)param;
-    (void)offset;
-    (void)mode;
+    LOG("grVertexLayout(param=%d, offset=%d, mode=%d)", param, offset, mode);
+    if (!g_voodoo) return;
+
+    /* mode=0 disables, mode=1 enables */
+    int32_t off = (mode == 1) ? offset : -1;
+
+    switch (param) {
+    case 1:  g_voodoo->vl_xy_offset = off; break;    /* GR_PARAM_XY */
+    case 2:  g_voodoo->vl_z_offset = off; break;     /* GR_PARAM_Z */
+    case 3:  g_voodoo->vl_w_offset = off; break;     /* GR_PARAM_W */
+    case 4:  g_voodoo->vl_q_offset = off; break;     /* GR_PARAM_Q */
+    case 16: g_voodoo->vl_a_offset = off; break;     /* GR_PARAM_A */
+    case 32: g_voodoo->vl_rgb_offset = off; break;   /* GR_PARAM_RGB */
+    case 48: g_voodoo->vl_pargb_offset = off; break; /* GR_PARAM_PARGB */
+    case 64: g_voodoo->vl_st0_offset = off; break;   /* GR_PARAM_ST0 */
+    case 65: g_voodoo->vl_st1_offset = off; break;   /* GR_PARAM_ST1 */
+    case 80: g_voodoo->vl_q0_offset = off; break;    /* GR_PARAM_Q0 */
+    case 81: g_voodoo->vl_q1_offset = off; break;    /* GR_PARAM_Q1 */
+    }
 }
 
 /*

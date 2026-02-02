@@ -179,6 +179,19 @@ GrContext_t __stdcall grSstWinOpen(
                     2 * 1024 * 1024);
     voodoo_init_tmu_shared(&g_voodoo->tmushare);
 
+    /* Initialize vertex layout to default (disabled) */
+    g_voodoo->vl_xy_offset = -1;
+    g_voodoo->vl_z_offset = -1;
+    g_voodoo->vl_w_offset = -1;
+    g_voodoo->vl_q_offset = -1;
+    g_voodoo->vl_a_offset = -1;
+    g_voodoo->vl_rgb_offset = -1;
+    g_voodoo->vl_pargb_offset = -1;
+    g_voodoo->vl_st0_offset = -1;
+    g_voodoo->vl_st1_offset = -1;
+    g_voodoo->vl_q0_offset = -1;
+    g_voodoo->vl_q1_offset = -1;
+
     /* Initialize display output */
     debug_log("glide3x: grSstWinOpen - init display\n");
     if (!display_init(g_screen_width, g_screen_height, (HWND)hwnd)) {

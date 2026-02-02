@@ -400,6 +400,15 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
 
         /* Apply texture if enabled */
         if (texture_enabled) {
+            /* Log texture coordinates before sampling */
+            if (diag_pixel_count < 5 && x == startx) {
+                char dbg[256];
+                snprintf(dbg, sizeof(dbg),
+                         "DIAG: texcoords iters0=%lld itert0=%lld iterw0=%lld\n",
+                         (long long)iters0, (long long)itert0, (long long)iterw0);
+                debug_log(dbg);
+            }
+
             rgb_t texel;
             TEXTURE_PIPELINE(vs, active_tmu_index, x, dither4, r_textureMode,
                              iters0, itert0, iterw0, texel);
@@ -540,17 +549,28 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
         PIXEL_PIPELINE_MODIFY(vs, dither, dither4, x, r_fbzMode, r_fbzColorPath,
                               r_alphaMode, r_fogMode, iterz, iterw, iterargb);
 
-        /* Log before write */
+        /* Log before write with RGB_BUFFER_MASK check */
         if (diag_pixel_count <= 5 && x == startx) {
-            char dbg[128];
+            char dbg[256];
+            int rgb_mask = FBZMODE_RGB_BUFFER_MASK(r_fbzMode);
             snprintf(dbg, sizeof(dbg),
-                     "DIAG: before write rgb=(%d,%d,%d) dest=%p x=%d\n",
-                     r, g, b, (void*)dest, x);
+                     "DIAG: before write rgb=(%d,%d,%d) dest=%p x=%d RGB_MASK=%d fbzMode=0x%08X\n",
+                     r, g, b, (void*)dest, x, rgb_mask, r_fbzMode);
             debug_log(dbg);
         }
 
         /* Pixel pipeline finish - write to framebuffer */
         PIXEL_PIPELINE_FINISH(vs, dither_lookup, x, dest, depth, r_fbzMode);
+
+        /* Log after write to verify what was written */
+        if (diag_pixel_count <= 5 && x == startx) {
+            char dbg[256];
+            int rgb_mask = FBZMODE_RGB_BUFFER_MASK(r_fbzMode);
+            snprintf(dbg, sizeof(dbg),
+                     "DIAG: after write dest[%d]=0x%04X (should be non-zero if RGB_MASK=%d)\n",
+                     x, dest[x], rgb_mask);
+            debug_log(dbg);
+        }
 
         PIXEL_PIPELINE_END((*stats));
 
@@ -625,6 +645,16 @@ void voodoo_triangle(voodoo_state *vs)
         break;
     default:
         return;  /* reserved */
+    }
+
+    /* Log drawbuf pointer for debugging (once per frame) */
+    if (diag_pixel_count == 0) {
+        char dbg[256];
+        snprintf(dbg, sizeof(dbg),
+                 "voodoo_triangle: drawbuf=%p DRAW_BUFFER=%d backbuf=%d offset=0x%X ram=%p\n",
+                 (void*)drawbuf, FBZMODE_DRAW_BUFFER(regs[fbzMode].u),
+                 fbi->backbuf, fbi->rgboffs[fbi->backbuf], (void*)fbi->ram);
+        debug_log(dbg);
     }
 
     /* Get depth buffer if enabled */

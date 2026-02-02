@@ -145,21 +145,15 @@ static int get_voodoo_format(GrTextureFormat_t format)
 
 /*
  * Helper: Get texture dimension from LOD
+ *
+ * Glide 3.x LOD = log2(size), so size = 2^LOD = 1 << LOD
+ * GR_LOD_LOG2_256=8, GR_LOD_LOG2_1=0
  */
 static int get_tex_size(GrLOD_t lod)
 {
-    switch (lod) {
-    case GR_LOD_LOG2_256: return 256;
-    case GR_LOD_LOG2_128: return 128;
-    case GR_LOD_LOG2_64:  return 64;
-    case GR_LOD_LOG2_32:  return 32;
-    case GR_LOD_LOG2_16:  return 16;
-    case GR_LOD_LOG2_8:   return 8;
-    case GR_LOD_LOG2_4:   return 4;
-    case GR_LOD_LOG2_2:   return 2;
-    case GR_LOD_LOG2_1:   return 1;
-    default:              return 256;
-    }
+    if (lod < 0) lod = 0;
+    if (lod > 8) lod = 8;
+    return 1 << lod;  /* 2^lod: lod=8 -> 256, lod=0 -> 1 */
 }
 
 /*
@@ -213,8 +207,18 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
 
-    LOG("  format=%d lod=%d aspect=%d ts->mask=0x%X",
-        info->format, info->largeLodLog2, info->aspectRatioLog2, ts->mask);
+    /* Log raw struct bytes to debug struct layout */
+    {
+        uint8_t *raw = (uint8_t*)info;
+        LOG("  STRUCT HEX: %02X %02X %02X %02X | %02X %02X %02X %02X | %02X %02X %02X %02X | %02X %02X %02X %02X | ptr=%02X%02X%02X%02X",
+            raw[0], raw[1], raw[2], raw[3],     /* smallLodLog2 */
+            raw[4], raw[5], raw[6], raw[7],     /* largeLodLog2 */
+            raw[8], raw[9], raw[10], raw[11],   /* aspectRatioLog2 */
+            raw[12], raw[13], raw[14], raw[15], /* format */
+            raw[19], raw[18], raw[17], raw[16]); /* data ptr (little-endian) */
+        LOG("  FIELDS: small=%d large=%d aspect=%d format=%d data=%p",
+            info->smallLodLog2, info->largeLodLog2, info->aspectRatioLog2, info->format, info->data);
+    }
 
     (void)evenOdd;
 
@@ -235,6 +239,8 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
 
     ts->wmask = tex_width - 1;
     ts->hmask = tex_height - 1;
+
+    LOG("  -> tex_size=%dx%d wmask=0x%X hmask=0x%X", tex_width, tex_height, ts->wmask, ts->hmask);
 
     /* Calculate bytes per texel for mipmap offset calculation */
     int bpp = get_texel_bytes(info->format);
