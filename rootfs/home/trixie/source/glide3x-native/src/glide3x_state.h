@@ -126,6 +126,14 @@ extern GrColor_t g_constant_color;
 extern int g_render_buffer;
 
 /*
+ * g_active_tmu - Which TMU is currently active for texture fetches
+ *
+ * Set by grTexSource(). Games may use either TMU0 or TMU1 for single-texture
+ * rendering. This tracks which TMU was last configured.
+ */
+extern int g_active_tmu;
+
+/*
  * g_lfb_buffer_locked - Which buffer was locked for LFB writes
  *
  * -1 = no buffer locked

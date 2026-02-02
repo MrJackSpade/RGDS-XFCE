@@ -25,6 +25,9 @@
 
 #include "glide3x_state.h"
 
+/* Diagnostic counter from voodoo_emu.c */
+extern int diag_pixel_count;
+
 /*
  * grBufferClear - Clear color and depth buffers
  *
@@ -193,6 +196,9 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
     uint8_t temp = g_voodoo->fbi.frontbuf;
     g_voodoo->fbi.frontbuf = g_voodoo->fbi.backbuf;
     g_voodoo->fbi.backbuf = temp;
+
+    /* Reset diagnostic logging counter for next frame */
+    diag_pixel_count = 0;
 }
 
 /*

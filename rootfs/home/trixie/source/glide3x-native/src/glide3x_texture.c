@@ -207,11 +207,14 @@ FxU32 __stdcall grTexMaxAddress(GrChipID_t tmu)
  */
 void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, GrTexInfo *info)
 {
-    LOG_FUNC();
+    LOG("grTexSource(tmu=%d, startAddr=0x%X, evenOdd=%d)", tmu, startAddress, evenOdd);
     if (!g_voodoo || !info) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
+
+    LOG("  format=%d lod=%d aspect=%d ts->mask=0x%X",
+        info->format, info->largeLodLog2, info->aspectRatioLog2, ts->mask);
 
     (void)evenOdd;
 
@@ -281,6 +284,12 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
     }
 
     ts->regdirty = 1;
+
+    /* Track which TMU is now active for rendering */
+    g_active_tmu = t;
+
+    LOG("  -> lodoffset[0]=0x%X wmask=%d hmask=%d lookup=%p active_tmu=%d",
+        ts->lodoffset[0], ts->wmask, ts->hmask, (void*)ts->lookup, g_active_tmu);
 }
 
 /*

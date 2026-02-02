@@ -9,8 +9,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <stdio.h>
 #include "voodoo_state.h"
 #include "voodoo_pipeline.h"
+#include "glide3x.h"
+
+/* Debug logging from glide3x_state.c */
+extern void debug_log(const char *msg);
 
 /*************************************
  * Reciprocal/log lookup table
@@ -307,6 +312,9 @@ static inline int32_t round_coordinate(float value)
  * Rasterize a single scanline
  *************************************/
 
+/* Diagnostic logging counter - log first few pixels per frame */
+int diag_pixel_count = 0;
+
 static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
                             int32_t y, int32_t startx, int32_t stopx,
                             int64_t iterr, int64_t iterg, int64_t iterb, int64_t itera,
@@ -316,18 +324,46 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
 {
     const voodoo_reg *regs = vs->reg;
     const fbi_state *fbi = &vs->fbi;
-    const tmu_state *tmu0 = &vs->tmu[0];
+
+    /*
+     * Use the TMU that was last configured via grTexSource().
+     * g_active_tmu is set by grTexSource and tracks which TMU
+     * the game intends to use for texture fetches.
+     */
+    extern int g_active_tmu;
+    int active_tmu_index = g_active_tmu;
+    const tmu_state *active_tmu = &vs->tmu[active_tmu_index];
 
     const uint32_t r_fbzColorPath = regs[fbzColorPath].u;
     const uint32_t r_fbzMode = regs[fbzMode].u;
     const uint32_t r_alphaMode = regs[alphaMode].u;
     const uint32_t r_fogMode = regs[fogMode].u;
     const uint32_t r_zaColor = regs[zaColor].u;
-    const uint32_t r_textureMode = tmu0->reg ? tmu0->reg->u : 0;
+    const uint32_t r_textureMode = active_tmu->reg ? active_tmu->reg->u : 0;
     uint32_t r_stipple = regs[stipple].u;
 
     /* Check if texture is enabled */
     int texture_enabled = FBZCP_TEXTURE_ENABLE(r_fbzColorPath);
+
+    /* Log first scanline of each frame for debugging */
+    if (diag_pixel_count < 5) {
+        char dbg[256];
+        snprintf(dbg, sizeof(dbg),
+                 "DIAG: y=%d x=%d-%d fbzMode=0x%08X fbzCP=0x%08X tex_en=%d alphaMode=0x%08X\n",
+                 y, startx, stopx, r_fbzMode, r_fbzColorPath, texture_enabled, r_alphaMode);
+        debug_log(dbg);
+        snprintf(dbg, sizeof(dbg),
+                 "DIAG: CC_RGBSEL=%d CC_ASEL=%d CC_LOCALSEL=%d CC_ZERO_OTHER=%d CC_ADD_CLOCAL=%d\n",
+                 FBZCP_CC_RGBSELECT(r_fbzColorPath), FBZCP_CC_ASELECT(r_fbzColorPath),
+                 FBZCP_CC_LOCALSELECT(r_fbzColorPath), FBZCP_CC_ZERO_OTHER(r_fbzColorPath),
+                 FBZCP_CC_ADD_ACLOCAL(r_fbzColorPath));
+        debug_log(dbg);
+        snprintf(dbg, sizeof(dbg),
+                 "DIAG: RGB_MASK=%d DEPTH_EN=%d DEPTH_FUNC=%d active_tmu=%d\n",
+                 FBZMODE_RGB_BUFFER_MASK(r_fbzMode), FBZMODE_ENABLE_DEPTHBUF(r_fbzMode),
+                 FBZMODE_DEPTH_FUNCTION(r_fbzMode), active_tmu_index);
+        debug_log(dbg);
+    }
 
     /* Compute dither pointers */
     const uint8_t *dither = NULL;
@@ -365,8 +401,40 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
         /* Apply texture if enabled */
         if (texture_enabled) {
             rgb_t texel;
-            TEXTURE_PIPELINE(vs, 0, x, dither4, r_textureMode,
+            TEXTURE_PIPELINE(vs, active_tmu_index, x, dither4, r_textureMode,
                              iters0, itert0, iterw0, texel);
+
+            /* Log texel value with detailed info */
+            if (diag_pixel_count < 5 && x == startx) {
+                char dbg[256];
+                int fmt = TEXMODE_FORMAT(r_textureMode);
+                snprintf(dbg, sizeof(dbg),
+                         "DIAG: texel=0x%08X (A=%d R=%d G=%d B=%d) iter_rgb=(%d,%d,%d)\n",
+                         texel, (texel >> 24) & 0xFF, (texel >> 16) & 0xFF,
+                         (texel >> 8) & 0xFF, texel & 0xFF, r, g, b);
+                debug_log(dbg);
+                snprintf(dbg, sizeof(dbg),
+                         "DIAG: texfmt=%d lodoff[0]=0x%X wmask=%d hmask=%d lookup=%p\n",
+                         fmt, active_tmu->lodoffset[0], active_tmu->wmask, active_tmu->hmask, (void*)active_tmu->lookup);
+                debug_log(dbg);
+                /* Show raw texture bytes at lodoffset */
+                if (active_tmu->ram) {
+                    uint32_t addr = active_tmu->lodoffset[0];
+                    snprintf(dbg, sizeof(dbg),
+                             "DIAG: ram[%d..%d]=%02X %02X %02X %02X %02X %02X %02X %02X\n",
+                             addr, addr+7,
+                             active_tmu->ram[addr], active_tmu->ram[addr+1], active_tmu->ram[addr+2], active_tmu->ram[addr+3],
+                             active_tmu->ram[addr+4], active_tmu->ram[addr+5], active_tmu->ram[addr+6], active_tmu->ram[addr+7]);
+                    debug_log(dbg);
+                }
+                /* Show first palette entries if lookup is palette */
+                if (active_tmu->lookup == active_tmu->palette) {
+                    snprintf(dbg, sizeof(dbg),
+                             "DIAG: palette[0..3]=0x%08X 0x%08X 0x%08X 0x%08X\n",
+                             active_tmu->palette[0], active_tmu->palette[1], active_tmu->palette[2], active_tmu->palette[3]);
+                    debug_log(dbg);
+                }
+            }
 
             /* Texture combine based on fbzColorPath settings */
             rgb_union c_local;
@@ -378,14 +446,49 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
             rgb_union c_texel;
             c_texel.u = texel;
 
-            /* Simple texture replace/modulate based on CC_RGBSELECT */
+            /* Texture combine based on CC_RGBSELECT
+             *
+             * CC_RGBSELECT determines the "other" color source:
+             *   0 = Iterated (vertex) color
+             *   1 = Texture color
+             *   2 = Color1 register
+             *
+             * However, many games enable texturing via grAlphaCombine but don't
+             * call grColorCombine. In this case, CC_RGBSELECT remains 0 but the
+             * game still expects texture to be visible.
+             *
+             * For compatibility: when texture is enabled and CC_RGBSELECT=0,
+             * check if the combine equation bits suggest "pass through other".
+             * If CC_ZERO_OTHER is not set and no add/sub operations are set,
+             * use texture color as the output (decal mode).
+             */
             switch (FBZCP_CC_RGBSELECT(r_fbzColorPath)) {
-            case 0:  /* Iterated color */
+            case 0:  /* Iterated color as "other" source */
+                /* Check if this looks like an unconfigured state where
+                 * the game expects texture output. If CC_ADD_CLOCAL is not
+                 * set (no local color contribution), use texture instead
+                 * of the likely-black iterated color.
+                 */
+                if (!FBZCP_CC_ZERO_OTHER(r_fbzColorPath) &&
+                    FBZCP_CC_ADD_ACLOCAL(r_fbzColorPath) == 0) {
+                    /* Decal mode fallback: use texture color directly */
+                    r = c_texel.rgb.r;
+                    g = c_texel.rgb.g;
+                    b = c_texel.rgb.b;
+                }
+                /* else: keep iterated color (for modulation or other effects) */
                 break;
             case 1:  /* Texture color */
                 r = c_texel.rgb.r;
                 g = c_texel.rgb.g;
                 b = c_texel.rgb.b;
+                if (diag_pixel_count < 5 && x == startx) {
+                    char dbg[128];
+                    snprintf(dbg, sizeof(dbg),
+                             "DIAG: case1 c_texel.u=0x%08X r=%d g=%d b=%d\n",
+                             c_texel.u, c_texel.rgb.r, c_texel.rgb.g, c_texel.rgb.b);
+                    debug_log(dbg);
+                }
                 break;
             case 2:  /* Color 1 register */
                 r = regs[color1].rgb.r;
@@ -410,19 +513,41 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
                 break;
             }
 
-            /* Apply texture modulation if local select is set */
-            if (FBZCP_CC_LOCALSELECT(r_fbzColorPath) == 0 &&
-                FBZCP_CC_RGBSELECT(r_fbzColorPath) == 1) {
-                /* Modulate texture by iterated color */
-                r = (r * c_local.rgb.r) >> 8;
-                g = (g * c_local.rgb.g) >> 8;
-                b = (b * c_local.rgb.b) >> 8;
+            /*
+             * Note: Full color combine equation would be:
+             *   result = (c_other - c_local) * blend + c_add
+             *
+             * For now, we handle common cases:
+             * - CC_RGBSELECT=1 (texture): output texture color directly
+             * - CC_RGBSELECT=0 with texture enabled: output texture (decal)
+             *
+             * Modulation (texture * iterated) requires CC_MSELECT to specify
+             * the blend factor. We skip modulation for now to avoid zeroing
+             * the output when iterated color is black.
+             */
+
+            /* Log final color after texture combine */
+            if (diag_pixel_count < 5 && x == startx) {
+                char dbg[128];
+                snprintf(dbg, sizeof(dbg),
+                         "DIAG: after combine rgb=(%d,%d,%d,%d)\n", r, g, b, a);
+                debug_log(dbg);
+                diag_pixel_count++;
             }
         }
 
         /* Pixel pipeline modify - fogging and alpha blend */
         PIXEL_PIPELINE_MODIFY(vs, dither, dither4, x, r_fbzMode, r_fbzColorPath,
                               r_alphaMode, r_fogMode, iterz, iterw, iterargb);
+
+        /* Log before write */
+        if (diag_pixel_count <= 5 && x == startx) {
+            char dbg[128];
+            snprintf(dbg, sizeof(dbg),
+                     "DIAG: before write rgb=(%d,%d,%d) dest=%p x=%d\n",
+                     r, g, b, (void*)dest, x);
+            debug_log(dbg);
+        }
 
         /* Pixel pipeline finish - write to framebuffer */
         PIXEL_PIPELINE_FINISH(vs, dither_lookup, x, dest, depth, r_fbzMode);
@@ -438,9 +563,9 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
         iterw += fbi->dwdx;
 
         /* Update texture iterators */
-        iters0 += tmu0->dsdx;
-        itert0 += tmu0->dtdx;
-        iterw0 += tmu0->dwdx;
+        iters0 += active_tmu->dsdx;
+        itert0 += active_tmu->dtdx;
+        iterw0 += active_tmu->dwdx;
     }
 }
 
@@ -562,11 +687,12 @@ void voodoo_triangle(voodoo_state *vs)
         int32_t iterz = fbi->startz + dy * fbi->dzdy + dx * fbi->dzdx;
         int64_t iterw = fbi->startw + dy * fbi->dwdy + dx * fbi->dwdx;
 
-        /* Compute texture coordinates for TMU0 */
-        tmu_state *tmu0 = &vs->tmu[0];
-        int64_t iters0 = tmu0->starts + dy * tmu0->dsdy + dx * tmu0->dsdx;
-        int64_t itert0 = tmu0->startt + dy * tmu0->dtdy + dx * tmu0->dtdx;
-        int64_t iterw0 = tmu0->startw + dy * tmu0->dwdy + dx * tmu0->dwdx;
+        /* Compute texture coordinates for active TMU */
+        extern int g_active_tmu;
+        tmu_state *active_tmu = &vs->tmu[g_active_tmu];
+        int64_t iters0 = active_tmu->starts + dy * active_tmu->dsdy + dx * active_tmu->dsdx;
+        int64_t itert0 = active_tmu->startt + dy * active_tmu->dtdy + dx * active_tmu->dtdx;
+        int64_t iterw0 = active_tmu->startw + dy * active_tmu->dwdy + dx * active_tmu->dwdx;
 
         /* Rasterize this scanline */
         raster_scanline(vs, dest, depth, y, istartx, istopx,
