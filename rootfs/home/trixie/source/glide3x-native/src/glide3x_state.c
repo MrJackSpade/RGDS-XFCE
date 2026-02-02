@@ -132,6 +132,13 @@ int g_lfb_buffer_locked = -1;
 GrLfbWriteMode_t g_lfb_write_mode = GR_LFBWRITEMODE_565;
 GrOriginLocation_t g_lfb_origin = GR_ORIGIN_UPPER_LEFT;
 
+/* Shadow buffer for non-16-bit LFB modes */
+uint8_t *g_lfb_shadow_buffer = NULL;
+size_t g_lfb_shadow_buffer_size = 0;
+int g_lfb_shadow_width = 0;
+int g_lfb_shadow_height = 0;
+GrBuffer_t g_lfb_shadow_target = 0;
+
 /*************************************
  * Statistics counters
  *************************************/

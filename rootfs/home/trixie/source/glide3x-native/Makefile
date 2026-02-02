@@ -31,7 +31,8 @@ SRCS = src/glide3x_state.c \
        src/glide3x_misc.c \
        src/glide3x_get.c \
        src/voodoo_emu.c \
-       src/display_ddraw.c
+       src/display_ddraw.c \
+       src/glide3x_screenshot.c
 
 # Output
 BUILD_DIR = build
@@ -39,9 +40,9 @@ TARGET = $(BUILD_DIR)/glide3x.dll
 DEFFILE = src/glide3x.def
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 
-.PHONY: all clean install test
+.PHONY: all clean install test test-lfb tests
 
-all: $(TARGET)
+all: $(TARGET) tests
 
 $(TARGET): $(OBJS) $(DEFFILE)
 	@mkdir -p $(dir $@)
@@ -54,6 +55,7 @@ $(BUILD_DIR)/%.o: %.c
 
 clean:
 	rm -rf $(BUILD_DIR)
+	rm -f $(TEST_TARGET) $(TEST_LFB_TARGET)
 
 # Install to Wine prefix
 install: $(TARGET)
@@ -74,8 +76,24 @@ TEST_TARGET = test_glide.exe
 TEST_SRCS = test/test_glide.c
 
 $(TEST_TARGET): $(TARGET) $(TEST_SRCS)
-	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_SRCS) -L. -lglide3x
+	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_SRCS) $(TARGET)
 	@echo "Built $@"
 
 test: $(TEST_TARGET)
 	@echo "Run with: wine ./test_glide.exe"
+
+# LFB stride test (Diablo 2 ZARDBLIZ bug reproduction)
+TEST_LFB_TARGET = test_lfb_stride.exe
+TEST_LFB_SRCS = test/test_lfb_stride.c
+
+$(TEST_LFB_TARGET): $(TARGET) $(TEST_LFB_SRCS)
+	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_LFB_SRCS) $(TARGET)
+	@echo "Built $@"
+
+test-lfb: $(TEST_LFB_TARGET)
+	@echo "Run with: wine ./test_lfb_stride.exe"
+	@echo "This test reproduces the D2 title screen stride bug"
+
+# Build all test executables
+tests: $(TEST_TARGET) $(TEST_LFB_TARGET)
+	@echo "All tests built: $(TEST_TARGET) $(TEST_LFB_TARGET)"

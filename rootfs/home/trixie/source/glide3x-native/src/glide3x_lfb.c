@@ -47,6 +47,26 @@
  */
 
 #include "glide3x_state.h"
+#include <stdlib.h>  /* For malloc/free */
+
+/*
+ * Get bytes per pixel for a given LFB write mode
+ */
+static int get_writemode_bpp(GrLfbWriteMode_t mode)
+{
+    switch (mode) {
+    case GR_LFBWRITEMODE_565:
+    case GR_LFBWRITEMODE_555:
+    case GR_LFBWRITEMODE_1555:
+        return 2;
+    case GR_LFBWRITEMODE_888:
+        return 3;
+    case GR_LFBWRITEMODE_8888:
+        return 4;
+    default:
+        return 2;  /* Default to 16-bit */
+    }
+}
 
 /*
  * grLfbLock - Lock a buffer for direct CPU access
@@ -106,6 +126,12 @@
  *
  * 4. Our implementation tracks which buffer was locked so
  *    grBufferSwap() knows whether to present front or back buffer.
+ *
+ * SHADOW BUFFER FOR NON-16-BIT MODES:
+ * When the application requests a non-16-bit write mode (e.g., 8888),
+ * we allocate a shadow buffer at that bit depth, return it to the app,
+ * and convert to 16-bit on grLfbUnlock(). This fixes the "ZARDBLIZ" bug
+ * in Diablo 2 where 32-bit writes with 16-bit stride caused wrapping.
  */
 FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t writeMode,
                  GrOriginLocation_t origin, FxBool pixelPipeline, GrLfbInfo_t *info)
@@ -132,38 +158,187 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
 
     (void)pixelPipeline;  /* We don't support pipeline mode */
 
-    uint8_t *bufptr;
-    switch (buffer) {
-    case GR_BUFFER_FRONTBUFFER:
-        bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf];
-        break;
-    case GR_BUFFER_BACKBUFFER:
-        bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf];
-        break;
-    case GR_BUFFER_AUXBUFFER:
-    case GR_BUFFER_DEPTHBUFFER:
-        bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs;
-        break;
-    default:
-        return FXFALSE;
-    }
+    int width = g_voodoo->fbi.width;
+    int height = g_voodoo->fbi.height;
+    int bpp = get_writemode_bpp(writeMode);
+    int stride = width * bpp;
 
-    info->size = sizeof(GrLfbInfo_t);
-    info->lfbPtr = bufptr;
-    /* Stride is always based on internal 16-bit format regardless of writeMode */
-    info->strideInBytes = g_voodoo->fbi.rowpixels * 2;
-    info->writeMode = writeMode;
-    info->origin = origin;
+    /*
+     * For non-16-bit write modes, we need a shadow buffer because
+     * our internal framebuffer is 16-bit RGB565.
+     */
+    if (bpp != 2 && type == GR_LFB_WRITE_ONLY) {
+        /* Allocate or resize shadow buffer if needed */
+        size_t needed_size = (size_t)stride * height;
+        if (g_lfb_shadow_buffer_size < needed_size) {
+            free(g_lfb_shadow_buffer);
+            g_lfb_shadow_buffer = (uint8_t*)malloc(needed_size);
+            if (!g_lfb_shadow_buffer) {
+                g_lfb_shadow_buffer_size = 0;
+                return FXFALSE;
+            }
+            g_lfb_shadow_buffer_size = needed_size;
+        }
+
+        /* Clear the shadow buffer */
+        memset(g_lfb_shadow_buffer, 0, needed_size);
+
+        /* Track shadow buffer parameters for unlock */
+        g_lfb_shadow_width = width;
+        g_lfb_shadow_height = height;
+        g_lfb_shadow_target = buffer;
+
+        info->size = sizeof(GrLfbInfo_t);
+        info->lfbPtr = g_lfb_shadow_buffer;
+        info->strideInBytes = stride;
+        info->writeMode = writeMode;
+        info->origin = origin;
+
+        {
+            char dbg[128];
+            snprintf(dbg, sizeof(dbg),
+                     "glide3x: grLfbLock using shadow buffer, stride=%d (bpp=%d)\n",
+                     stride, bpp);
+            debug_log(dbg);
+        }
+    } else {
+        /* 16-bit mode or read-only: return direct framebuffer pointer */
+        uint8_t *bufptr;
+        switch (buffer) {
+        case GR_BUFFER_FRONTBUFFER:
+            bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf];
+            break;
+        case GR_BUFFER_BACKBUFFER:
+            bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf];
+            break;
+        case GR_BUFFER_AUXBUFFER:
+        case GR_BUFFER_DEPTHBUFFER:
+            bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs;
+            break;
+        default:
+            return FXFALSE;
+        }
+
+        /* No shadow buffer in use */
+        g_lfb_shadow_target = (GrBuffer_t)-1;
+
+        info->size = sizeof(GrLfbInfo_t);
+        info->lfbPtr = bufptr;
+        info->strideInBytes = stride;  /* width * bpp (2 for 16-bit) */
+        info->writeMode = writeMode;
+        info->origin = origin;
+    }
 
     {
         char dbg[128];
         snprintf(dbg, sizeof(dbg),
                  "glide3x: grLfbLock returning lfbPtr=%p stride=%d\n",
-                 bufptr, info->strideInBytes);
+                 info->lfbPtr, info->strideInBytes);
         debug_log(dbg);
     }
 
     return FXTRUE;
+}
+
+/*
+ * Convert shadow buffer to 16-bit framebuffer
+ */
+static void convert_shadow_to_framebuffer(GrBuffer_t buffer)
+{
+    if (!g_voodoo || !g_lfb_shadow_buffer) return;
+
+    /* Get destination buffer */
+    uint16_t *dest;
+    switch (buffer) {
+    case GR_BUFFER_FRONTBUFFER:
+        dest = (uint16_t*)(g_voodoo->fbi.ram +
+                           g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
+        break;
+    case GR_BUFFER_BACKBUFFER:
+        dest = (uint16_t*)(g_voodoo->fbi.ram +
+                           g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf]);
+        break;
+    default:
+        return;
+    }
+
+    int width = g_lfb_shadow_width;
+    int height = g_lfb_shadow_height;
+    int bpp = get_writemode_bpp(g_lfb_write_mode);
+    int src_stride = width * bpp;
+    int dst_stride = g_voodoo->fbi.rowpixels;
+
+    {
+        char dbg[128];
+        snprintf(dbg, sizeof(dbg),
+                 "glide3x: Converting shadow buffer %dx%d bpp=%d to framebuffer\n",
+                 width, height, bpp);
+        debug_log(dbg);
+    }
+
+    for (int y = 0; y < height; y++) {
+        uint16_t *dst_row = &dest[y * dst_stride];
+        uint8_t *src_row = &g_lfb_shadow_buffer[y * src_stride];
+
+        switch (g_lfb_write_mode) {
+        case GR_LFBWRITEMODE_8888:
+            /* Convert ARGB8888 to RGB565 */
+            {
+                uint32_t *src32 = (uint32_t*)src_row;
+                for (int x = 0; x < width; x++) {
+                    uint32_t pix = src32[x];
+                    uint8_t r = (pix >> 16) & 0xFF;
+                    uint8_t g = (pix >> 8) & 0xFF;
+                    uint8_t b = pix & 0xFF;
+                    dst_row[x] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+                }
+            }
+            break;
+
+        case GR_LFBWRITEMODE_888:
+            /* Convert RGB888 to RGB565 */
+            for (int x = 0; x < width; x++) {
+                uint8_t b = src_row[x * 3 + 0];
+                uint8_t g = src_row[x * 3 + 1];
+                uint8_t r = src_row[x * 3 + 2];
+                dst_row[x] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+            }
+            break;
+
+        case GR_LFBWRITEMODE_555:
+            /* Convert RGB555 to RGB565 */
+            {
+                uint16_t *src16 = (uint16_t*)src_row;
+                for (int x = 0; x < width; x++) {
+                    uint16_t pix = src16[x];
+                    uint16_t r = (pix >> 10) & 0x1F;
+                    uint16_t g = (pix >> 5) & 0x1F;
+                    uint16_t b = pix & 0x1F;
+                    dst_row[x] = (r << 11) | (g << 6) | b;
+                }
+            }
+            break;
+
+        case GR_LFBWRITEMODE_1555:
+            /* Convert ARGB1555 to RGB565 (discard alpha) */
+            {
+                uint16_t *src16 = (uint16_t*)src_row;
+                for (int x = 0; x < width; x++) {
+                    uint16_t pix = src16[x];
+                    uint16_t r = (pix >> 10) & 0x1F;
+                    uint16_t g = (pix >> 5) & 0x1F;
+                    uint16_t b = pix & 0x1F;
+                    dst_row[x] = (r << 11) | (g << 6) | b;
+                }
+            }
+            break;
+
+        default:
+            /* 565 or unknown - direct copy */
+            memcpy(dst_row, src_row, width * 2);
+            break;
+        }
+    }
 }
 
 /*
@@ -185,6 +360,10 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
  * present that buffer to the display. This ensures LFB writes to the
  * front buffer are visible without requiring a grBufferSwap().
  *
+ * SHADOW BUFFER CONVERSION:
+ * If a shadow buffer was used (for non-16-bit write modes), we convert
+ * it to the 16-bit framebuffer here before presenting.
+ *
  * This behavior is important for applications that:
  *   - Play fullscreen video directly to the front buffer
  *   - Draw UI elements after the main rendering pass
@@ -201,8 +380,16 @@ FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
         debug_log(dbg);
     }
 
+    if (!g_voodoo) return FXFALSE;
+
+    /* If shadow buffer was used, convert it to framebuffer */
+    if (type == GR_LFB_WRITE_ONLY && g_lfb_shadow_target == buffer && g_lfb_shadow_buffer) {
+        convert_shadow_to_framebuffer(buffer);
+        g_lfb_shadow_target = (GrBuffer_t)-1;  /* Mark shadow as processed */
+    }
+
     /* If this was a write lock on front buffer, present immediately */
-    if (type == GR_LFB_WRITE_ONLY && buffer == GR_BUFFER_FRONTBUFFER && g_voodoo) {
+    if (type == GR_LFB_WRITE_ONLY && buffer == GR_BUFFER_FRONTBUFFER) {
         uint16_t *frontbuf = (uint16_t*)(g_voodoo->fbi.ram +
                                           g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
         {

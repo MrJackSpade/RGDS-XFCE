@@ -1,48 +1,94 @@
+param(
+    [switch]$TestOnly,      # Only run the LFB stride test, not Diablo 2
+    [switch]$DeployOnly,    # Only build and deploy, don't run anything
+    [switch]$NoBuild        # Skip build step (use existing binaries)
+)
+
 $ErrorActionPreference = "Stop"
 
 # Configuration
 $RemoteUser = "trixie"
 $RemoteHost = "192.168.12.204"
 $RemotePath = "/home/trixie/.wine-hangover/drive_c/Program Files (x86)/Diablo II"
+$RemoteTestPath = "/home/trixie/.wine-hangover/drive_c/glide3x_tests"
 $LocalDll = "build/glide3x.dll"
+$LocalTestGlide = "test_glide.exe"
+$LocalTestLfb = "test_lfb_stride.exe"
 $RemoteLogPath = "/home/trixie/.wine-hangover/drive_c/glide3x_debug.log"
 $LocalLogPath = "glide3x_debug.log"
 
-Write-Host "Building project..."
-wsl make clean all
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Build failed!"
+if (-not $NoBuild) {
+    Write-Host "Building project (including tests)..."
+    wsl make clean all
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Build failed!"
+    }
 }
 
+# Create test directory on remote if it doesn't exist
+Write-Host "Creating test directory on remote..."
+& "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "mkdir -p '${RemoteTestPath}'"
+
+# Deploy DLL and test executables
 $SftpScript = @"
 cd "${RemotePath}"
 put $LocalDll
+cd "${RemoteTestPath}"
+put $LocalDll
+put $LocalTestGlide
+put $LocalTestLfb
 bye
 "@
+Write-Host "Deploying DLL and test executables..."
 $SftpScript | & "C:\Windows\System32\OpenSSH\sftp.exe" "${RemoteUser}@${RemoteHost}"
 
+Write-Host ""
+Write-Host "=== Deployment complete ==="
+Write-Host "DLL deployed to: ${RemotePath}"
+Write-Host "Tests deployed to: ${RemoteTestPath}"
+Write-Host ""
+
+if ($DeployOnly) {
+    Write-Host "Deploy-only mode. To run tests manually:"
+    Write-Host "  ssh ${RemoteUser}@${RemoteHost}"
+    Write-Host "  cd '${RemoteTestPath}'"
+    Write-Host "  DISPLAY=:0 WINEPREFIX=~/.wine-hangover wine test_lfb_stride.exe"
+    exit 0
+}
+
+if ($TestOnly) {
+    Write-Host "=== Running LFB Stride Test (ZARDBLIZ bug reproduction) ==="
+    Write-Host ""
+
+    # Clear any old log
+    & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -f '${RemoteLogPath}'"
+
+    $TestCmd = "export DISPLAY=:0 && cd '${RemoteTestPath}' && WINEPREFIX=~/.wine-hangover /usr/bin/wine test_lfb_stride.exe 2>&1"
+
+    Write-Host "Executing test..."
+    & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" $TestCmd
+
+    Write-Host ""
+    Write-Host "Fetching debug log..."
+    $SftpScriptLog = @"
+get "${RemoteLogPath}" $LocalLogPath
+bye
+"@
+    $SftpScriptLog | & "C:\Windows\System32\OpenSSH\sftp.exe" "${RemoteUser}@${RemoteHost}"
+
+    Write-Host ""
+    Write-Host "=== Debug Log (last 50 lines) ==="
+    Get-Content $LocalLogPath -Tail 50
+    exit 0
+}
+
+# Default: Run Diablo II
 Write-Host "Executing Diablo II on remote host..."
-# We run this in the background / async or wait? 
-# The user wants to wait 20 seconds then kill it.
-# If we run 'wine ...' via ssh, it will block until wine exits.
-# So we should probably start it in background on remote, or use a timeout here?
-# Actually, the user instruction is:
-# 2. execute ...
-# 3. wait 20 seconds
-# 4. pkill
-# So we can start it, sleep locally, then open a new ssh to pkill.
-# OR we can run it with a timeout command on linux?
-# Let's try spawning it in background on remote.
 
 $RunCmd = "export DISPLAY=:0 && cd '${RemotePath}' && ODLL=libwow64fex.dll WINEPREFIX=~/.wine-hangover /usr/bin/wine `'Diablo II.exe`' -3dfx -w 2>&1"
-# Use nohup or & to background it so SSH returns? 
-# Or just start-job? 
-# If we keep SSH open, we can see logs. 
-# Let's use PowerShell Start-Job to run the SSH command asynchronously.
 
 $Job = Start-Job -ScriptBlock {
     param($User, $RemoteHostAddr, $Cmd)
-    # Bypass wrapper by using absolute path
     & "C:\Windows\System32\OpenSSH\ssh.exe" "${User}@${RemoteHostAddr}" $Cmd
 } -ArgumentList $RemoteUser, $RemoteHost, $RunCmd
 
@@ -52,7 +98,7 @@ Start-Sleep -Seconds 30
 Write-Host "Killing Diablo II..."
 & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "pkill -f iabl"
 
-# Wait for job to finish (it should finish now that pkill happened)
+# Wait for job to finish
 try {
     Receive-Job -Job $Job -Wait
 }

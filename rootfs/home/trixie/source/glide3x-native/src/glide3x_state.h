@@ -153,6 +153,20 @@ extern GrLfbWriteMode_t g_lfb_write_mode;
  */
 extern GrOriginLocation_t g_lfb_origin;
 
+/*
+ * g_lfb_shadow_buffer - Shadow buffer for non-16-bit LFB write modes
+ *
+ * When a game requests a 32-bit writeMode (e.g., GR_LFBWRITEMODE_8888),
+ * we can't give them a pointer to the 16-bit framebuffer directly.
+ * Instead, we allocate a shadow buffer at the requested bit depth,
+ * return that to the game, and convert it to 16-bit on unlock.
+ */
+extern uint8_t *g_lfb_shadow_buffer;
+extern size_t g_lfb_shadow_buffer_size;
+extern int g_lfb_shadow_width;
+extern int g_lfb_shadow_height;
+extern GrBuffer_t g_lfb_shadow_target;  /* Which buffer to write to on unlock */
+
 /*************************************
  * Statistics counters (for debugging)
  *************************************/
