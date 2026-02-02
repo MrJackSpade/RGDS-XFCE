@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Wine ISO Mount
+Comment=Mount ISO files as Wine CD-ROM drives
+Exec=wine-iso %f
+Icon=media-optical
+Terminal=false
+Type=Application
+Categories=Utility;
+MimeType=application/x-iso9660-image;application/x-cd-image;application/x-raw-disk-image;
+NoDisplay=true

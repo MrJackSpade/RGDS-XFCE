@@ -28,7 +28,22 @@
       "Bash(git clone:*)",
       "Bash(sshpass -p 'trixie' ssh:*)",
       "Bash(sshpass:*)",
-      "Bash(tar xf:*)"
+      "Bash(tar xf:*)",
+      "Bash(i686-w64-mingw32-g++:*)",
+      "WebFetch(domain:bbs.archlinux.org)",
+      "WebFetch(domain:forum.winehq.org)",
+      "Bash(i686-w64-mingw32-dlltool:*)",
+      "Bash(i686-w64-mingw32-gcc:*)",
+      "Bash(i686-w64-mingw32-objdump:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl:*)",
+      "Bash(wc:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(wine:*)",
+      "Bash(echo:*)",
+      "Bash(xargs cat:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)"
     ]
   }
 }

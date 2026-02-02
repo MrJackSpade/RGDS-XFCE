@@ -13,15 +13,17 @@ WINE_PREFIXES=(
 
 usage() {
     cat << EOF
-Usage: wine-iso mount <drive> <iso-path>    Mount ISO to Wine drive
+Usage: wine-iso <iso-path>                  Toggle: mount ISO or unmount if already mounted
+       wine-iso mount [drive] <iso-path>    Mount ISO to Wine drive (swaps if already mounted)
        wine-iso unmount <drive>             Unmount drive
-       wine-iso swap <drive> <iso-path>     Swap disc - lazy unmount then mount
        wine-iso list                        List mounted ISO drives
        wine-iso unmount-all                 Unmount all ISO drives
 
 Examples:
-    wine-iso mount d "/path/to/game.iso"
-    wine-iso swap d "/path/to/disc2.iso"
+    wine-iso "/path/to/game.iso"            # Mounts (or unmounts if already mounted)
+    wine-iso mount "/path/to/game.iso"      # Prompts for drive selection
+    wine-iso mount d "/path/to/game.iso"    # Mounts to D:
+    wine-iso mount d "/path/to/disc2.iso"   # Swaps to disc 2
     wine-iso unmount d
     wine-iso list
 
@@ -59,41 +61,105 @@ to_lower() {
     echo "$1" | tr "[:upper:]" "[:lower:]"
 }
 
+# Get list of available (unmounted) drive letters
+get_available_drives() {
+    local available=()
+    for letter in d e f g h i j k l m n o p q r s t u v w x y z; do
+        local mount_point="$MOUNT_BASE/$letter"
+        if ! mountpoint -q "$mount_point" 2>/dev/null; then
+            available+=("$letter")
+        fi
+    done
+    echo "${available[@]}"
+}
+
+# Get list of mounted drive letters
+get_mounted_drives() {
+    local mounted=()
+    for letter in d e f g h i j k l m n o p q r s t u v w x y z; do
+        local mount_point="$MOUNT_BASE/$letter"
+        if mountpoint -q "$mount_point" 2>/dev/null; then
+            mounted+=("$letter")
+        fi
+    done
+    echo "${mounted[@]}"
+}
+
+# Check if an ISO file is currently mounted, return drive letter if so
+find_mounted_iso() {
+    local iso_path="$1"
+    local real_iso=$(realpath "$iso_path" 2>/dev/null || echo "$iso_path")
+    for letter in d e f g h i j k l m n o p q r s t u v w x y z; do
+        local mount_point="$MOUNT_BASE/$letter"
+        if mountpoint -q "$mount_point" 2>/dev/null; then
+            local source=$(findmnt -n -o SOURCE "$mount_point" 2>/dev/null)
+            local real_source=$(realpath "$source" 2>/dev/null || echo "$source")
+            if [[ "$real_source" == "$real_iso" ]]; then
+                echo "$letter"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
+# Select a drive letter interactively
+select_drive() {
+    local iso_name="$1"
+    local available=($(get_available_drives))
+    local mounted=($(get_mounted_drives))
+
+    if [[ ${#available[@]} -eq 0 ]]; then
+        echo "Error: No available drive letters" >&2
+        exit 1
+    fi
+
+    # Build display list with status
+    local options=()
+    local display=()
+    for letter in "${available[@]}"; do
+        options+=("$letter")
+        display+=("${letter^^}:  (available)")
+    done
+    for letter in "${mounted[@]}"; do
+        local source=$(findmnt -n -o SOURCE "$MOUNT_BASE/$letter" 2>/dev/null || echo "mounted")
+        options+=("$letter")
+        display+=("${letter^^}:  (swap - $source)")
+    done
+
+    # Try GUI if available
+    if [[ -n "${DISPLAY:-}" ]] && command -v zenity &>/dev/null; then
+        local zenity_list=()
+        for i in "${!options[@]}"; do
+            zenity_list+=("${options[$i]}" "${display[$i]}")
+        done
+        local selected
+        selected=$(zenity --list --title="Select Drive" \
+            --text="Mount: $(basename "$iso_name")\nSelect target drive:" \
+            --column="Drive" --column="Status" \
+            --hide-column=1 --print-column=1 \
+            "${zenity_list[@]}" 2>/dev/null) || exit 1
+        echo "$selected"
+    else
+        # CLI fallback
+        echo "Mount: $(basename "$iso_name")" >&2
+        echo "Select target drive:" >&2
+        echo >&2
+        PS3="Enter number: "
+        select opt in "${display[@]}"; do
+            if [[ -n "$opt" ]]; then
+                echo "${options[$((REPLY-1))]}"
+                break
+            fi
+        done </dev/tty
+    fi
+}
+
 mount_iso() {
     local drive=$(to_lower "$1")
     local iso_path="$2"
     local mount_point="$MOUNT_BASE/$drive"
-
-    if [[ ! -f "$iso_path" ]]; then
-        echo "Error: ISO file not found: $iso_path"
-        exit 1
-    fi
-
-    if mountpoint -q "$mount_point" 2>/dev/null; then
-        echo "Error: Drive $drive: is already mounted"
-        echo "Use: wine-iso swap $drive <iso>"
-        exit 1
-    fi
-
-    ensure_dirs
-    mkdir -p "$mount_point"
-
-    echo "Mounting: $iso_path"
-    fuseiso -o ro,umask=0222 "$iso_path" "$mount_point"
-
-    link_drive "$drive" "$mount_point"
-
-    echo "Mounted as ${drive^^}: in Wine (all prefixes)"
-    echo "Contents:"
-    ls "$mount_point" | head -10
-    local count=$(ls "$mount_point" | wc -l)
-    [[ $count -gt 10 ]] && echo "... and $((count - 10)) more files"
-}
-
-swap_iso() {
-    local drive=$(to_lower "$1")
-    local iso_path="$2"
-    local mount_point="$MOUNT_BASE/$drive"
+    local swapping=0
 
     if [[ ! -f "$iso_path" ]]; then
         echo "Error: ISO file not found: $iso_path"
@@ -103,12 +169,13 @@ swap_iso() {
     ensure_dirs
 
     if mountpoint -q "$mount_point" 2>/dev/null; then
-        echo "Lazy unmounting current disc..."
+        echo "Swapping disc (lazy unmount)..."
         fusermount -uz "$mount_point" 2>/dev/null || true
         sleep 0.5
+        rmdir "$mount_point" 2>/dev/null || true
+        swapping=1
     fi
 
-    rmdir "$mount_point" 2>/dev/null || true
     mkdir -p "$mount_point"
 
     echo "Mounting: $iso_path"
@@ -116,7 +183,11 @@ swap_iso() {
 
     link_drive "$drive" "$mount_point"
 
-    echo "Swapped ${drive^^}: in Wine (all prefixes)"
+    if [[ $swapping -eq 1 ]]; then
+        echo "Swapped ${drive^^}: in Wine (all prefixes)"
+    else
+        echo "Mounted as ${drive^^}: in Wine (all prefixes)"
+    fi
     echo "Contents:"
     ls "$mount_point" | head -10
     local count=$(ls "$mount_point" | wc -l)
@@ -136,7 +207,7 @@ unmount_iso() {
 
     echo "Unmounting ${drive^^}:..."
     if ! fusermount -u "$mount_point" 2>/dev/null; then
-        echo "Device busy - use: wine-iso swap $drive <new-iso>"
+        echo "Device busy - use: wine-iso mount $drive <new-iso> to swap"
         exit 1
     fi
     unlink_drive "$drive"
@@ -177,12 +248,18 @@ unmount_all() {
 
 case "${1:-}" in
     mount)
-        [[ -z "${2:-}" || -z "${3:-}" ]] && usage
-        mount_iso "$2" "$3"
-        ;;
-    swap)
-        [[ -z "${2:-}" || -z "${3:-}" ]] && usage
-        swap_iso "$2" "$3"
+        if [[ -n "${3:-}" ]]; then
+            # mount <drive> <iso>
+            mount_iso "$2" "$3"
+        elif [[ -n "${2:-}" ]]; then
+            # mount <iso> - select drive
+            [[ ! -f "$2" ]] && { echo "Error: File not found: $2"; exit 1; }
+            drive=$(select_drive "$2")
+            [[ -z "$drive" ]] && exit 1
+            mount_iso "$drive" "$2"
+        else
+            usage
+        fi
         ;;
     unmount|umount)
         [[ -z "${2:-}" ]] && usage
@@ -194,7 +271,23 @@ case "${1:-}" in
     unmount-all|umount-all)
         unmount_all
         ;;
-    *)
+    -h|--help|help)
         usage
+        ;;
+    *)
+        # Default: treat as ISO file path (toggle mount/unmount)
+        if [[ -n "${1:-}" && -f "$1" ]]; then
+            # Check if this ISO is already mounted
+            if mounted_drive=$(find_mounted_iso "$1"); then
+                echo "ISO already mounted on ${mounted_drive^^}:, unmounting..."
+                unmount_iso "$mounted_drive"
+            else
+                drive=$(select_drive "$1")
+                [[ -z "$drive" ]] && exit 1
+                mount_iso "$drive" "$1"
+            fi
+        else
+            usage
+        fi
         ;;
 esac

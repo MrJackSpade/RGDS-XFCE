@@ -596,20 +596,27 @@ int main(int argc, char** argv) {
         int status;
         pid_t result = waitpid(pid, &status, WNOHANG);
         if (result != 0) {
-            if (WIFEXITED(status)) {
-                fprintf(stderr, "Error: Process exited with code %d\n", WEXITSTATUS(status));
+            // Process exited - if we have a window name to search for, keep looking
+            // (Wine and similar launchers fork and the parent exits while child continues)
+            if (!config.windowName.empty()) {
+                DEBUG("Process exited but continuing to search by name '%s'", config.windowName.c_str());
+                pid = 0;  // Clear PID so we only search by name from now on
             } else {
-                fprintf(stderr, "Error: Process terminated abnormally\n");
+                if (WIFEXITED(status)) {
+                    fprintf(stderr, "Error: Process exited with code %d\n", WEXITSTATUS(status));
+                } else {
+                    fprintf(stderr, "Error: Process terminated abnormally\n");
+                }
+                XCloseDisplay(dpy);
+                return 1;
             }
-            XCloseDisplay(dpy);
-            return 1;
         }
 
         // Try to find the window
         if (!config.windowName.empty()) {
             win = findWindowByName(dpy, DefaultRootWindow(dpy), config.windowName);
         }
-        if (win == None) {
+        if (win == None && pid > 0) {
             win = findWindowByPid(dpy, DefaultRootWindow(dpy), pid);
         }
 

@@ -1,0 +1,275 @@
+/*
+ * display_ddraw.c - DirectDraw display output for software Glide3x
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * Uses DirectDraw to blit RGB565 framebuffer to screen.
+ * This is a single syscall per frame, minimizing Wine overhead.
+ */
+
+#include <windows.h>
+#include <ddraw.h>
+#include <stdint.h>
+#include <stdio.h>
+
+/* DirectDraw interfaces */
+static LPDIRECTDRAW g_dd = NULL;
+static LPDIRECTDRAW7 g_dd7 = NULL;
+static LPDIRECTDRAWSURFACE7 g_primary = NULL;
+static LPDIRECTDRAWSURFACE7 g_backbuf = NULL;
+static HWND g_hwnd = NULL;
+static int g_width = 0;
+static int g_height = 0;
+
+/* Debug logging - write to same log file as glide3x.c */
+static FILE *g_display_log = NULL;
+static void display_log(const char *msg)
+{
+    if (!g_display_log) {
+        g_display_log = fopen("C:\\glide3x_debug.log", "a");
+    }
+    if (g_display_log) {
+        fputs(msg, g_display_log);
+        fflush(g_display_log);
+    }
+}
+
+/* Forward declaration */
+void display_shutdown(void);
+
+/* Window procedure */
+static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg) {
+    case WM_CLOSE:
+        DestroyWindow(hwnd);
+        return 0;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    case WM_KEYDOWN:
+        if (wParam == VK_ESCAPE) {
+            PostMessage(hwnd, WM_CLOSE, 0, 0);
+            return 0;
+        }
+        break;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+/* Create output window */
+static HWND create_window(int width, int height)
+{
+    WNDCLASS wc = {0};
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.lpszClassName = "Glide3xWindow";
+
+    if (!RegisterClass(&wc)) {
+        /* Class may already be registered */
+    }
+
+    /* Compute window size for client area */
+    RECT rect = {0, 0, width, height};
+    AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+
+    HWND hwnd = CreateWindow(
+        "Glide3xWindow",
+        "Glide3x Software Renderer",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        rect.right - rect.left, rect.bottom - rect.top,
+        NULL, NULL, GetModuleHandle(NULL), NULL
+    );
+
+    if (hwnd) {
+        ShowWindow(hwnd, SW_SHOW);
+        UpdateWindow(hwnd);
+    }
+
+    return hwnd;
+}
+
+/* Initialize DirectDraw */
+int display_init(int width, int height)
+{
+    HRESULT hr;
+    DDSURFACEDESC2 ddsd;
+
+    g_width = width;
+    g_height = height;
+
+    /* Create window */
+    g_hwnd = create_window(width, height);
+    if (!g_hwnd) {
+        OutputDebugStringA("display_ddraw: Failed to create window\n");
+        return 0;
+    }
+
+    /* Create DirectDraw object */
+    hr = DirectDrawCreate(NULL, &g_dd, NULL);
+    if (FAILED(hr)) {
+        OutputDebugStringA("display_ddraw: DirectDrawCreate failed\n");
+        return 0;
+    }
+
+    /* Get IDirectDraw7 interface */
+    hr = IDirectDraw_QueryInterface(g_dd, &IID_IDirectDraw7, (void**)&g_dd7);
+    if (FAILED(hr)) {
+        OutputDebugStringA("display_ddraw: QueryInterface for DD7 failed\n");
+        IDirectDraw_Release(g_dd);
+        g_dd = NULL;
+        return 0;
+    }
+
+    /* Set cooperative level - windowed mode */
+    hr = IDirectDraw7_SetCooperativeLevel(g_dd7, g_hwnd, DDSCL_NORMAL);
+    if (FAILED(hr)) {
+        OutputDebugStringA("display_ddraw: SetCooperativeLevel failed\n");
+        goto fail;
+    }
+
+    /* Create primary surface */
+    memset(&ddsd, 0, sizeof(ddsd));
+    ddsd.dwSize = sizeof(ddsd);
+    ddsd.dwFlags = DDSD_CAPS;
+    ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+
+    hr = IDirectDraw7_CreateSurface(g_dd7, &ddsd, &g_primary, NULL);
+    if (FAILED(hr)) {
+        OutputDebugStringA("display_ddraw: CreateSurface (primary) failed\n");
+        goto fail;
+    }
+
+    /* Create offscreen back buffer for rendering */
+    memset(&ddsd, 0, sizeof(ddsd));
+    ddsd.dwSize = sizeof(ddsd);
+    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
+    ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY;
+    ddsd.dwWidth = width;
+    ddsd.dwHeight = height;
+
+    /* Request RGB565 format */
+    ddsd.ddpfPixelFormat.dwSize = sizeof(ddsd.ddpfPixelFormat);
+    ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
+    ddsd.ddpfPixelFormat.dwRGBBitCount = 16;
+    ddsd.ddpfPixelFormat.dwRBitMask = 0xF800;
+    ddsd.ddpfPixelFormat.dwGBitMask = 0x07E0;
+    ddsd.ddpfPixelFormat.dwBBitMask = 0x001F;
+
+    hr = IDirectDraw7_CreateSurface(g_dd7, &ddsd, &g_backbuf, NULL);
+    if (FAILED(hr)) {
+        OutputDebugStringA("display_ddraw: CreateSurface (backbuf) failed\n");
+        goto fail;
+    }
+
+    return 1;
+
+fail:
+    display_shutdown();
+    return 0;
+}
+
+/* Shutdown DirectDraw */
+void display_shutdown(void)
+{
+    if (g_backbuf) {
+        IDirectDrawSurface7_Release(g_backbuf);
+        g_backbuf = NULL;
+    }
+    if (g_primary) {
+        IDirectDrawSurface7_Release(g_primary);
+        g_primary = NULL;
+    }
+    if (g_dd7) {
+        IDirectDraw7_Release(g_dd7);
+        g_dd7 = NULL;
+    }
+    if (g_dd) {
+        IDirectDraw_Release(g_dd);
+        g_dd = NULL;
+    }
+    if (g_hwnd) {
+        DestroyWindow(g_hwnd);
+        g_hwnd = NULL;
+    }
+}
+
+static int g_present_count = 0;
+
+/* Present framebuffer to screen */
+void display_present(uint16_t *framebuffer, int width, int height)
+{
+    HRESULT hr;
+    DDSURFACEDESC2 ddsd;
+    RECT src_rect, dst_rect;
+    POINT pt;
+    MSG msg;
+    char dbg[256];
+
+    g_present_count++;
+    if (g_present_count <= 20) {
+        snprintf(dbg, sizeof(dbg), "display_present #%d: %dx%d fb=%p\n",
+                 g_present_count, width, height, (void*)framebuffer);
+        display_log(dbg);
+    }
+
+    if (!g_backbuf || !g_primary) return;
+
+    /* Process window messages */
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    /* Lock the back buffer and copy framebuffer data */
+    memset(&ddsd, 0, sizeof(ddsd));
+    ddsd.dwSize = sizeof(ddsd);
+
+    hr = IDirectDrawSurface7_Lock(g_backbuf, NULL, &ddsd, DDLOCK_WAIT | DDLOCK_WRITEONLY, NULL);
+    if (FAILED(hr)) {
+        return;
+    }
+
+    /* Copy RGB565 data */
+    uint16_t *dst = (uint16_t*)ddsd.lpSurface;
+    int dst_pitch = ddsd.lPitch / 2;  /* pitch in 16-bit words */
+
+    for (int y = 0; y < height; y++) {
+        memcpy(&dst[y * dst_pitch], &framebuffer[y * width], width * 2);
+    }
+
+    IDirectDrawSurface7_Unlock(g_backbuf, NULL);
+
+    /* Get window client area position */
+    pt.x = 0;
+    pt.y = 0;
+    ClientToScreen(g_hwnd, &pt);
+
+    /* Set up rectangles */
+    src_rect.left = 0;
+    src_rect.top = 0;
+    src_rect.right = width;
+    src_rect.bottom = height;
+
+    GetClientRect(g_hwnd, &dst_rect);
+    OffsetRect(&dst_rect, pt.x, pt.y);
+
+    /* Blit to primary surface */
+    hr = IDirectDrawSurface7_Blt(g_primary, &dst_rect, g_backbuf, &src_rect, DDBLT_WAIT, NULL);
+    if (g_present_count <= 20) {
+        snprintf(dbg, sizeof(dbg), "  Blt hr=0x%08lX dst=[%ld,%ld,%ld,%ld] src=[%ld,%ld,%ld,%ld]\n",
+                 (unsigned long)hr,
+                 dst_rect.left, dst_rect.top, dst_rect.right, dst_rect.bottom,
+                 src_rect.left, src_rect.top, src_rect.right, src_rect.bottom);
+        display_log(dbg);
+    }
+    if (FAILED(hr)) {
+        /* Try to restore surfaces if lost */
+        if (hr == DDERR_SURFACELOST) {
+            IDirectDrawSurface7_Restore(g_primary);
+            IDirectDrawSurface7_Restore(g_backbuf);
+        }
+    }
+}

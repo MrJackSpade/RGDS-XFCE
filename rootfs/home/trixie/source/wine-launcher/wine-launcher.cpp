@@ -887,6 +887,7 @@ void printUsage(const char* prog) {
     fprintf(stderr, "Usage: %s [options] [program.exe] [arguments...]\n\n", prog);
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "  --backend=<type>   Select backend: auto, box86, box64, hangover, hangover-fex\n");
+    fprintf(stderr, "  --timeout=<ms>     Delay before launching wine (for display-launcher sync)\n");
     fprintf(stderr, "  --info <file>      Show executable info and exit\n");
     fprintf(stderr, "  --help             Show this help\n");
     fprintf(stderr, "\nIf no --backend is specified, a selection dialog is shown.\n");
@@ -896,6 +897,7 @@ int main(int argc, char** argv) {
     WineBackend selectedBackend = WineBackend::Auto;
     bool showDialog = true;
     int firstArg = 1;
+    int timeoutMs = 0;
 
     // Parse our options (before the exe path)
     for (int i = 1; i < argc; i++) {
@@ -916,6 +918,14 @@ int main(int argc, char** argv) {
                 return 1;
             }
             showDialog = false;
+            // Shift arguments
+            for (int j = i; j < argc - 1; j++) {
+                argv[j] = argv[j + 1];
+            }
+            argc--;
+            i--;
+        } else if (strncmp(argv[i], "--timeout=", 10) == 0) {
+            timeoutMs = atoi(argv[i] + 10);
             // Shift arguments
             for (int j = i; j < argc - 1; j++) {
                 argv[j] = argv[j + 1];
@@ -982,6 +992,11 @@ int main(int argc, char** argv) {
     if (selectedBackend == WineBackend::Auto) {
         selectedBackend = recommended;
         fprintf(stderr, "[wine-launcher] Using: %s\n", backendName(selectedBackend));
+    }
+
+    // Delay if requested (for display-launcher synchronization)
+    if (timeoutMs > 0) {
+        usleep(timeoutMs * 1000);
     }
 
     // Execute wine with selected backend
