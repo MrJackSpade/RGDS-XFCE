@@ -203,8 +203,6 @@ void display_present(uint16_t *framebuffer, int width, int height)
 {
     HRESULT hr;
     DDSURFACEDESC2 ddsd;
-    RECT src_rect, dst_rect;
-    POINT pt;
     MSG msg;
     char dbg[256];
 
@@ -242,34 +240,17 @@ void display_present(uint16_t *framebuffer, int width, int height)
 
     IDirectDrawSurface7_Unlock(g_backbuf, NULL);
 
-    /* Get window client area position */
-    pt.x = 0;
-    pt.y = 0;
-    ClientToScreen(g_hwnd, &pt);
-
-    /* Set up rectangles */
-    src_rect.left = 0;
-    src_rect.top = 0;
-    src_rect.right = width;
-    src_rect.bottom = height;
-
-    GetClientRect(g_hwnd, &dst_rect);
-    OffsetRect(&dst_rect, pt.x, pt.y);
-
-    /* Blit to primary surface */
-    hr = IDirectDrawSurface7_Blt(g_primary, &dst_rect, g_backbuf, &src_rect, DDBLT_WAIT, NULL);
-    if (g_present_count <= 20) {
-        snprintf(dbg, sizeof(dbg), "  Blt hr=0x%08lX dst=[%ld,%ld,%ld,%ld] src=[%ld,%ld,%ld,%ld]\n",
-                 (unsigned long)hr,
-                 dst_rect.left, dst_rect.top, dst_rect.right, dst_rect.bottom,
-                 src_rect.left, src_rect.top, src_rect.right, src_rect.bottom);
-        display_log(dbg);
-    }
-    if (FAILED(hr)) {
-        /* Try to restore surfaces if lost */
-        if (hr == DDERR_SURFACELOST) {
-            IDirectDrawSurface7_Restore(g_primary);
-            IDirectDrawSurface7_Restore(g_backbuf);
+    /* Use GDI BitBlt instead of DirectDraw Blt */
+    {
+        HDC hdcSurf, hdcWnd;
+        hr = IDirectDrawSurface7_GetDC(g_backbuf, &hdcSurf);
+        if (SUCCEEDED(hr)) {
+            hdcWnd = GetDC(g_hwnd);
+            if (hdcWnd) {
+                BitBlt(hdcWnd, 0, 0, width, height, hdcSurf, 0, 0, SRCCOPY);
+                ReleaseDC(g_hwnd, hdcWnd);
+            }
+            IDirectDrawSurface7_ReleaseDC(g_backbuf, hdcSurf);
         }
     }
 }
