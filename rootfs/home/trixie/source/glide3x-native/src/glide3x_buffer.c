@@ -78,6 +78,25 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
     uint16_t *depthbuf;
     int x, y;
 
+    /*
+     * Check write masks - respect grColorMask and grDepthMask settings
+     *
+     * From the 3dfx SDK: "grBufferClear clears the buffers indicated by
+     * the current grColorMask and grDepthMask settings."
+     *
+     * FBZMODE_RGB_BUFFER_MASK: bit 9, 1 = RGB writes enabled
+     * FBZMODE_AUX_BUFFER_MASK: bit 10, 1 = depth/alpha writes enabled
+     */
+    uint32_t fbzmode = g_voodoo->reg[fbzMode].u;
+    int doColor = FBZMODE_RGB_BUFFER_MASK(fbzmode);
+    int doDepth = FBZMODE_AUX_BUFFER_MASK(fbzmode);
+
+    /* Early return if nothing to clear */
+    if (!doColor && !doDepth) {
+        debug_log("glide3x: grBufferClear skipped (both masks disabled)\n");
+        return;
+    }
+
     /* Get target color buffer based on current render buffer setting */
     if (g_render_buffer == 0) {
         /* Front buffer */
@@ -93,37 +112,43 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
     depthbuf = (uint16_t*)(g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs);
 
     /*
-     * Convert 32-bit ARGB color to RGB565
-     *
-     * ARGB8888: AAAA AAAA RRRR RRRR GGGG GGGG BBBB BBBB
-     * RGB565:   RRRR RGGG GGGB BBBB
-     *
-     * R: 8 bits -> 5 bits (shift right 3)
-     * G: 8 bits -> 6 bits (shift right 2)
-     * B: 8 bits -> 5 bits (shift right 3)
+     * Clear color buffer only if RGB writes are enabled
      */
-    int r = (color >> 16) & 0xFF;
-    int g = (color >> 8) & 0xFF;
-    int b = color & 0xFF;
-    uint16_t color565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+    if (doColor) {
+        /*
+         * Convert 32-bit ARGB color to RGB565
+         *
+         * ARGB8888: AAAA AAAA RRRR RRRR GGGG GGGG BBBB BBBB
+         * RGB565:   RRRR RGGG GGGB BBBB
+         *
+         * R: 8 bits -> 5 bits (shift right 3)
+         * G: 8 bits -> 6 bits (shift right 2)
+         * B: 8 bits -> 5 bits (shift right 3)
+         */
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        uint16_t color565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
 
-    /* Clear color buffer */
-    for (y = 0; y < (int)g_voodoo->fbi.height; y++) {
-        for (x = 0; x < (int)g_voodoo->fbi.width; x++) {
-            dest[y * g_voodoo->fbi.rowpixels + x] = color565;
+        for (y = 0; y < (int)g_voodoo->fbi.height; y++) {
+            for (x = 0; x < (int)g_voodoo->fbi.width; x++) {
+                dest[y * g_voodoo->fbi.rowpixels + x] = color565;
+            }
         }
     }
 
     /*
-     * Clear depth buffer
+     * Clear depth buffer only if AUX writes are enabled
      *
      * The depth parameter is 32-bit, but our depth buffer is 16-bit.
      * We use the upper 16 bits as the clear value.
      */
-    uint16_t depth16 = (uint16_t)(depth >> 16);
-    for (y = 0; y < (int)g_voodoo->fbi.height; y++) {
-        for (x = 0; x < (int)g_voodoo->fbi.width; x++) {
-            depthbuf[y * g_voodoo->fbi.rowpixels + x] = depth16;
+    if (doDepth) {
+        uint16_t depth16 = (uint16_t)(depth >> 16);
+        for (y = 0; y < (int)g_voodoo->fbi.height; y++) {
+            for (x = 0; x < (int)g_voodoo->fbi.width; x++) {
+                depthbuf[y * g_voodoo->fbi.rowpixels + x] = depth16;
+            }
         }
     }
 }
