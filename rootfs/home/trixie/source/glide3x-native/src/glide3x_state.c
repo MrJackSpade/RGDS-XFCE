@@ -57,9 +57,14 @@ static void debug_log_output(const char *msg)
  * This function is always enabled (unlike debug_log which can be disabled).
  * Used by diagnostic traps to catch black pixel writes.
  */
+static int trap_log_first_access = 1;
 void trap_log(const char *fmt, ...)
 {
     if (!g_trap_log) {
+        if (trap_log_first_access) {
+            DeleteFileA("C:\\glide3x_debug.log");
+            trap_log_first_access = 0;
+        }
         g_trap_log = fopen("C:\\glide3x_debug.log", "a");
     }
     if (g_trap_log) {
