@@ -343,18 +343,24 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
                             int64_t iterr, int64_t iterg, int64_t iterb, int64_t itera,
                             int32_t iterz, int64_t iterw,
                             int64_t iters0, int64_t itert0, int64_t iterw0,
+                            int64_t iters1, int64_t itert1, int64_t iterw1,
                             stats_block *stats)
 {
     const voodoo_reg *regs = vs->reg;
     const fbi_state *fbi = &vs->fbi;
+    const tmu_state *tmu0 = &vs->tmu[0];
+    const tmu_state *tmu1 = &vs->tmu[1];
 
     /*
-     * Use the TMU that was last configured via grTexSource().
-     * g_active_tmu is set by grTexSource and tracks which TMU
-     * the game intends to use for texture fetches.
+     * Determine which TMU(s) are active based on lodmin.
+     * TMU is active if lodmin < (8 << 8). Games disable a TMU by setting lodmin >= 8.
+     * For single-texture rendering, only one TMU will be active.
      */
-    extern int g_active_tmu;
-    int active_tmu_index = g_active_tmu;
+    int tmu0_active = (tmu0->lodmin < (8 << 8));
+    int tmu1_active = (tmu1->lodmin < (8 << 8));
+
+    /* Select the active TMU for texture fetches (prefer TMU1 if both active, as per hardware) */
+    int active_tmu_index = tmu1_active ? 1 : 0;
     const tmu_state *active_tmu = &vs->tmu[active_tmu_index];
 
     const uint32_t r_fbzColorPath = regs[fbzColorPath].u;
@@ -373,8 +379,8 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
     if (g_scanline_log_count < 10) {
         extern void trap_log(const char *fmt, ...);
         g_scanline_log_count++;
-        trap_log("SCANLINE #%d: fbzColorPath=0x%08X tex_enabled=%d tmu=%d\n",
-                g_scanline_log_count, r_fbzColorPath, texture_enabled, active_tmu_index);
+        trap_log("SCANLINE #%d: fbzColorPath=0x%08X tex_enabled=%d tmu0_active=%d tmu1_active=%d using_tmu=%d\n",
+                g_scanline_log_count, r_fbzColorPath, texture_enabled, tmu0_active, tmu1_active, active_tmu_index);
     }
 
     /* Compute dither pointers */
@@ -412,10 +418,14 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
 
         /* Apply texture if enabled */
         if (texture_enabled) {
+            /* Use texture coordinates for the active TMU */
+            int64_t iters = (active_tmu_index == 1) ? iters1 : iters0;
+            int64_t itert = (active_tmu_index == 1) ? itert1 : itert0;
+            int64_t iterw_tex = (active_tmu_index == 1) ? iterw1 : iterw0;
 
             rgb_t texel;
             TEXTURE_PIPELINE(vs, active_tmu_index, x, dither4, r_textureMode,
-                             iters0, itert0, iterw0, texel);
+                             iters, itert, iterw_tex, texel);
 
             /* Debug: log first texel fetches */
             extern int g_texel_log_count;
@@ -517,10 +527,13 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
         iterz += fbi->dzdx;
         iterw += fbi->dwdx;
 
-        /* Update texture iterators */
-        iters0 += active_tmu->dsdx;
-        itert0 += active_tmu->dtdx;
-        iterw0 += active_tmu->dwdx;
+        /* Update texture iterators for both TMUs */
+        iters0 += tmu0->dsdx;
+        itert0 += tmu0->dtdx;
+        iterw0 += tmu0->dwdx;
+        iters1 += tmu1->dsdx;
+        itert1 += tmu1->dtdx;
+        iterw1 += tmu1->dwdx;
     }
 }
 
@@ -661,17 +674,22 @@ void voodoo_triangle(voodoo_state *vs)
         int32_t iterz = fbi->startz + dy * fbi->dzdy + dx * fbi->dzdx;
         int64_t iterw = fbi->startw + dy * fbi->dwdy + dx * fbi->dwdx;
 
-        /* Compute texture coordinates for active TMU */
-        extern int g_active_tmu;
-        tmu_state *active_tmu = &vs->tmu[g_active_tmu];
-        int64_t iters0 = active_tmu->starts + dy * active_tmu->dsdy + dx * active_tmu->dsdx;
-        int64_t itert0 = active_tmu->startt + dy * active_tmu->dtdy + dx * active_tmu->dtdx;
-        int64_t iterw0 = active_tmu->startw + dy * active_tmu->dwdy + dx * active_tmu->dwdx;
+        /* Compute texture coordinates for both TMUs */
+        tmu_state *tmu0 = &vs->tmu[0];
+        tmu_state *tmu1 = &vs->tmu[1];
+
+        int64_t iters0 = tmu0->starts + dy * tmu0->dsdy + dx * tmu0->dsdx;
+        int64_t itert0 = tmu0->startt + dy * tmu0->dtdy + dx * tmu0->dtdx;
+        int64_t iterw0 = tmu0->startw + dy * tmu0->dwdy + dx * tmu0->dwdx;
+
+        int64_t iters1 = tmu1->starts + dy * tmu1->dsdy + dx * tmu1->dsdx;
+        int64_t itert1 = tmu1->startt + dy * tmu1->dtdy + dx * tmu1->dtdx;
+        int64_t iterw1 = tmu1->startw + dy * tmu1->dwdy + dx * tmu1->dwdx;
 
         /* Rasterize this scanline */
         raster_scanline(vs, dest, depth, y, istartx, istopx,
                         iterr, iterg, iterb, itera, iterz, iterw,
-                        iters0, itert0, iterw0, &my_stats);
+                        iters0, itert0, iterw0, iters1, itert1, iterw1, &my_stats);
     }
 
     /* Accumulate statistics */

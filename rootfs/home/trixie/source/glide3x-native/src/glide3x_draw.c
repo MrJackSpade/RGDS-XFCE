@@ -109,12 +109,14 @@
 
 /*
  * Unpacked vertex data - read from raw vertex using layout offsets
+ * Contains texture coords for both TMUs (sow0/tow0 for TMU0, sow1/tow1 for TMU1)
  */
 typedef struct {
     float x, y;
     float ooz, oow;
     float r, g, b, a;
-    float sow, tow;
+    float sow0, tow0;  /* TMU0 texture coords (S/W, T/W) */
+    float sow1, tow1;  /* TMU1 texture coords (S/W, T/W) */
 } UnpackedVertex;
 
 /*
@@ -132,7 +134,8 @@ static void read_vertex_from_layout(const uint8_t *raw, UnpackedVertex *v)
     v->oow = 1.0f;
     v->r = v->g = v->b = 255.0f;
     v->a = 255.0f;
-    v->sow = v->tow = 0.0f;
+    v->sow0 = v->tow0 = 0.0f;
+    v->sow1 = v->tow1 = 0.0f;
 
     if (!g_voodoo) return;
 
@@ -179,13 +182,22 @@ static void read_vertex_from_layout(const uint8_t *raw, UnpackedVertex *v)
         v->ooz = *(const float *)(raw + g_voodoo->vl_z_offset);
     }
 
-    /* Texture coordinates S,T (2 floats) - use ST0 or ST1 based on active TMU */
-    int32_t st_offset = (g_active_tmu == 0) ? g_voodoo->vl_st0_offset : g_voodoo->vl_st1_offset;
-    if (st_offset < 0) st_offset = g_voodoo->vl_st0_offset;  /* Fallback to ST0 */
-    if (st_offset >= 0) {
-        const float *st = (const float *)(raw + st_offset);
-        v->sow = st[0];
-        v->tow = st[1];
+    /* Texture coordinates for TMU0 */
+    if (g_voodoo->vl_st0_offset >= 0) {
+        const float *st = (const float *)(raw + g_voodoo->vl_st0_offset);
+        v->sow0 = st[0];
+        v->tow0 = st[1];
+    }
+
+    /* Texture coordinates for TMU1 */
+    if (g_voodoo->vl_st1_offset >= 0) {
+        const float *st = (const float *)(raw + g_voodoo->vl_st1_offset);
+        v->sow1 = st[0];
+        v->tow1 = st[1];
+    } else {
+        /* If TMU1 coords not specified, copy from TMU0 */
+        v->sow1 = v->sow0;
+        v->tow1 = v->tow0;
     }
 }
 
@@ -251,7 +263,6 @@ static int g_triangles_this_frame = 0;
 static int g_frames_logged = 0;
 extern int g_fbi_init_count;  /* from voodoo_emu.c */
 extern int g_swap_count;      /* from glide3x_buffer.c */
-extern int g_active_tmu;      /* from glide3x_state.c */
 static int g_last_swap_seen = 0;
 
 void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVertex *c)
@@ -271,13 +282,13 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
     /* Log first 100 triangles of first 5 frames after FBI INIT #4 (menu) */
     if (g_fbi_init_count >= 4 && g_frames_logged < 5 && g_triangles_this_frame <= 100) {
         extern void trap_log(const char *fmt, ...);
-        uint32_t fbzMode = g_voodoo->reg[0x110/4].u;
-        int texEnabled = (fbzMode >> 14) & 1;
-        tmu_state *tmu = &g_voodoo->tmu[g_active_tmu];
-        trap_log("TRIANGLE: frame=%d tri=%d tmu=%d texBase=0x%08X texMode=0x%08X pos=(%.0f,%.0f) tex=%d\n",
-                g_frames_logged, g_triangles_this_frame, g_active_tmu,
-                tmu->lodoffset[0], tmu->reg ? tmu->reg[0].u : 0,
-                a->x, a->y, texEnabled);
+        int tmu0_active = (g_voodoo->tmu[0].lodmin < (8 << 8));
+        int tmu1_active = (g_voodoo->tmu[1].lodmin < (8 << 8));
+        int active_tmu = tmu1_active ? 1 : 0;
+        tmu_state *tmu = &g_voodoo->tmu[active_tmu];
+        trap_log("TRIANGLE: frame=%d tri=%d tmu0=%d tmu1=%d using=%d texBase=0x%08X pos=(%.0f,%.0f)\n",
+                g_frames_logged, g_triangles_this_frame, tmu0_active, tmu1_active, active_tmu,
+                tmu->lodoffset[0], a->x, a->y);
     }
 
     fbi_state *fbi = &g_voodoo->fbi;
@@ -295,17 +306,20 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
         va.x = a->x; va.y = a->y;
         va.ooz = a->ooz; va.oow = a->oow;
         va.r = a->r; va.g = a->g; va.b = a->b; va.a = a->a;
-        va.sow = a->sow; va.tow = a->tow;
+        va.sow0 = a->sow; va.tow0 = a->tow;
+        va.sow1 = a->sow; va.tow1 = a->tow;  /* Copy to both TMUs */
 
         vb.x = b->x; vb.y = b->y;
         vb.ooz = b->ooz; vb.oow = b->oow;
         vb.r = b->r; vb.g = b->g; vb.b = b->b; vb.a = b->a;
-        vb.sow = b->sow; vb.tow = b->tow;
+        vb.sow0 = b->sow; vb.tow0 = b->tow;
+        vb.sow1 = b->sow; vb.tow1 = b->tow;  /* Copy to both TMUs */
 
         vc.x = c->x; vc.y = c->y;
         vc.ooz = c->ooz; vc.oow = c->oow;
         vc.r = c->r; vc.g = c->g; vc.b = c->b; vc.a = c->a;
-        vc.sow = c->sow; vc.tow = c->tow;
+        vc.sow0 = c->sow; vc.tow0 = c->tow;
+        vc.sow1 = c->sow; vc.tow1 = c->tow;  /* Copy to both TMUs */
     }
 
     {
@@ -377,46 +391,42 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
     fbi->dwdx = (int64_t)(dwdx_f * 4294967296.0);
     fbi->dwdy = (int64_t)(dwdy_f * 4294967296.0);
 
-    /* Set up texture coordinates if texturing enabled */
+    /* Set up texture coordinates for BOTH TMUs */
     if (FBZCP_TEXTURE_ENABLE(g_voodoo->reg[fbzColorPath].u)) {
-        /* Use the active TMU (set by grTexSource) for texture coordinates */
-        tmu_state *tmu0 = &g_voodoo->tmu[g_active_tmu];
+        tmu_state *tmu0 = &g_voodoo->tmu[0];
+        tmu_state *tmu1 = &g_voodoo->tmu[1];
 
-        float s0a = va.sow, t0a = va.tow, w0a = va.oow;
-        float s0b = vb.sow, t0b = vb.tow, w0b = vb.oow;
-        float s0c = vc.sow, t0c = vc.tow, w0c = vc.oow;
-
+        /* TMU0 texture coordinates */
         float ds0dx, ds0dy, dt0dx, dt0dy, dw0dx, dw0dy;
-        compute_gradients(ax, ay, bx, by, cx, cy, s0a, s0b, s0c, &ds0dx, &ds0dy);
-        compute_gradients(ax, ay, bx, by, cx, cy, t0a, t0b, t0c, &dt0dx, &dt0dy);
-        compute_gradients(ax, ay, bx, by, cx, cy, w0a, w0b, w0c, &dw0dx, &dw0dy);
+        compute_gradients(ax, ay, bx, by, cx, cy, va.sow0, vb.sow0, vc.sow0, &ds0dx, &ds0dy);
+        compute_gradients(ax, ay, bx, by, cx, cy, va.tow0, vb.tow0, vc.tow0, &dt0dx, &dt0dy);
+        compute_gradients(ax, ay, bx, by, cx, cy, va.oow, vb.oow, vc.oow, &dw0dx, &dw0dy);
 
-        /* S/T in 14.18 fixed point, W in 2.30 */
-        tmu0->starts = (int64_t)(s0a * 262144.0);
-        tmu0->startt = (int64_t)(t0a * 262144.0);
-        tmu0->startw = (int64_t)(w0a * 1073741824.0);
-
+        tmu0->starts = (int64_t)(va.sow0 * 262144.0);
+        tmu0->startt = (int64_t)(va.tow0 * 262144.0);
+        tmu0->startw = (int64_t)(va.oow * 1073741824.0);
         tmu0->dsdx = (int64_t)(ds0dx * 262144.0);
         tmu0->dtdx = (int64_t)(dt0dx * 262144.0);
         tmu0->dwdx = (int64_t)(dw0dx * 1073741824.0);
-
         tmu0->dsdy = (int64_t)(ds0dy * 262144.0);
         tmu0->dtdy = (int64_t)(dt0dy * 262144.0);
         tmu0->dwdy = (int64_t)(dw0dy * 1073741824.0);
 
-        /* Debug: log texture coordinate setup */
-        {
-            char dbg[256];
-            snprintf(dbg, sizeof(dbg),
-                     "TEXSETUP: sow=(%f,%f,%f) tow=(%f,%f,%f) oow=(%f,%f,%f)\n",
-                     s0a, s0b, s0c, t0a, t0b, t0c, w0a, w0b, w0c);
-            debug_log(dbg);
-            snprintf(dbg, sizeof(dbg),
-                     "TEXSETUP: starts=%lld startt=%lld dsdx=%lld dtdx=%lld\n",
-                     (long long)tmu0->starts, (long long)tmu0->startt,
-                     (long long)tmu0->dsdx, (long long)tmu0->dtdx);
-            debug_log(dbg);
-        }
+        /* TMU1 texture coordinates */
+        float ds1dx, ds1dy, dt1dx, dt1dy, dw1dx, dw1dy;
+        compute_gradients(ax, ay, bx, by, cx, cy, va.sow1, vb.sow1, vc.sow1, &ds1dx, &ds1dy);
+        compute_gradients(ax, ay, bx, by, cx, cy, va.tow1, vb.tow1, vc.tow1, &dt1dx, &dt1dy);
+        compute_gradients(ax, ay, bx, by, cx, cy, va.oow, vb.oow, vc.oow, &dw1dx, &dw1dy);
+
+        tmu1->starts = (int64_t)(va.sow1 * 262144.0);
+        tmu1->startt = (int64_t)(va.tow1 * 262144.0);
+        tmu1->startw = (int64_t)(va.oow * 1073741824.0);
+        tmu1->dsdx = (int64_t)(ds1dx * 262144.0);
+        tmu1->dtdx = (int64_t)(dt1dx * 262144.0);
+        tmu1->dwdx = (int64_t)(dw1dx * 1073741824.0);
+        tmu1->dsdy = (int64_t)(ds1dy * 262144.0);
+        tmu1->dtdy = (int64_t)(dt1dy * 262144.0);
+        tmu1->dwdy = (int64_t)(dw1dy * 262144.0);
     }
 
     /* Call the software rasterizer */

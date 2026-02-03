@@ -285,8 +285,9 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
 
     ts->regdirty = 1;
 
-    /* Track which TMU is now active for rendering */
-    g_active_tmu = t;
+    /* Note: TMU selection for rendering is now based on lodmin, not this call.
+     * grTexSource configures the specified TMU's texture source; the rasterizer
+     * uses whichever TMU has lodmin < (8 << 8). */
 }
 
 /*
