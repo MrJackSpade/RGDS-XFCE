@@ -20,12 +20,14 @@
  */
 
 #include "glide3x_state.h"
+#include <stdarg.h>
 
 /*************************************
  * Debug logging implementation
  *************************************/
 
 FILE *g_debug_log = NULL;
+static FILE *g_trap_log = NULL;
 int g_call_count = 0;
 
 /* Deduplication state for consecutive identical messages */
@@ -47,6 +49,26 @@ static void debug_log_output(const char *msg)
         fflush(g_debug_log);
     }
     OutputDebugStringA(msg);
+}
+
+/*
+ * trap_log - Write a trap message to the debug log file
+ *
+ * This function is always enabled (unlike debug_log which can be disabled).
+ * Used by diagnostic traps to catch black pixel writes.
+ */
+void trap_log(const char *fmt, ...)
+{
+    if (!g_trap_log) {
+        g_trap_log = fopen("C:\\glide3x_debug.log", "a");
+    }
+    if (g_trap_log) {
+        va_list args;
+        va_start(args, fmt);
+        vfprintf(g_trap_log, fmt, args);
+        va_end(args);
+        fflush(g_trap_log);
+    }
 }
 
 /*
@@ -118,6 +140,13 @@ GrContext_t g_context = NULL;
 int g_initialized = 0;
 
 /*************************************
+ * Black pixel write trap
+ *************************************/
+int g_black_pixel_count = 0;
+int g_black_pixel_logged = 0;
+void *g_black_pixel_dest = NULL;
+
+/*************************************
  * Screen/display state
  *************************************/
 
@@ -131,6 +160,7 @@ int g_screen_height = 480;
 GrColor_t g_constant_color = 0xFFFFFFFF;
 int g_render_buffer = 1;  /* Default: back buffer */
 int g_active_tmu = 0;     /* Which TMU was last configured via grTexSource */
+int g_color_format = 0;   /* GR_COLORFORMAT_ARGB=0, GR_COLORFORMAT_ABGR=1 */
 int g_lfb_buffer_locked = -1;
 GrLfbWriteMode_t g_lfb_write_mode = GR_LFBWRITEMODE_565;
 GrOriginLocation_t g_lfb_origin = GR_ORIGIN_UPPER_LEFT;
@@ -198,6 +228,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
     switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
+        /* Delete old log file to start fresh */
+        DeleteFileA("glide3x_debug.log");
         debug_log("glide3x: DLL_PROCESS_ATTACH\n");
         /* Disable thread library calls for performance */
         DisableThreadLibraryCalls(hinstDLL);

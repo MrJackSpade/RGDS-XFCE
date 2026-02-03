@@ -83,13 +83,15 @@ GrContext_t __stdcall grSstWinOpen(
 
     /* Suppress unused parameter warnings */
     (void)refresh;
-    (void)colorFormat;
     (void)numColorBuffers;
     (void)numAuxBuffers;
 
+    /* Store color format for palette interpretation */
+    g_color_format = colorFormat;
+
     snprintf(dbg, sizeof(dbg),
-             "glide3x: grSstWinOpen(hwnd=0x%x, res=%d, origin=%d)\n",
-             (unsigned int)hwnd, resolution, origin);
+             "glide3x: grSstWinOpen(hwnd=0x%x, res=%d, origin=%d, colorFmt=%d)\n",
+             (unsigned int)hwnd, resolution, origin, colorFormat);
     debug_log(dbg);
 
     /* Auto-initialize if app forgot to call grGlideInit */
@@ -136,22 +138,20 @@ GrContext_t __stdcall grSstWinOpen(
 
     if (fbi_was_initialized) {
         debug_log("glide3x: grSstWinOpen - FBI already initialized, preserving buffers\n");
-    }
+        /* Skip reinitialization to preserve framebuffer content */
+    } else {
+        voodoo_init_fbi(&g_voodoo->fbi, 4 * 1024 * 1024);
+        g_voodoo->fbi.width = g_screen_width;
+        g_voodoo->fbi.height = g_screen_height;
+        g_voodoo->fbi.rowpixels = g_screen_width;
 
-    voodoo_init_fbi(&g_voodoo->fbi, 4 * 1024 * 1024);
-    g_voodoo->fbi.width = g_screen_width;
-    g_voodoo->fbi.height = g_screen_height;
-    g_voodoo->fbi.rowpixels = g_screen_width;
+        /* Calculate buffer offsets (16-bit = 2 bytes per pixel) */
+        int buffer_size = g_screen_width * g_screen_height * 2;
+        g_voodoo->fbi.rgboffs[0] = 0;                    /* Front buffer */
+        g_voodoo->fbi.rgboffs[1] = buffer_size;          /* Back buffer */
+        g_voodoo->fbi.rgboffs[2] = buffer_size * 2;      /* Triple buffer */
+        g_voodoo->fbi.auxoffs = buffer_size * 3;         /* Depth buffer */
 
-    /* Calculate buffer offsets (16-bit = 2 bytes per pixel) */
-    int buffer_size = g_screen_width * g_screen_height * 2;
-    g_voodoo->fbi.rgboffs[0] = 0;                    /* Front buffer */
-    g_voodoo->fbi.rgboffs[1] = buffer_size;          /* Back buffer */
-    g_voodoo->fbi.rgboffs[2] = buffer_size * 2;      /* Triple buffer */
-    g_voodoo->fbi.auxoffs = buffer_size * 3;         /* Depth buffer */
-
-    /* Only reset buffer indices if FBI was freshly initialized */
-    if (!fbi_was_initialized) {
         g_voodoo->fbi.frontbuf = 0;
         g_voodoo->fbi.backbuf = 1;
     }
@@ -182,15 +182,23 @@ GrContext_t __stdcall grSstWinOpen(
      *
      * TMU0 is closest to the framebuffer, TMU1 feeds into TMU0.
      * For multi-texture effects, the TMUs are chained together.
+     *
+     * IMPORTANT: Only initialize TMUs if not already set up, to preserve
+     * texture data across grSstWinOpen calls (games may upload textures
+     * before calling grSstWinOpen again).
      */
-    debug_log("glide3x: grSstWinOpen - init TMUs\n");
-    voodoo_init_tmu(&g_voodoo->tmu[0],
-                    &g_voodoo->reg[textureMode],
-                    2 * 1024 * 1024);
-    voodoo_init_tmu(&g_voodoo->tmu[1],
-                    &g_voodoo->reg[textureMode + 0x100/4],
-                    2 * 1024 * 1024);
-    voodoo_init_tmu_shared(&g_voodoo->tmushare);
+    if (g_voodoo->tmu[0].ram == NULL) {
+        debug_log("glide3x: grSstWinOpen - init TMUs (first time)\n");
+        voodoo_init_tmu(&g_voodoo->tmu[0],
+                        &g_voodoo->reg[textureMode],
+                        2 * 1024 * 1024);
+        voodoo_init_tmu(&g_voodoo->tmu[1],
+                        &g_voodoo->reg[textureMode + 0x100/4],
+                        2 * 1024 * 1024);
+        voodoo_init_tmu_shared(&g_voodoo->tmushare);
+    } else {
+        debug_log("glide3x: grSstWinOpen - TMUs already initialized, preserving textures\n");
+    }
 
     /* Initialize vertex layout to default (disabled) */
     g_voodoo->vl_xy_offset = -1;
@@ -250,6 +258,10 @@ GrContext_t __stdcall grSstWinOpen(
 
     g_voodoo->active = true;
     g_context = (GrContext_t)g_voodoo;
+
+    /* Reset debug counters for fresh logging each session */
+    extern void reset_debug_counters(void);
+    reset_debug_counters();
 
     debug_log("glide3x: grSstWinOpen complete\n");
     return g_context;

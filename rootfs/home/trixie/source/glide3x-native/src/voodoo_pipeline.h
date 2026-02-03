@@ -868,7 +868,22 @@ do                                                                          \
     {                                                                       \
         /* apply dithering */                                               \
         APPLY_DITHER(FBZMODE, XX, DITHER_LOOKUP, r, g, b);                  \
-        (dest)[XX] = (uint16_t)((r << 11) | (g << 5) | b);                  \
+        uint16_t _pix = (uint16_t)((r << 11) | (g << 5) | b);               \
+        /* TRAP: Catch black pixel writes */                                \
+        if (_pix == 0x0000) {                                               \
+            extern int g_black_pixel_count;                                 \
+            extern int g_black_pixel_logged;                                \
+            extern void *g_black_pixel_dest;                                \
+            extern void trap_log(const char *fmt, ...);                     \
+            g_black_pixel_count++;                                          \
+            if (!g_black_pixel_logged && g_black_pixel_count > 1000) {      \
+                g_black_pixel_logged = 1;                                   \
+                g_black_pixel_dest = (void*)(dest);                         \
+                trap_log("BLACK PIXEL TRAP: %d black pixels written to dest=%p x=%d\n", \
+                        g_black_pixel_count, (void*)(dest), (int)(XX));     \
+            }                                                               \
+        }                                                                   \
+        (dest)[XX] = _pix;                                                  \
     }                                                                       \
     /* write to aux buffer */                                               \
     if ((depth) && FBZMODE_AUX_BUFFER_MASK(FBZMODE))                        \

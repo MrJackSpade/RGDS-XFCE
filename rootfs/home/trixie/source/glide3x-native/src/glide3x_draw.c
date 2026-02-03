@@ -246,11 +246,39 @@ static void compute_gradients(
  *   5. Sets up texture coordinates if texturing enabled
  *   6. Calls the software rasterizer (voodoo_triangle)
  */
+/* Track triangle draws per frame */
+static int g_triangles_this_frame = 0;
+static int g_frames_logged = 0;
+extern int g_fbi_init_count;  /* from voodoo_emu.c */
+extern int g_swap_count;      /* from glide3x_buffer.c */
+extern int g_active_tmu;      /* from glide3x_state.c */
+static int g_last_swap_seen = 0;
+
 void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVertex *c)
 {
     if (!g_voodoo || !g_voodoo->active) return;
 
     g_triangle_count++;
+
+    /* Track triangles per frame (reset on swap) */
+    if (g_swap_count > g_last_swap_seen) {
+        g_last_swap_seen = g_swap_count;
+        g_triangles_this_frame = 0;
+        g_frames_logged++;
+    }
+    g_triangles_this_frame++;
+
+    /* Log first 100 triangles of first 5 frames after FBI INIT #4 (menu) */
+    if (g_fbi_init_count >= 4 && g_frames_logged < 5 && g_triangles_this_frame <= 100) {
+        extern void trap_log(const char *fmt, ...);
+        uint32_t fbzMode = g_voodoo->reg[0x110/4].u;
+        int texEnabled = (fbzMode >> 14) & 1;
+        tmu_state *tmu = &g_voodoo->tmu[g_active_tmu];
+        trap_log("TRIANGLE: frame=%d tri=%d tmu=%d texBase=0x%08X texMode=0x%08X pos=(%.0f,%.0f) tex=%d\n",
+                g_frames_logged, g_triangles_this_frame, g_active_tmu,
+                tmu->lodoffset[0], tmu->reg ? tmu->reg[0].u : 0,
+                a->x, a->y, texEnabled);
+    }
 
     fbi_state *fbi = &g_voodoo->fbi;
 

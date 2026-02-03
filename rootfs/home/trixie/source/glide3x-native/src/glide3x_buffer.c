@@ -114,7 +114,7 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
     /*
      * Clear color buffer only if RGB writes are enabled
      */
-    if (doColor) {
+    if (0) {
         /*
          * Convert 32-bit ARGB color to RGB565
          *
@@ -129,6 +129,13 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
         uint16_t color565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+
+        /* TRAP: Catch black buffer clears */
+        if (color565 == 0x0000) {
+            trap_log("BUFFER CLEAR TRAP: Clearing %s buffer to BLACK (dest=%p, size=%dx%d)\n",
+                    g_render_buffer == 0 ? "FRONT" : "BACK", (void*)dest,
+                    g_voodoo->fbi.width, g_voodoo->fbi.height);
+        }
 
         for (y = 0; y < (int)g_voodoo->fbi.height; y++) {
             for (x = 0; x < (int)g_voodoo->fbi.width; x++) {
@@ -186,13 +193,6 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
 void __stdcall grBufferSwap(FxU32 swap_interval)
 {
     g_swap_count++;
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grBufferSwap #%d (interval=%u, lfb_locked=%d)\n",
-                 g_swap_count, swap_interval, g_lfb_buffer_locked);
-        debug_log(dbg);
-    }
 
     if (!g_voodoo || !g_voodoo->active) return;
 
@@ -209,18 +209,6 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
         /* Normal case: present the back buffer */
         presentbuf = (uint16_t*)(g_voodoo->fbi.ram +
                                  g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf]);
-    }
-
-    /* Log buffer pointers for debugging */
-    {
-        char dbg[256];
-        uint32_t draw_buf_setting = (g_voodoo->reg[fbzMode].u >> 14) & 3;
-        snprintf(dbg, sizeof(dbg),
-                 "grBufferSwap: presenting buf=%p (backbuf=%d offset=0x%X) DRAW_BUFFER=%d ram=%p\n",
-                 (void*)presentbuf, g_voodoo->fbi.backbuf,
-                 g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf],
-                 draw_buf_setting, (void*)g_voodoo->fbi.ram);
-        debug_log(dbg);
     }
 
     /* Send to display */

@@ -43,6 +43,7 @@ EXPORTS
     _grTexSource@16 = grTexSource@16
     _grTexDownloadMipMap@16 = grTexDownloadMipMap@16
     _grTexDownloadMipMapLevel@32 = grTexDownloadMipMapLevel@32
+    _grTexDownloadMipMapLevelPartial@40 = grTexDownloadMipMapLevelPartial@40
     _grTexDownloadTable@8 = grTexDownloadTable@8
     _grTexFilterMode@12 = grTexFilterMode@12
     _grTexClampMode@12 = grTexClampMode@12

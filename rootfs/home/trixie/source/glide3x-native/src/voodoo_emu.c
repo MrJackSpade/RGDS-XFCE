@@ -17,6 +17,17 @@
 /* Debug logging from glide3x_state.c */
 extern void debug_log(const char *msg);
 
+/* Debug counters - reset each session via reset_debug_counters() */
+int g_scanline_log_count = 0;
+int g_texel_log_count = 0;
+int g_tri_debug_count = 0;
+
+void reset_debug_counters(void) {
+    g_scanline_log_count = 0;
+    g_texel_log_count = 0;
+    g_tri_debug_count = 0;
+}
+
 /*************************************
  * Reciprocal/log lookup table
  * (exported for use by voodoo_pipeline.h)
@@ -141,9 +152,21 @@ void voodoo_destroy(voodoo_state *v)
  * FBI (Frame Buffer Interface) init
  *************************************/
 
+/* Counter for FBI INIT events, exported for triangle tracking */
+int g_fbi_init_count = 0;
+
 void voodoo_init_fbi(fbi_state *f, int fbmem)
 {
     if (fbmem < 1) fbmem = 1;
+
+    g_fbi_init_count++;
+
+    /* TRAP: Log FBI init (could clear existing content) */
+    {
+        extern void trap_log(const char *fmt, ...);
+        trap_log("FBI INIT TRAP #%d: Initializing FBI with %d bytes (existing ram=%p)\n",
+                g_fbi_init_count, fbmem, (void*)f->ram);
+    }
 
     /* Allocate frame buffer RAM (aligned to 8 bytes) */
     f->ram = (uint8_t*)calloc(1, fbmem + 8);
@@ -345,6 +368,15 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
     /* Check if texture is enabled */
     int texture_enabled = FBZCP_TEXTURE_ENABLE(r_fbzColorPath);
 
+    /* Debug: log texture enable state */
+    extern int g_scanline_log_count;
+    if (g_scanline_log_count < 10) {
+        extern void trap_log(const char *fmt, ...);
+        g_scanline_log_count++;
+        trap_log("SCANLINE #%d: fbzColorPath=0x%08X tex_enabled=%d tmu=%d\n",
+                g_scanline_log_count, r_fbzColorPath, texture_enabled, active_tmu_index);
+    }
+
     /* Compute dither pointers */
     const uint8_t *dither = NULL;
     const uint8_t *dither4 = NULL;
@@ -384,6 +416,18 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
             rgb_t texel;
             TEXTURE_PIPELINE(vs, active_tmu_index, x, dither4, r_textureMode,
                              iters0, itert0, iterw0, texel);
+
+            /* Debug: log first texel fetches */
+            extern int g_texel_log_count;
+            if (g_texel_log_count < 20) {
+                extern void trap_log(const char *fmt, ...);
+                g_texel_log_count++;
+                tmu_state *dbg_tmu = &vs->tmu[active_tmu_index];
+                trap_log("TEXEL #%d: tmu=%d texel=0x%08X lookup=%p palette[0]=0x%08X ram[0]=0x%02X fmt=%d\n",
+                        g_texel_log_count, active_tmu_index, texel, (void*)dbg_tmu->lookup,
+                        dbg_tmu->palette[0], dbg_tmu->ram[0],
+                        (r_textureMode >> 8) & 0xF);
+            }
 
             /* Texture combine based on fbzColorPath settings */
             rgb_union c_local;
@@ -520,6 +564,15 @@ void voodoo_triangle(voodoo_state *vs)
     /* Compute integral Y values */
     int32_t v1yi = round_coordinate(v1y);
     int32_t v3yi = round_coordinate(v3y);
+
+    /* Debug: log triangle vertex positions */
+    extern int g_tri_debug_count;
+    if (g_tri_debug_count < 20) {
+        extern void trap_log(const char *fmt, ...);
+        g_tri_debug_count++;
+        trap_log("TRI_RASTER #%d: a=(%.1f,%.1f) b=(%.1f,%.1f) c=(%.1f,%.1f) v1yi=%d v3yi=%d\n",
+                g_tri_debug_count, ax, ay, bx, by, cx, cy, v1yi, v3yi);
+    }
 
     /* Degenerate triangle check */
     if (v3yi <= v1yi)
@@ -668,6 +721,13 @@ void voodoo_fastfill(voodoo_state *vs)
 
     /* Convert to RGB565 */
     uint16_t rgb565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+
+    /* TRAP: Catch black fastfill */
+    if (rgb565 == 0x0000) {
+        extern void trap_log(const char *fmt, ...);
+        trap_log("FASTFILL TRAP: Filling to BLACK at (%d,%d)-(%d,%d) drawbuf=%p\n",
+                sx, sy, ex, ey, (void*)drawbuf);
+    }
 
     /* Get depth buffer and value if needed */
     uint16_t *depthbuf = NULL;

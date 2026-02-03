@@ -1450,6 +1450,18 @@ FX_ENTRY void FX_CALL grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddres
                                GrTextureFormat_t format, FxU32 evenOdd, void *data);
 
 /*
+ * grTexDownloadMipMapLevelPartial - Download part of a single mipmap level
+ *
+ * Uploads a portion of a single LOD level. Used for streaming/partial texture updates.
+ * @param start: Starting row to upload
+ * @param end: Ending row to upload (inclusive)
+ */
+FX_ENTRY void FX_CALL grTexDownloadMipMapLevelPartial(GrChipID_t tmu, FxU32 startAddress, GrLOD_t thisLod,
+                               GrLOD_t largeLod, GrAspectRatio_t aspectRatio,
+                               GrTextureFormat_t format, FxU32 evenOdd, void *data,
+                               int start, int end);
+
+/*
  * grTexTextureMemRequired - Calculate texture memory requirement
  *
  * @param evenOdd: Mipmap selection

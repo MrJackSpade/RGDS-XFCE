@@ -137,13 +137,6 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
                  GrOriginLocation_t origin, FxBool pixelPipeline, GrLfbInfo_t *info)
 {
     g_lfb_lock_count++;
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grLfbLock #%d (type=%d, buffer=%d, writeMode=%d)\n",
-                 g_lfb_lock_count, type, buffer, writeMode);
-        debug_log(dbg);
-    }
 
     if (!g_voodoo || !info) return FXFALSE;
 
@@ -193,11 +186,9 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
             /* Initialize new shadow buffer to black (or could copy from FB) */
             memset(g_lfb_shadow_buffer, 0, needed_size);
 
-            char dbg[128];
-            snprintf(dbg, sizeof(dbg),
-                     "glide3x: grLfbLock allocated new shadow buffer %zu bytes\n",
-                     needed_size);
-            debug_log(dbg);
+            /* TRAP: Log shadow buffer init to black */
+            trap_log("SHADOW BUFFER TRAP: New shadow buffer initialized to BLACK (%zu bytes) for buffer=%d\n",
+                    needed_size, buffer);
         }
 
         /* Track shadow buffer parameters for unlock */
@@ -211,13 +202,6 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
         info->writeMode = writeMode;
         info->origin = origin;
 
-        {
-            char dbg[128];
-            snprintf(dbg, sizeof(dbg),
-                     "glide3x: grLfbLock using shadow buffer, stride=%d (bpp=%d)\n",
-                     stride, bpp);
-            debug_log(dbg);
-        }
     } else {
         /* 16-bit mode or read-only: return direct framebuffer pointer */
         uint8_t *bufptr;
@@ -244,14 +228,6 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
         info->strideInBytes = stride;  /* width * bpp (2 for 16-bit) */
         info->writeMode = writeMode;
         info->origin = origin;
-    }
-
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grLfbLock returning lfbPtr=%p stride=%d\n",
-                 info->lfbPtr, info->strideInBytes);
-        debug_log(dbg);
     }
 
     return FXTRUE;
@@ -284,14 +260,6 @@ static void convert_shadow_to_framebuffer(GrBuffer_t buffer)
     int bpp = get_writemode_bpp(g_lfb_write_mode);
     int src_stride = width * bpp;
     int dst_stride = g_voodoo->fbi.rowpixels;
-
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: Converting shadow buffer %dx%d bpp=%d to framebuffer\n",
-                 width, height, bpp);
-        debug_log(dbg);
-    }
 
     for (int y = 0; y < height; y++) {
         uint16_t *dst_row = &dest[y * dst_stride];
@@ -389,13 +357,6 @@ static void convert_shadow_to_framebuffer(GrBuffer_t buffer)
 FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
 {
     g_lfb_unlock_count++;
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grLfbUnlock #%d (type=%d, buffer=%d)\n",
-                 g_lfb_unlock_count, type, buffer);
-        debug_log(dbg);
-    }
 
     if (!g_voodoo) return FXFALSE;
 
@@ -409,12 +370,7 @@ FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
     if (type == GR_LFB_WRITE_ONLY && buffer == GR_BUFFER_FRONTBUFFER) {
         uint16_t *frontbuf = (uint16_t*)(g_voodoo->fbi.ram +
                                           g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
-        {
-            char dbg[128];
-            snprintf(dbg, sizeof(dbg),
-                     "glide3x: grLfbUnlock presenting front buffer\n");
-            debug_log(dbg);
-        }
+
         display_present(frontbuf, g_voodoo->fbi.width, g_voodoo->fbi.height);
     }
 
@@ -465,13 +421,6 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
                          FxBool pixelPipeline, FxI32 src_stride, void *src_data)
 {
     g_lfb_write_count++;
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grLfbWriteRegion #%d (buf=%d, x=%u, y=%u, w=%u, h=%u)\n",
-                 g_lfb_write_count, dst_buffer, dst_x, dst_y, src_width, src_height);
-        debug_log(dbg);
-    }
 
     if (!g_voodoo || !src_data) return FXFALSE;
 
@@ -498,6 +447,20 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
 
     /* Copy data row by row with format conversion if needed */
     uint8_t *src = (uint8_t*)src_data;
+
+    /* TRAP: Check if source data is mostly black */
+    {
+        int black_count = 0;
+        uint16_t *check = (uint16_t*)src_data;
+        int check_size = (src_width * src_height < 1000) ? (int)(src_width * src_height) : 1000;
+        for (int i = 0; i < check_size; i++) {
+            if (check[i] == 0x0000) black_count++;
+        }
+        if (black_count > check_size / 2) {
+            trap_log("LFB WRITE TRAP: Writing %d/%d black pixels to buf=%d at (%u,%u) size %ux%u dest=%p\n",
+                    black_count, check_size, dst_buffer, dst_x, dst_y, src_width, src_height, (void*)dest);
+        }
+    }
 
     for (FxU32 y = 0; y < src_height; y++) {
         uint16_t *dst_row = &dest[(dst_y + y) * g_voodoo->fbi.rowpixels + dst_x];

@@ -60,7 +60,8 @@ if ($TestOnly) {
     Write-Host "=== Running LFB Stride Test (ZARDBLIZ bug reproduction) ==="
     Write-Host ""
 
-    # Clear any old log
+    # Clear any old logs
+    if (Test-Path $LocalLogPath) { Remove-Item $LocalLogPath }
     & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -f '${RemoteLogPath}'"
 
     $TestCmd = "export DISPLAY=:0 && cd '${RemoteTestPath}' && WINEPREFIX=~/.wine-hangover /usr/bin/wine test_lfb_stride.exe 2>&1"
@@ -84,6 +85,10 @@ bye
 
 # Default: Run Diablo II
 Write-Host "Executing Diablo II on remote host..."
+
+# Clear any old logs
+if (Test-Path $LocalLogPath) { Remove-Item $LocalLogPath }
+& "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -f '${RemoteLogPath}'"
 
 $RunCmd = "export DISPLAY=:0 && cd '${RemotePath}' && ODLL=libwow64fex.dll WINEPREFIX=~/.wine-hangover /usr/bin/wine `'Diablo II.exe`' -3dfx -w 2>&1"
 

@@ -37,6 +37,9 @@ void debug_log(const char *msg);
 /* Flush any pending deduplicated log message */
 void debug_log_flush(void);
 
+/* Write a trap message to the debug log (always enabled) */
+void trap_log(const char *fmt, ...);
+
 /* Original logging macros - uncomment to re-enable:
 #define LOG_FUNC() do { \
     char _dbg[128]; \
@@ -132,6 +135,14 @@ extern int g_render_buffer;
  * rendering. This tracks which TMU was last configured.
  */
 extern int g_active_tmu;
+
+/*
+ * g_color_format - Color component ordering from grSstWinOpen
+ *
+ * GR_COLORFORMAT_ARGB (0): Colors in A-R-G-B order (most common)
+ * GR_COLORFORMAT_ABGR (1): Colors in A-B-G-R order (R and B swapped)
+ */
+extern int g_color_format;
 
 /*
  * g_lfb_buffer_locked - Which buffer was locked for LFB writes
