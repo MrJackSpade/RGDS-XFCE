@@ -157,7 +157,6 @@ int g_screen_height = 480;
 
 GrColor_t g_constant_color = 0xFFFFFFFF;
 int g_render_buffer = 1;  /* Default: back buffer */
-int g_active_tmu = 0;     /* Which TMU was last configured via grTexSource */
 int g_color_format = 0;   /* GR_COLORFORMAT_ARGB=0, GR_COLORFORMAT_ABGR=1 */
 int g_lfb_buffer_locked = -1;
 GrLfbWriteMode_t g_lfb_write_mode = GR_LFBWRITEMODE_565;

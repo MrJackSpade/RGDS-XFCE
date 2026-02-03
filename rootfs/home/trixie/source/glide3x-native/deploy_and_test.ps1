@@ -16,6 +16,8 @@ $LocalTestGlide = "test_glide.exe"
 $LocalTestLfb = "test_lfb_stride.exe"
 $RemoteLogPath = "/home/trixie/.wine-hangover/drive_c/glide3x_debug.log"
 $LocalLogPath = "glide3x_debug.log"
+$RemoteTexturesPath = "/home/trixie/.wine-hangover/drive_c/textures"
+$LocalTexturesPath = "textures"
 
 if (-not $NoBuild) {
     Write-Host "Building project (including tests)..."
@@ -90,6 +92,11 @@ Write-Host "Executing Diablo II on remote host..."
 if (Test-Path $LocalLogPath) { Remove-Item $LocalLogPath }
 & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -f '${RemoteLogPath}'"
 
+# Clear textures directories (local and remote)
+Write-Host "Clearing textures directories..."
+if (Test-Path $LocalTexturesPath) { Remove-Item $LocalTexturesPath -Recurse -Force }
+& "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -rf '${RemoteTexturesPath}'"
+
 $RunCmd = "export DISPLAY=:0 && cd '${RemotePath}' && ODLL=libwow64fex.dll WINEPREFIX=~/.wine-hangover /usr/bin/wine `'Diablo II.exe`' -3dfx -w 2>&1"
 
 $Job = Start-Job -ScriptBlock {
@@ -112,11 +119,25 @@ catch {
 }
 Remove-Job $Job
 
+# Fetch debug log
 $SftpScriptLog = @"
 get "${RemoteLogPath}" $LocalLogPath
 bye
 "@
 $SftpScriptLog | & "C:\Windows\System32\OpenSSH\sftp.exe" "${RemoteUser}@${RemoteHost}"
 
+# Fetch textures directory
+Write-Host "Fetching textures directory..."
+& "C:\Windows\System32\OpenSSH\scp.exe" -r "${RemoteUser}@${RemoteHost}:${RemoteTexturesPath}" $LocalTexturesPath
+
+$TextureCount = 0
+if (Test-Path $LocalTexturesPath) {
+    $TextureCount = (Get-ChildItem $LocalTexturesPath -Filter "*.bmp" | Measure-Object).Count
+}
+
+Write-Host ""
 Write-Host "Done. Log saved to $LocalLogPath"
+Write-Host "Textures saved to $LocalTexturesPath ($TextureCount BMP files)"
+Write-Host ""
+Write-Host "=== Debug Log (last 20 lines) ==="
 Get-Content $LocalLogPath -Tail 20

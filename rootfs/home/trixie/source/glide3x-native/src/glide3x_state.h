@@ -129,14 +129,6 @@ extern GrColor_t g_constant_color;
 extern int g_render_buffer;
 
 /*
- * g_active_tmu - Which TMU is currently active for texture fetches
- *
- * Set by grTexSource(). Games may use either TMU0 or TMU1 for single-texture
- * rendering. This tracks which TMU was last configured.
- */
-extern int g_active_tmu;
-
-/*
  * g_color_format - Color component ordering from grSstWinOpen
  *
  * GR_COLORFORMAT_ARGB (0): Colors in A-R-G-B order (most common)
