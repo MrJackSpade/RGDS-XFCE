@@ -89,22 +89,24 @@ void debug_log_flush(void)
  */
 void debug_log(const char *msg)
 {
-    /* Check if this message matches the last one */
+    /* LOGGING DISABLED - uncomment below to re-enable */
+    (void)msg;
+    return;
+
+    /*
     if (g_last_msg_count > 0 && strcmp(msg, g_last_msg) == 0) {
         g_last_msg_count++;
         return;
     }
 
-    /* Different message - flush the previous one with count if needed */
     debug_log_flush();
 
-    /* Store and output the new message */
     strncpy(g_last_msg, msg, sizeof(g_last_msg) - 1);
     g_last_msg[sizeof(g_last_msg) - 1] = '\0';
     g_last_msg_count = 1;
 
-    /* Output immediately for first occurrence */
     debug_log_output(msg);
+    */
 }
 
 /*************************************

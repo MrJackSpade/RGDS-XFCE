@@ -615,7 +615,7 @@ FxBool __stdcall grLfbReadRegion(GrBuffer_t src_buffer, FxU32 src_x, FxU32 src_y
                         FxU32 src_width, FxU32 src_height,
                         FxU32 dst_stride, void *dst_data)
 {
-    LOG_FUNC();
+    
 
     if (!g_voodoo || !dst_data) return FXFALSE;
 

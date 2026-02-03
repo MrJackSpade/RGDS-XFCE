@@ -262,7 +262,7 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
  */
 void __stdcall grRenderBuffer(GrBuffer_t buffer)
 {
-    LOG_FUNC();
+    
 
     if (buffer == GR_BUFFER_FRONTBUFFER) {
         g_render_buffer = 0;

@@ -541,7 +541,7 @@ void __stdcall grDrawVertexArrayContiguous(FxU32 mode, FxU32 count, void *vertic
  */
 void __stdcall grDrawPoint(const void *pt)
 {
-    LOG_FUNC();
+    
     const GrVertex *v = (const GrVertex*)pt;
     if (!v) return;
 
@@ -562,7 +562,7 @@ void __stdcall grDrawPoint(const void *pt)
  */
 void __stdcall grDrawLine(const void *v1_in, const void *v2_in)
 {
-    LOG_FUNC();
+    
     const GrVertex *v1 = (const GrVertex*)v1_in;
     const GrVertex *v2 = (const GrVertex*)v2_in;
 
@@ -587,7 +587,7 @@ void __stdcall grDrawLine(const void *v1_in, const void *v2_in)
 void __stdcall grAADrawTriangle(const void *a, const void *b, const void *c,
                       FxBool ab_antialias, FxBool bc_antialias, FxBool ca_antialias)
 {
-    LOG_FUNC();
+    
     (void)ab_antialias;
     (void)bc_antialias;
     (void)ca_antialias;
@@ -608,7 +608,6 @@ void __stdcall grAADrawTriangle(const void *a, const void *b, const void *c,
  */
 void __stdcall grCullMode(GrCullMode_t mode)
 {
-    LOG("grCullMode(%d)", mode);
     if (!g_voodoo) return;
     g_voodoo->cull_mode = mode;
 }

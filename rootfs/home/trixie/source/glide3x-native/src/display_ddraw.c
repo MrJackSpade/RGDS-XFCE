@@ -22,16 +22,6 @@ static int g_width = 0;
 static int g_height = 0;
 static int g_window_owned = 0;
 
-/* Debug logging - write to same log file as glide3x.c */
-/* Shared debug logging from glide3x.c */
-extern void debug_log(const char *msg);
-
-static void display_log(const char *msg)
-{
-    fprintf(stderr, "%s", msg); /* Force stderr output */
-    debug_log(msg);
-}
-
 /* Forward declaration */
 void display_shutdown(void);
 
@@ -40,13 +30,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 {
     switch (msg) {
     case WM_CLOSE:
-        display_log("display_ddraw: WndProc received WM_CLOSE\n");
         DestroyWindow(hwnd);
         return 0;
     case WM_DESTROY:
-        display_log("display_ddraw: WndProc received WM_DESTROY\n");
         if (hwnd == g_hwnd) {
-            display_log("display_ddraw: wndproc clearing g_hwnd\n");
             g_hwnd = NULL;
         }
         PostQuitMessage(0);
@@ -64,12 +51,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
 /* Create output window */
 static HWND create_window(int width, int height, HWND hWindow)
 {
-    char dbg[128];
 
     /* If external window provided, use it */
     if (hWindow) {
-        snprintf(dbg, sizeof(dbg), "display_ddraw: Using external window %p\n", (void*)hWindow);
-        display_log(dbg);
         g_window_owned = 0;
         
         /* Ensure it's visible and sized correctly? 
@@ -97,14 +81,9 @@ static HWND create_window(int width, int height, HWND hWindow)
     
     int win_width = rect.right - rect.left;
     int win_height = rect.bottom - rect.top;
-    
-    snprintf(dbg, sizeof(dbg), "display_ddraw: create_window requesting %dx%d (client %dx%d)\n", 
-             win_width, win_height, width, height);
-    display_log(dbg);
 
     /* Reuse existing window if available */
     if (g_hwnd) {
-        display_log("display_ddraw: Reusing existing window\n");
         /* Simply resize and show */
         SetWindowPos(g_hwnd, NULL, 0, 0, win_width, win_height, SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW);
         return g_hwnd;
@@ -128,22 +107,11 @@ static HWND create_window(int width, int height, HWND hWindow)
         /* Verify actual size */
         RECT client_rect;
         GetClientRect(hwnd, &client_rect);
-        snprintf(dbg, sizeof(dbg), "display_ddraw: Created window client rect %ldx%ld\n", 
-                 client_rect.right - client_rect.left, client_rect.bottom - client_rect.top);
-        display_log(dbg);
         
         /* Force resize if mismatch */
         if ((client_rect.right - client_rect.left) != width || (client_rect.bottom - client_rect.top) != height) {
-            display_log("display_ddraw: Window size mismatch, attempting to force resize...\n");
-            if (!SetWindowPos(hwnd, NULL, 0, 0, win_width, win_height, SWP_NOMOVE | SWP_NOZORDER)) {
-                snprintf(dbg, sizeof(dbg), "display_ddraw: SetWindowPos failed (Error %ld)\n", GetLastError());
-                display_log(dbg);
-            } else {
-                display_log("display_ddraw: SetWindowPos succeeded. Re-verifying...\n");
+            if (SetWindowPos(hwnd, NULL, 0, 0, win_width, win_height, SWP_NOMOVE | SWP_NOZORDER)) {
                 GetClientRect(hwnd, &client_rect);
-                snprintf(dbg, sizeof(dbg), "display_ddraw: New client rect %ldx%ld\n", 
-                         client_rect.right - client_rect.left, client_rect.bottom - client_rect.top);
-                display_log(dbg);
             }
         }
     }
@@ -156,11 +124,6 @@ int display_init(int width, int height, HWND hWindow)
 {
     HRESULT hr;
     DDSURFACEDESC2 ddsd;
-    char dbg[256];
-
-    snprintf(dbg, sizeof(dbg), "display_init: Initializing %dx%d (hwnd=%p, prev g_width=%d g_height=%d)\n",
-             width, height, (void*)hWindow, g_width, g_height);
-    display_log(dbg);
 
     g_width = width;
     g_height = height;
@@ -225,13 +188,8 @@ int display_init(int width, int height, HWND hWindow)
 
     hr = IDirectDraw7_CreateSurface(g_dd7, &ddsd, &g_backbuf, NULL);
     if (FAILED(hr)) {
-        snprintf(dbg, sizeof(dbg), "display_ddraw: CreateSurface (backbuf) failed hr=0x%08lX\n", hr);
-        display_log(dbg);
         goto fail;
     }
-
-    snprintf(dbg, sizeof(dbg), "display_init: Success - created %dx%d backbuffer\n", width, height);
-    display_log(dbg);
 
     return 1;
 
@@ -259,20 +217,15 @@ void display_shutdown(void)
         IDirectDraw_Release(g_dd);
         g_dd = NULL;
     }
-    display_log("display_ddraw: display_shutdown complete (window preserved)\n");
 }
 
 /* Explicitly destroy window (called on DLL detach) */
 void display_destroy_window(void)
 {
-    display_log("display_ddraw: display_destroy_window called\n");
     if (g_hwnd) {
         if (g_window_owned) {
-            display_log("display_ddraw: Destroying owned window\n");
             DestroyWindow(g_hwnd);
-        } else {
-            display_log("display_ddraw: Detaching from external window (not destroying)\n");
-        }
+        } 
         g_hwnd = NULL;
     }
 }
@@ -285,17 +238,10 @@ void display_present(uint16_t *framebuffer, int width, int height)
     HRESULT hr;
     DDSURFACEDESC2 ddsd;
     MSG msg;
-    char dbg[256];
 
     g_present_count++;
-    snprintf(dbg, sizeof(dbg), "display_present #%d: %dx%d fb=%p\n",
-             g_present_count, width, height, (void*)framebuffer);
-    display_log(dbg);
 
     if (!g_backbuf || !g_primary) {
-        snprintf(dbg, sizeof(dbg), "display_present: EARLY RETURN - g_backbuf=%p g_primary=%p\n",
-                 (void*)g_backbuf, (void*)g_primary);
-        display_log(dbg);
         return;
     }
 
@@ -308,11 +254,6 @@ void display_present(uint16_t *framebuffer, int width, int height)
             if (framebuffer[i] != 0) nonzero_row0++;
             if (framebuffer[mid_row * width + i] != 0) nonzero_mid++;
         }
-        /* Always log for debugging */
-        snprintf(dbg, sizeof(dbg), "display_present: row0=%d/%d mid=%d/%d non-zero, pix[0]=0x%04X pix[mid]=0x%04X\n",
-                 nonzero_row0, sample_count, nonzero_mid, sample_count,
-                 framebuffer[0], framebuffer[mid_row * width]);
-        display_log(dbg);
     }
 
     /* Process window messages */
@@ -333,14 +274,6 @@ void display_present(uint16_t *framebuffer, int width, int height)
     /* Copy RGB565 data */
     uint16_t *dst = (uint16_t*)ddsd.lpSurface;
     int dst_pitch_pixels = ddsd.lPitch / 2;  /* pitch in 16-bit words */
-
-    /* Debug pitch mismatch once */
-    if (g_present_count == 1 || dst_pitch_pixels < width) {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg), "display_present: width=%d, pitch_pixels=%d (bytes=%ld)\n", 
-                 width, dst_pitch_pixels, ddsd.lPitch);
-        display_log(dbg);
-    }
 
     /* Clamp copy to prevent wrapping ("ZARDBLIZ" fix) */
     int copy_width = (width < dst_pitch_pixels) ? width : dst_pitch_pixels;
@@ -365,9 +298,6 @@ void display_present(uint16_t *framebuffer, int width, int height)
 
                 /* Log on size change */
                 if (width != client_w || height != client_h) {
-                    char dbg[256];
-                    snprintf(dbg, sizeof(dbg), "display_present: Scaling %dx%d -> %dx%d\n", width, height, client_w, client_h);
-                    display_log(dbg);
                     SetStretchBltMode(hdcWnd, COLORONCOLOR); /* Better quality for shrinking? or HALFTONE? COLORONCOLOR is faster */
                 }
 

@@ -18,8 +18,6 @@ static HWND g_hwnd = NULL;
 #define WIDTH 640
 #define HEIGHT 480
 
-#define LOG(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
-
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     if (msg == WM_DESTROY) {

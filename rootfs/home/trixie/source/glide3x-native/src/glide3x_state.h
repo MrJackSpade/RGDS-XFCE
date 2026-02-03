@@ -37,19 +37,19 @@ void debug_log(const char *msg);
 /* Flush any pending deduplicated log message */
 void debug_log_flush(void);
 
-/* Log macro for function entry */
+/* Original logging macros - uncomment to re-enable:
 #define LOG_FUNC() do { \
     char _dbg[128]; \
     snprintf(_dbg, sizeof(_dbg), "glide3x: %s\n", __func__); \
     debug_log(_dbg); \
 } while(0)
 
-/* Log macro with printf-style formatting */
 #define LOG(fmt, ...) do { \
     char _dbg[256]; \
     snprintf(_dbg, sizeof(_dbg), "glide3x: " fmt "\n", ##__VA_ARGS__); \
     debug_log(_dbg); \
 } while(0)
+*/
 
 /*************************************
  * Core Glide state

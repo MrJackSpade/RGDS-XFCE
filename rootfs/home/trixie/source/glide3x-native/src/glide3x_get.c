@@ -344,7 +344,7 @@ static struct {
  */
 GrProc __stdcall grGetProcAddress(char *procName)
 {
-    LOG_FUNC();
+    
     if (!procName) return NULL;
 
     for (int i = 0; g_proc_table[i].name != NULL; i++) {
@@ -373,7 +373,7 @@ GrProc __stdcall grGetProcAddress(char *procName)
  */
 FxBool __stdcall grSstQueryHardware(GrHwConfiguration *hwconfig)
 {
-    LOG_FUNC();
+    
     debug_log("glide3x: grSstQueryHardware called\n");
 
     if (!hwconfig) return FXFALSE;
@@ -392,7 +392,7 @@ FxBool __stdcall grSstQueryHardware(GrHwConfiguration *hwconfig)
  */
 FxU32 __stdcall grSstQueryBoards(GrHwConfiguration *hwconfig)
 {
-    LOG_FUNC();
+    
     debug_log("glide3x: grSstQueryBoards called\n");
 
     if (hwconfig) {
@@ -410,6 +410,6 @@ FxU32 __stdcall grSstQueryBoards(GrHwConfiguration *hwconfig)
  */
 void __stdcall grSstSelect(int which_sst)
 {
-    LOG_FUNC();
+    
     (void)which_sst;
 }

@@ -115,7 +115,6 @@
  */
 void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
 {
-    LOG("grAlphaTestFunction(%d)", function);
     if (!g_voodoo) return;
 
     /*
@@ -178,7 +177,6 @@ void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
  */
 void __stdcall grAlphaTestReferenceValue(GrAlpha_t value)
 {
-    LOG("grAlphaTestReferenceValue(%d)", value);
     if (!g_voodoo) return;
 
     uint32_t val = g_voodoo->reg[alphaMode].u;
@@ -235,7 +233,6 @@ void __stdcall grAlphaTestReferenceValue(GrAlpha_t value)
  */
 void __stdcall grColorMask(FxBool rgb, FxBool alpha)
 {
-    LOG("grColorMask(rgb=%d, alpha=%d)", rgb, alpha);
     if (!g_voodoo) return;
 
     /* Update shadow state for tracking */
@@ -275,5 +272,4 @@ void __stdcall grColorMask(FxBool rgb, FxBool alpha)
     }
 
     g_voodoo->reg[fbzMode].u = val;
-    LOG("  fbzMode updated: 0x%08X", val);
 }

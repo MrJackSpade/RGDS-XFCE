@@ -142,8 +142,6 @@
 void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t factor,
                     GrCombineLocal_t local, GrCombineOther_t other, FxBool invert)
 {
-    LOG("grColorCombine(func=%d, factor=%d, local=%d, other=%d, invert=%d)",
-        function, factor, local, other, invert);
     if (!g_voodoo) return;
 
     /* Build fbzColorPath register value
@@ -321,8 +319,6 @@ void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t fa
 void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t factor,
                     GrCombineLocal_t local, GrCombineOther_t other, FxBool invert)
 {
-    LOG("grAlphaCombine(func=%d, factor=%d, local=%d, other=%d, invert=%d)",
-        function, factor, local, other, invert);
     if (!g_voodoo) return;
 
     /* Build fbzColorPath register value (alpha portion)
@@ -480,7 +476,7 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
  */
 void __stdcall grConstantColorValue(GrColor_t value)
 {
-    LOG_FUNC();
+    
     g_constant_color = value;
     if (g_voodoo) {
         g_voodoo->reg[color0].u = value;

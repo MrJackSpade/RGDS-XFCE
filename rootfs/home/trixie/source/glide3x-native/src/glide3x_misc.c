@@ -75,7 +75,7 @@
  */
 void __stdcall grClipWindow(FxU32 minx, FxU32 miny, FxU32 maxx, FxU32 maxy)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     g_voodoo->clip_left = minx;
@@ -106,7 +106,7 @@ void __stdcall grClipWindow(FxU32 minx, FxU32 miny, FxU32 maxx, FxU32 maxy)
  */
 void __stdcall grDitherMode(GrDitherMode_t mode)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     uint32_t val = g_voodoo->reg[fbzMode].u;
@@ -134,7 +134,7 @@ void __stdcall grDitherMode(GrDitherMode_t mode)
  */
 void __stdcall grChromakeyMode(GrChromakeyMode_t mode)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     uint32_t val = g_voodoo->reg[fbzMode].u;
@@ -155,7 +155,7 @@ void __stdcall grChromakeyMode(GrChromakeyMode_t mode)
  */
 void __stdcall grChromakeyValue(GrColor_t value)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
     g_voodoo->reg[chromaKey].u = value;
 }
@@ -169,7 +169,7 @@ void __stdcall grChromakeyValue(GrColor_t value)
  */
 void __stdcall grSstOrigin(GrOriginLocation_t origin)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     if (origin == GR_ORIGIN_LOWER_LEFT) {
@@ -189,7 +189,7 @@ void __stdcall grSstOrigin(GrOriginLocation_t origin)
  */
 void __stdcall grCoordinateSpace(GrCoordinateSpaceMode_t mode)
 {
-    LOG_FUNC();
+    
     (void)mode;
 }
 
@@ -206,7 +206,6 @@ void __stdcall grCoordinateSpace(GrCoordinateSpaceMode_t mode)
  */
 void __stdcall grVertexLayout(FxU32 param, FxI32 offset, FxU32 mode)
 {
-    LOG("grVertexLayout(param=%d, offset=%d, mode=%d)", param, offset, mode);
     if (!g_voodoo) return;
 
     /* mode=0 disables, mode=1 enables */
@@ -235,7 +234,7 @@ void __stdcall grVertexLayout(FxU32 param, FxI32 offset, FxU32 mode)
  */
 void __stdcall grViewport(FxI32 x, FxI32 y, FxI32 width, FxI32 height)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     g_voodoo->vp_x = x;
@@ -253,13 +252,13 @@ void __stdcall grViewport(FxI32 x, FxI32 y, FxI32 width, FxI32 height)
  */
 void __stdcall grEnable(GrEnableMode_t mode)
 {
-    LOG_FUNC();
+    
     (void)mode;
 }
 
 void __stdcall grDisable(GrEnableMode_t mode)
 {
-    LOG_FUNC();
+    
     (void)mode;
 }
 
@@ -272,7 +271,6 @@ void __stdcall grDisable(GrEnableMode_t mode)
  */
 void __stdcall grLoadGammaTable(FxU32 nentries, FxU32 *red, FxU32 *green, FxU32 *blue)
 {
-    LOG("grLoadGammaTable(entries=%d)", nentries);
     if (!g_voodoo) return;
 
     if (nentries > 32) nentries = 32;
@@ -293,8 +291,6 @@ void __stdcall grLoadGammaTable(FxU32 nentries, FxU32 *red, FxU32 *green, FxU32 
  */
 void __stdcall guGammaCorrectionRGB(float red, float green, float blue)
 {
-    LOG("guGammaCorrectionRGB(%.2f, %.2f, %.2f)", red, green, blue);
-
     FxU32 r_table[32], g_table[32], b_table[32];
 
     for (int i = 0; i < 32; i++) {
@@ -317,13 +313,13 @@ void __stdcall guGammaCorrectionRGB(float red, float green, float blue)
  */
 float __stdcall grSstScreenWidth(void)
 {
-    LOG_FUNC();
+    
     return (float)g_screen_width;
 }
 
 float __stdcall grSstScreenHeight(void)
 {
-    LOG_FUNC();
+    
     return (float)g_screen_height;
 }
 
@@ -335,12 +331,12 @@ float __stdcall grSstScreenHeight(void)
  */
 void __stdcall grFinish(void)
 {
-    LOG_FUNC();
+    
 }
 
 void __stdcall grFlush(void)
 {
-    LOG_FUNC();
+    
 }
 
 /*
@@ -350,7 +346,7 @@ void __stdcall grFlush(void)
  */
 void __stdcall grErrorSetCallback(void (*fnc)(const char *string, FxBool fatal))
 {
-    LOG_FUNC();
+    
     (void)fnc;
 }
 
@@ -362,7 +358,7 @@ void __stdcall grErrorSetCallback(void (*fnc)(const char *string, FxBool fatal))
  */
 void __stdcall grSstIdle(void)
 {
-    LOG_FUNC();
+    
     /* Software renderer is always idle after each operation */
 }
 
@@ -378,7 +374,7 @@ void __stdcall grSstIdle(void)
  */
 FxU32 __stdcall grSstStatus(void)
 {
-    LOG_FUNC();
+    
     return 0;  /* Always idle */
 }
 
@@ -393,6 +389,6 @@ FxU32 __stdcall grSstStatus(void)
  */
 FxI32 __stdcall grBufferNumPending(void)
 {
-    LOG_FUNC();
+    
     return 0;  /* No pending swaps */
 }

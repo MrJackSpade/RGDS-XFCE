@@ -128,6 +128,6 @@ void __stdcall grGlideShutdown(void)
  */
 void __stdcall grGlideGetVersion(char version[80])
 {
-    LOG_FUNC();
+    
     strcpy(version, "Glide3x Software 1.0 (DOSBox-Staging derived)");
 }

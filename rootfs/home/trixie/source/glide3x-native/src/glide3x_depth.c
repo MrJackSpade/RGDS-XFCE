@@ -114,7 +114,6 @@
  */
 void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
 {
-    LOG("grDepthBufferMode(%d)", mode);
     if (!g_voodoo) return;
 
     /*
@@ -180,7 +179,6 @@ void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
  */
 void __stdcall grDepthBufferFunction(GrCmpFnc_t func)
 {
-    LOG("grDepthBufferFunction(%d)", func);
     if (!g_voodoo) return;
 
     /*
@@ -234,7 +232,6 @@ void __stdcall grDepthBufferFunction(GrCmpFnc_t func)
  */
 void __stdcall grDepthMask(FxBool mask)
 {
-    LOG("grDepthMask(%d)", mask);
     if (!g_voodoo) return;
 
     /* Update shadow state for tracking */
@@ -293,7 +290,7 @@ void __stdcall grDepthMask(FxBool mask)
  */
 void __stdcall grDepthBiasLevel(FxI32 level)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     /*

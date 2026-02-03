@@ -125,7 +125,7 @@
  */
 void __stdcall grFogMode(GrFogMode_t mode)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     /*
@@ -160,7 +160,7 @@ void __stdcall grFogMode(GrFogMode_t mode)
  */
 void __stdcall grFogColorValue(GrColor_t fogcolor)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
     g_voodoo->reg[fogColor].u = fogcolor;
 }
@@ -200,7 +200,7 @@ void __stdcall grFogColorValue(GrColor_t fogcolor)
  */
 void __stdcall grFogTable(const GrFog_t ft[])
 {
-    LOG_FUNC();
+    
     if (!g_voodoo || !ft) return;
 
     /* Copy all 64 entries and compute deltas for interpolation

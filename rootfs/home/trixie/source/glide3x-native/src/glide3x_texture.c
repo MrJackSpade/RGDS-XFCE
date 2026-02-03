@@ -164,7 +164,7 @@ static int get_tex_size(GrLOD_t lod)
  */
 FxU32 __stdcall grTexMinAddress(GrChipID_t tmu)
 {
-    LOG_FUNC();
+    
     (void)tmu;
     return 0;
 }
@@ -177,7 +177,7 @@ FxU32 __stdcall grTexMinAddress(GrChipID_t tmu)
  */
 FxU32 __stdcall grTexMaxAddress(GrChipID_t tmu)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return 0;
     int t = (tmu == GR_TMU0) ? 0 : 1;
     return g_voodoo->tmu[t].mask;  /* mask = memory_size - 1 */
@@ -201,24 +201,10 @@ FxU32 __stdcall grTexMaxAddress(GrChipID_t tmu)
  */
 void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, GrTexInfo *info)
 {
-    LOG("grTexSource(tmu=%d, startAddr=0x%X, evenOdd=%d)", tmu, startAddress, evenOdd);
     if (!g_voodoo || !info) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
-
-    /* Log raw struct bytes to debug struct layout */
-    {
-        uint8_t *raw = (uint8_t*)info;
-        LOG("  STRUCT HEX: %02X %02X %02X %02X | %02X %02X %02X %02X | %02X %02X %02X %02X | %02X %02X %02X %02X | ptr=%02X%02X%02X%02X",
-            raw[0], raw[1], raw[2], raw[3],     /* smallLodLog2 */
-            raw[4], raw[5], raw[6], raw[7],     /* largeLodLog2 */
-            raw[8], raw[9], raw[10], raw[11],   /* aspectRatioLog2 */
-            raw[12], raw[13], raw[14], raw[15], /* format */
-            raw[19], raw[18], raw[17], raw[16]); /* data ptr (little-endian) */
-        LOG("  FIELDS: small=%d large=%d aspect=%d format=%d data=%p",
-            info->smallLodLog2, info->largeLodLog2, info->aspectRatioLog2, info->format, info->data);
-    }
 
     (void)evenOdd;
 
@@ -239,8 +225,6 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
 
     ts->wmask = tex_width - 1;
     ts->hmask = tex_height - 1;
-
-    LOG("  -> tex_size=%dx%d wmask=0x%X hmask=0x%X", tex_width, tex_height, ts->wmask, ts->hmask);
 
     /* Calculate bytes per texel for mipmap offset calculation */
     int bpp = get_texel_bytes(info->format);
@@ -293,9 +277,6 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
 
     /* Track which TMU is now active for rendering */
     g_active_tmu = t;
-
-    LOG("  -> lodoffset[0]=0x%X wmask=%d hmask=%d lookup=%p active_tmu=%d",
-        ts->lodoffset[0], ts->wmask, ts->hmask, (void*)ts->lookup, g_active_tmu);
 }
 
 /*
@@ -315,7 +296,7 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
  */
 void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, GrTexInfo *info)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo || !info || !info->data) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
@@ -366,7 +347,7 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
                                GrLOD_t largeLod, GrAspectRatio_t aspectRatio,
                                GrTextureFormat_t format, FxU32 evenOdd, void *data)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo || !data) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
@@ -407,7 +388,7 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
  */
 FxU32 __stdcall grTexTextureMemRequired(FxU32 evenOdd, GrTexInfo *info)
 {
-    LOG_FUNC();
+    
     if (!info) return 0;
 
     (void)evenOdd;
@@ -452,9 +433,7 @@ void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
                   GrCombineFactor_t rgb_factor, GrCombineFunction_t alpha_function,
                   GrCombineFactor_t alpha_factor, FxBool rgb_invert, FxBool alpha_invert)
 {
-    LOG("grTexCombine(tmu=%d, rgb_func=%d, rgb_factor=%d, alpha_func=%d, alpha_factor=%d, rgb_inv=%d, alpha_inv=%d)",
-        tmu, rgb_function, rgb_factor, alpha_function, alpha_factor, rgb_invert, alpha_invert);
-    if (!g_voodoo) return;
+   if (!g_voodoo) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
@@ -535,7 +514,7 @@ void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
 void __stdcall grTexFilterMode(GrChipID_t tmu, GrTextureFilterMode_t minfilter_mode,
                      GrTextureFilterMode_t magfilter_mode)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
@@ -559,7 +538,7 @@ void __stdcall grTexFilterMode(GrChipID_t tmu, GrTextureFilterMode_t minfilter_m
  */
 void __stdcall grTexClampMode(GrChipID_t tmu, GrTextureClampMode_t s_clamp, GrTextureClampMode_t t_clamp)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
@@ -583,7 +562,7 @@ void __stdcall grTexClampMode(GrChipID_t tmu, GrTextureClampMode_t s_clamp, GrTe
  */
 void __stdcall grTexMipMapMode(GrChipID_t tmu, GrMipMapMode_t mode, FxBool lodBlend)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
@@ -605,7 +584,7 @@ void __stdcall grTexMipMapMode(GrChipID_t tmu, GrMipMapMode_t mode, FxBool lodBl
  */
 void __stdcall grTexLodBiasValue(GrChipID_t tmu, float bias)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
@@ -619,10 +598,8 @@ void __stdcall grTexLodBiasValue(GrChipID_t tmu, float bias)
  */
 void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
 {
-    LOG_FUNC();
+    
     if (!g_voodoo || !data) return;
-
-    LOG("  type=%d", type);
 
     for (int t = 0; t < 2; t++) {
         tmu_state *ts = &g_voodoo->tmu[t];
@@ -630,9 +607,6 @@ void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
         switch (type) {
         case GR_TEXTABLE_NCC0:
         case GR_TEXTABLE_NCC1:
-            if (t == 0) {
-                LOG("  WARNING: NCC Table download not fully implemented");
-            }
             break;
 
         case GR_TEXTABLE_PALETTE:
@@ -646,7 +620,6 @@ void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
             break;
 
         default:
-            if (t == 0) LOG("  Unknown table type %d", type);
             break;
         }
 

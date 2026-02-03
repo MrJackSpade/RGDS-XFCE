@@ -135,7 +135,6 @@
 void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t rgb_df,
                           GrAlphaBlendFnc_t alpha_sf, GrAlphaBlendFnc_t alpha_df)
 {
-    LOG_FUNC();
     if (!g_voodoo) return;
 
     /*

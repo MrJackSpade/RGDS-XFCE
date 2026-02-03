@@ -128,6 +128,16 @@ GrContext_t __stdcall grSstWinOpen(
      *   Offset W*H*6: Depth buffer
      */
     debug_log("glide3x: grSstWinOpen - init FBI\n");
+
+    /* Check if FBI needs full initialization or just dimension update */
+    int fbi_was_initialized = (g_voodoo->fbi.ram != NULL &&
+                               g_voodoo->fbi.width == g_screen_width &&
+                               g_voodoo->fbi.height == g_screen_height);
+
+    if (fbi_was_initialized) {
+        debug_log("glide3x: grSstWinOpen - FBI already initialized, preserving buffers\n");
+    }
+
     voodoo_init_fbi(&g_voodoo->fbi, 4 * 1024 * 1024);
     g_voodoo->fbi.width = g_screen_width;
     g_voodoo->fbi.height = g_screen_height;
@@ -140,8 +150,11 @@ GrContext_t __stdcall grSstWinOpen(
     g_voodoo->fbi.rgboffs[2] = buffer_size * 2;      /* Triple buffer */
     g_voodoo->fbi.auxoffs = buffer_size * 3;         /* Depth buffer */
 
-    g_voodoo->fbi.frontbuf = 0;
-    g_voodoo->fbi.backbuf = 1;
+    /* Only reset buffer indices if FBI was freshly initialized */
+    if (!fbi_was_initialized) {
+        g_voodoo->fbi.frontbuf = 0;
+        g_voodoo->fbi.backbuf = 1;
+    }
 
     /*
      * Set Y origin
@@ -262,7 +275,7 @@ GrContext_t __stdcall grSstWinOpen(
  */
 FxBool __stdcall grSstWinClose(GrContext_t context)
 {
-    LOG_FUNC();
+    
 
     if (context != g_context) {
         debug_log("glide3x: grSstWinClose - invalid context\n");
@@ -295,7 +308,7 @@ FxBool __stdcall grSstWinClose(GrContext_t context)
  */
 FxBool __stdcall grSelectContext(GrContext_t context)
 {
-    LOG_FUNC();
+    
 
     if (context == g_context) {
         return FXTRUE;

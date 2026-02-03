@@ -345,26 +345,6 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
     /* Check if texture is enabled */
     int texture_enabled = FBZCP_TEXTURE_ENABLE(r_fbzColorPath);
 
-    /* Log first scanline of each frame for debugging */
-    if (diag_pixel_count < 5) {
-        char dbg[256];
-        snprintf(dbg, sizeof(dbg),
-                 "DIAG: y=%d x=%d-%d fbzMode=0x%08X fbzCP=0x%08X tex_en=%d alphaMode=0x%08X\n",
-                 y, startx, stopx, r_fbzMode, r_fbzColorPath, texture_enabled, r_alphaMode);
-        debug_log(dbg);
-        snprintf(dbg, sizeof(dbg),
-                 "DIAG: CC_RGBSEL=%d CC_ASEL=%d CC_LOCALSEL=%d CC_ZERO_OTHER=%d CC_ADD_CLOCAL=%d\n",
-                 FBZCP_CC_RGBSELECT(r_fbzColorPath), FBZCP_CC_ASELECT(r_fbzColorPath),
-                 FBZCP_CC_LOCALSELECT(r_fbzColorPath), FBZCP_CC_ZERO_OTHER(r_fbzColorPath),
-                 FBZCP_CC_ADD_ACLOCAL(r_fbzColorPath));
-        debug_log(dbg);
-        snprintf(dbg, sizeof(dbg),
-                 "DIAG: RGB_MASK=%d DEPTH_EN=%d DEPTH_FUNC=%d active_tmu=%d\n",
-                 FBZMODE_RGB_BUFFER_MASK(r_fbzMode), FBZMODE_ENABLE_DEPTHBUF(r_fbzMode),
-                 FBZMODE_DEPTH_FUNCTION(r_fbzMode), active_tmu_index);
-        debug_log(dbg);
-    }
-
     /* Compute dither pointers */
     const uint8_t *dither = NULL;
     const uint8_t *dither4 = NULL;
@@ -400,50 +380,10 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
 
         /* Apply texture if enabled */
         if (texture_enabled) {
-            /* Log texture coordinates before sampling */
-            if (diag_pixel_count < 5 && x == startx) {
-                char dbg[256];
-                snprintf(dbg, sizeof(dbg),
-                         "DIAG: texcoords iters0=%lld itert0=%lld iterw0=%lld\n",
-                         (long long)iters0, (long long)itert0, (long long)iterw0);
-                debug_log(dbg);
-            }
 
             rgb_t texel;
             TEXTURE_PIPELINE(vs, active_tmu_index, x, dither4, r_textureMode,
                              iters0, itert0, iterw0, texel);
-
-            /* Log texel value with detailed info */
-            if (diag_pixel_count < 5 && x == startx) {
-                char dbg[256];
-                int fmt = TEXMODE_FORMAT(r_textureMode);
-                snprintf(dbg, sizeof(dbg),
-                         "DIAG: texel=0x%08X (A=%d R=%d G=%d B=%d) iter_rgb=(%d,%d,%d)\n",
-                         texel, (texel >> 24) & 0xFF, (texel >> 16) & 0xFF,
-                         (texel >> 8) & 0xFF, texel & 0xFF, r, g, b);
-                debug_log(dbg);
-                snprintf(dbg, sizeof(dbg),
-                         "DIAG: texfmt=%d lodoff[0]=0x%X wmask=%d hmask=%d lookup=%p\n",
-                         fmt, active_tmu->lodoffset[0], active_tmu->wmask, active_tmu->hmask, (void*)active_tmu->lookup);
-                debug_log(dbg);
-                /* Show raw texture bytes at lodoffset */
-                if (active_tmu->ram) {
-                    uint32_t addr = active_tmu->lodoffset[0];
-                    snprintf(dbg, sizeof(dbg),
-                             "DIAG: ram[%d..%d]=%02X %02X %02X %02X %02X %02X %02X %02X\n",
-                             addr, addr+7,
-                             active_tmu->ram[addr], active_tmu->ram[addr+1], active_tmu->ram[addr+2], active_tmu->ram[addr+3],
-                             active_tmu->ram[addr+4], active_tmu->ram[addr+5], active_tmu->ram[addr+6], active_tmu->ram[addr+7]);
-                    debug_log(dbg);
-                }
-                /* Show first palette entries if lookup is palette */
-                if (active_tmu->lookup == active_tmu->palette) {
-                    snprintf(dbg, sizeof(dbg),
-                             "DIAG: palette[0..3]=0x%08X 0x%08X 0x%08X 0x%08X\n",
-                             active_tmu->palette[0], active_tmu->palette[1], active_tmu->palette[2], active_tmu->palette[3]);
-                    debug_log(dbg);
-                }
-            }
 
             /* Texture combine based on fbzColorPath settings */
             rgb_union c_local;
@@ -491,13 +431,6 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
                 r = c_texel.rgb.r;
                 g = c_texel.rgb.g;
                 b = c_texel.rgb.b;
-                if (diag_pixel_count < 5 && x == startx) {
-                    char dbg[128];
-                    snprintf(dbg, sizeof(dbg),
-                             "DIAG: case1 c_texel.u=0x%08X r=%d g=%d b=%d\n",
-                             c_texel.u, c_texel.rgb.r, c_texel.rgb.g, c_texel.rgb.b);
-                    debug_log(dbg);
-                }
                 break;
             case 2:  /* Color 1 register */
                 r = regs[color1].rgb.r;
@@ -521,73 +454,14 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
             default:
                 break;
             }
-
-            /*
-             * Note: Full color combine equation would be:
-             *   result = (c_other - c_local) * blend + c_add
-             *
-             * For now, we handle common cases:
-             * - CC_RGBSELECT=1 (texture): output texture color directly
-             * - CC_RGBSELECT=0 with texture enabled: output texture (decal)
-             *
-             * Modulation (texture * iterated) requires CC_MSELECT to specify
-             * the blend factor. We skip modulation for now to avoid zeroing
-             * the output when iterated color is black.
-             */
-
-            /* Log final color after texture combine */
-            if (diag_pixel_count < 5 && x == startx) {
-                char dbg[128];
-                snprintf(dbg, sizeof(dbg),
-                         "DIAG: after combine rgb=(%d,%d,%d,%d)\n", r, g, b, a);
-                debug_log(dbg);
-                diag_pixel_count++;
-            }
         }
 
         /* Pixel pipeline modify - fogging and alpha blend */
         PIXEL_PIPELINE_MODIFY(vs, dither, dither4, x, r_fbzMode, r_fbzColorPath,
                               r_alphaMode, r_fogMode, iterz, iterw, iterargb);
 
-        /* Direct test write to diagnose memory issue */
-        if (diag_pixel_count <= 5 && x == startx) {
-            char dbg[512];
-            int rgb_mask = FBZMODE_RGB_BUFFER_MASK(r_fbzMode);
-
-            /* Test: direct write to dest[x] */
-            uint16_t test_val = 0x1234;
-            uint16_t *write_addr = &dest[x];
-            uint16_t before = *write_addr;
-            *write_addr = test_val;
-            uint16_t after = *write_addr;
-
-            snprintf(dbg, sizeof(dbg),
-                     "DIAG: TEST x=%d addr=%p before=0x%04X wrote=0x%04X readback=0x%04X %s\n",
-                     x, (void*)write_addr, before, test_val, after,
-                     (after == test_val) ? "OK" : "WRITE FAILED!");
-            debug_log(dbg);
-
-            /* Restore and let normal pipeline write */
-            *write_addr = before;
-
-            snprintf(dbg, sizeof(dbg),
-                     "DIAG: rgb=(%d,%d,%d) dest=%p x=%d RGB_MASK=%d fbzMode=0x%08X\n",
-                     r, g, b, (void*)dest, x, rgb_mask, r_fbzMode);
-            debug_log(dbg);
-        }
-
         /* Pixel pipeline finish - write to framebuffer */
         PIXEL_PIPELINE_FINISH(vs, dither_lookup, x, dest, depth, r_fbzMode);
-
-        /* Log after write to verify what was written */
-        if (diag_pixel_count <= 5 && x == startx) {
-            char dbg[256];
-            int rgb_mask = FBZMODE_RGB_BUFFER_MASK(r_fbzMode);
-            snprintf(dbg, sizeof(dbg),
-                     "DIAG: after FINISH dest[%d]=0x%04X (should be non-zero if RGB_MASK=%d)\n",
-                     x, dest[x], rgb_mask);
-            debug_log(dbg);
-        }
 
         PIXEL_PIPELINE_END((*stats));
 
