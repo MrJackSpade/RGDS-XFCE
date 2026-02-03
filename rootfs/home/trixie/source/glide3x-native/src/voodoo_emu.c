@@ -161,13 +161,6 @@ void voodoo_init_fbi(fbi_state *f, int fbmem)
 
     g_fbi_init_count++;
 
-    /* TRAP: Log FBI init (could clear existing content) */
-    {
-        extern void trap_log(const char *fmt, ...);
-        trap_log("FBI INIT TRAP #%d: Initializing FBI with %d bytes (existing ram=%p)\n",
-                g_fbi_init_count, fbmem, (void*)f->ram);
-    }
-
     /* Allocate frame buffer RAM (aligned to 8 bytes) */
     f->ram = (uint8_t*)calloc(1, fbmem + 8);
     if (!f->ram) return;
@@ -374,15 +367,6 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
     /* Check if texture is enabled */
     int texture_enabled = FBZCP_TEXTURE_ENABLE(r_fbzColorPath);
 
-    /* Debug: log texture enable state */
-    extern int g_scanline_log_count;
-    if (g_scanline_log_count < 10) {
-        extern void trap_log(const char *fmt, ...);
-        g_scanline_log_count++;
-        trap_log("SCANLINE #%d: fbzColorPath=0x%08X tex_enabled=%d tmu0_active=%d tmu1_active=%d using_tmu=%d\n",
-                g_scanline_log_count, r_fbzColorPath, texture_enabled, tmu0_active, tmu1_active, active_tmu_index);
-    }
-
     /* Compute dither pointers */
     const uint8_t *dither = NULL;
     const uint8_t *dither4 = NULL;
@@ -572,15 +556,6 @@ void voodoo_triangle(voodoo_state *vs)
     int32_t v1yi = round_coordinate(v1y);
     int32_t v3yi = round_coordinate(v3y);
 
-    /* Debug: log triangle vertex positions */
-    extern int g_tri_debug_count;
-    if (g_tri_debug_count < 20) {
-        extern void trap_log(const char *fmt, ...);
-        g_tri_debug_count++;
-        trap_log("TRI_RASTER #%d: a=(%.1f,%.1f) b=(%.1f,%.1f) c=(%.1f,%.1f) v1yi=%d v3yi=%d\n",
-                g_tri_debug_count, ax, ay, bx, by, cx, cy, v1yi, v3yi);
-    }
-
     /* Degenerate triangle check */
     if (v3yi <= v1yi)
         return;
@@ -596,16 +571,6 @@ void voodoo_triangle(voodoo_state *vs)
         break;
     default:
         return;  /* reserved */
-    }
-
-    /* Log drawbuf pointer for debugging (once per frame) */
-    if (diag_pixel_count == 0) {
-        char dbg[256];
-        snprintf(dbg, sizeof(dbg),
-                 "voodoo_triangle: drawbuf=%p DRAW_BUFFER=%d backbuf=%d offset=0x%X ram=%p\n",
-                 (void*)drawbuf, FBZMODE_DRAW_BUFFER(regs[fbzMode].u),
-                 fbi->backbuf, fbi->rgboffs[fbi->backbuf], (void*)fbi->ram);
-        debug_log(dbg);
     }
 
     /* Get depth buffer if enabled */
@@ -733,13 +698,6 @@ void voodoo_fastfill(voodoo_state *vs)
 
     /* Convert to RGB565 */
     uint16_t rgb565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-
-    /* TRAP: Catch black fastfill */
-    if (rgb565 == 0x0000) {
-        extern void trap_log(const char *fmt, ...);
-        trap_log("FASTFILL TRAP: Filling to BLACK at (%d,%d)-(%d,%d) drawbuf=%p\n",
-                sx, sy, ex, ey, (void*)drawbuf);
-    }
 
     /* Get depth buffer and value if needed */
     uint16_t *depthbuf = NULL;

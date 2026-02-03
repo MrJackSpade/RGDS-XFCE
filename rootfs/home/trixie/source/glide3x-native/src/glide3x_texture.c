@@ -199,8 +199,6 @@ FxU32 __stdcall grTexMaxAddress(GrChipID_t tmu)
  * After this call, triangles rendered will use this texture
  * (assuming texturing is enabled in the color combine).
  */
-static int g_tex_source_count = 0;
-
 void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, GrTexInfo *info)
 {
     if (!g_voodoo || !info) return;
@@ -209,14 +207,6 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
     tmu_state *ts = &g_voodoo->tmu[t];
 
     (void)evenOdd;
-
-    /* Log first 30 texture source calls */
-    g_tex_source_count++;
-    if (g_tex_source_count <= 30) {
-        extern void trap_log(const char *fmt, ...);
-        trap_log("TEX SOURCE #%d: raw_tmu=%d t=%d addr=0x%08X\n",
-                g_tex_source_count, tmu, t, startAddress);
-    }
 
     /* Calculate texture dimensions */
     int tex_width = get_tex_size(info->largeLodLog2);
@@ -305,24 +295,12 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
  * The info->data pointer should contain all mipmap levels contiguously,
  * from largest to smallest.
  */
-static int g_tex_download_count = 0;
-
 void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, GrTexInfo *info)
 {
-
     if (!g_voodoo || !info || !info->data) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
-
-    /* Log first 50 texture downloads, and any to TMU 1 */
-    g_tex_download_count++;
-    if (g_tex_download_count <= 50 || t == 1) {
-        extern void trap_log(const char *fmt, ...);
-        trap_log("TEX DOWNLOAD #%d: raw_tmu=%d t=%d addr=0x%08X fmt=%d size=%dx%d\n",
-                g_tex_download_count, tmu, t, startAddress, info->format,
-                1 << info->largeLodLog2, 1 << info->largeLodLog2);
-    }
 
     (void)evenOdd;
 
@@ -365,25 +343,14 @@ void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 eve
 /*
  * grTexDownloadMipMapLevel - Download a single mipmap level
  */
-static int g_tex_level_count = 0;
-
 void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLOD_t thisLod,
                                GrLOD_t largeLod, GrAspectRatio_t aspectRatio,
                                GrTextureFormat_t format, FxU32 evenOdd, void *data)
 {
-
     if (!g_voodoo || !data) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
-
-    /* Log first 50 level downloads, and any to TMU 1 */
-    g_tex_level_count++;
-    if (g_tex_level_count <= 50 || t == 1) {
-        extern void trap_log(const char *fmt, ...);
-        trap_log("TEX LEVEL #%d: tmu=%d addr=0x%08X lod=%d fmt=%d\n",
-                g_tex_level_count, t, startAddress, thisLod, format);
-    }
 
     (void)evenOdd;
     (void)largeLod;
@@ -418,8 +385,6 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
 /*
  * grTexDownloadMipMapLevelPartial - Download part of a single mipmap level
  */
-static int g_tex_partial_count = 0;
-
 void __stdcall grTexDownloadMipMapLevelPartial(GrChipID_t tmu, FxU32 startAddress, GrLOD_t thisLod,
                                GrLOD_t largeLod, GrAspectRatio_t aspectRatio,
                                GrTextureFormat_t format, FxU32 evenOdd, void *data,
@@ -429,14 +394,6 @@ void __stdcall grTexDownloadMipMapLevelPartial(GrChipID_t tmu, FxU32 startAddres
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
-
-    /* Log partial downloads */
-    g_tex_partial_count++;
-    if (g_tex_partial_count <= 50 || t == 1) {
-        extern void trap_log(const char *fmt, ...);
-        trap_log("TEX PARTIAL #%d: raw_tmu=%d t=%d addr=0x%08X lod=%d rows=%d-%d\n",
-                g_tex_partial_count, tmu, t, startAddress, thisLod, start, end);
-    }
 
     (void)evenOdd;
     (void)largeLod;
@@ -685,25 +642,9 @@ void __stdcall grTexLodBiasValue(GrChipID_t tmu, float bias)
 /*
  * grTexDownloadTable - Download palette or NCC table
  */
-static int g_tex_table_count = 0;
-
 void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
 {
-
     if (!g_voodoo || !data) return;
-
-    g_tex_table_count++;
-    {
-        extern void trap_log(const char *fmt, ...);
-        const char *type_name = "UNKNOWN";
-        switch (type) {
-        case GR_TEXTABLE_NCC0: type_name = "NCC0"; break;
-        case GR_TEXTABLE_NCC1: type_name = "NCC1"; break;
-        case GR_TEXTABLE_PALETTE: type_name = "PALETTE"; break;
-        case GR_TEXTABLE_PALETTE_6666_EXT: type_name = "PALETTE_6666"; break;
-        }
-        trap_log("TEX TABLE #%d: type=%s (%d)\n", g_tex_table_count, type_name, type);
-    }
 
     for (int t = 0; t < 2; t++) {
         tmu_state *ts = &g_voodoo->tmu[t];
@@ -729,13 +670,6 @@ void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
                         color = (a << 24) | (r << 16) | (g << 8) | b;
                     }
                     ts->palette[i] = color;
-                }
-                /* Log first few palette entries */
-                if (g_tex_table_count <= 2 && t == 0) {
-                    extern void trap_log(const char *fmt, ...);
-                    trap_log("PALETTE tmu=%d fmt=%d: [0]=0x%08X [1]=0x%08X [2]=0x%08X [128]=0x%08X [255]=0x%08X\n",
-                            t, g_color_format, ts->palette[0], ts->palette[1], ts->palette[2],
-                            ts->palette[128], ts->palette[255]);
                 }
             }
             break;

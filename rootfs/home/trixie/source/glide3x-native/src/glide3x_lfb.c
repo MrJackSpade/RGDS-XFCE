@@ -444,20 +444,6 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
     /* Copy data row by row with format conversion if needed */
     uint8_t *src = (uint8_t*)src_data;
 
-    /* TRAP: Check if source data is mostly black */
-    {
-        int black_count = 0;
-        uint16_t *check = (uint16_t*)src_data;
-        int check_size = (src_width * src_height < 1000) ? (int)(src_width * src_height) : 1000;
-        for (int i = 0; i < check_size; i++) {
-            if (check[i] == 0x0000) black_count++;
-        }
-        if (black_count > check_size / 2) {
-            trap_log("LFB WRITE TRAP: Writing %d/%d black pixels to buf=%d at (%u,%u) size %ux%u dest=%p\n",
-                    black_count, check_size, dst_buffer, dst_x, dst_y, src_width, src_height, (void*)dest);
-        }
-    }
-
     for (FxU32 y = 0; y < src_height; y++) {
         uint16_t *dst_row = &dest[(dst_y + y) * g_voodoo->fbi.rowpixels + dst_x];
 

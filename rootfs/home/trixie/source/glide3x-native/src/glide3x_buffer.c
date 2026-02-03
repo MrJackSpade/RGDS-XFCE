@@ -114,7 +114,7 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
     /*
      * Clear color buffer only if RGB writes are enabled
      */
-    if (0) {
+    if (doColor) {
         /*
          * Convert 32-bit ARGB color to RGB565
          *
@@ -129,13 +129,6 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
         uint16_t color565 = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-
-        /* TRAP: Catch black buffer clears */
-        if (color565 == 0x0000) {
-            trap_log("BUFFER CLEAR TRAP: Clearing %s buffer to BLACK (dest=%p, size=%dx%d)\n",
-                    g_render_buffer == 0 ? "FRONT" : "BACK", (void*)dest,
-                    g_voodoo->fbi.width, g_voodoo->fbi.height);
-        }
 
         for (y = 0; y < (int)g_voodoo->fbi.height; y++) {
             for (x = 0; x < (int)g_voodoo->fbi.width; x++) {
