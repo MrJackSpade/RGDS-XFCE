@@ -152,14 +152,9 @@ void voodoo_destroy(voodoo_state *v)
  * FBI (Frame Buffer Interface) init
  *************************************/
 
-/* Counter for FBI INIT events, exported for triangle tracking */
-int g_fbi_init_count = 0;
-
 void voodoo_init_fbi(fbi_state *f, int fbmem)
 {
     if (fbmem < 1) fbmem = 1;
-
-    g_fbi_init_count++;
 
     /* Allocate frame buffer RAM (aligned to 8 bytes) */
     f->ram = (uint8_t*)calloc(1, fbmem + 8);
@@ -327,9 +322,6 @@ static inline int32_t round_coordinate(float value)
 /*************************************
  * Rasterize a single scanline
  *************************************/
-
-/* Diagnostic logging counter - log first few pixels per frame */
-int diag_pixel_count = 0;
 
 static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
                             int32_t y, int32_t startx, int32_t stopx,
