@@ -18,12 +18,10 @@
 extern void debug_log(const char *msg);
 
 /* Debug counters - reset each session via reset_debug_counters() */
-int g_scanline_log_count = 0;
 int g_texel_log_count = 0;
 int g_tri_debug_count = 0;
 
 void reset_debug_counters(void) {
-    g_scanline_log_count = 0;
     g_texel_log_count = 0;
     g_tri_debug_count = 0;
 }
