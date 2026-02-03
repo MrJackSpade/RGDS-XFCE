@@ -854,13 +854,13 @@ do                                                                          \
     }
 
 #define PIXEL_PIPELINE_MODIFY(VV, DITHER, DITHER4, XX, FBZMODE, FBZCOLORPATH, ALPHAMODE, FOGMODE, ITERZ, ITERW, ITERAXXX) \
-    /* perform fogging */                                                   \
+    /* RE-ENABLED: perform fogging */                                       \
     prefogr = r;                                                            \
     prefogg = g;                                                            \
     prefogb = b;                                                            \
     APPLY_FOGGING(VV, FOGMODE, FBZCOLORPATH, XX, DITHER4, r, g, b,          \
                     ITERZ, ITERW, ITERAXXX);                                \
-    /* perform alpha blending */                                            \
+    /* RE-ENABLED: perform alpha blending */                                \
     APPLY_ALPHA_BLEND(FBZMODE, ALPHAMODE, XX, DITHER, r, g, b, a);
 
 #define PIXEL_PIPELINE_FINISH(VV, DITHER_LOOKUP, XX, dest, depth, FBZMODE)  \
@@ -869,7 +869,7 @@ do                                                                          \
     {                                                                       \
         /* apply dithering */                                               \
         APPLY_DITHER(FBZMODE, XX, DITHER_LOOKUP, r, g, b);                  \
-        (dest)[XX] = (uint16_t)((r << 11) | (g << 5) | b);                                                  \
+        (dest)[XX] = (uint16_t)((r << 11) | (g << 5) | b);                  \
     }                                                                       \
     /* write to aux buffer */                                               \
     if ((depth) && FBZMODE_AUX_BUFFER_MASK(FBZMODE))                        \

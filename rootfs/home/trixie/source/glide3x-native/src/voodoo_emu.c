@@ -74,22 +74,23 @@ static void init_dither_tables(void)
 {
     if (dither_initialized) return;
 
-    /* Build dither lookup tables for 4x4 and 2x2 patterns */
+    /* Build dither lookup tables for 4x4 and 2x2 patterns
+     * Formula from DOSBox-Staging, confirmed hardware-accurate */
     for (int y = 0; y < 4; y++) {
         for (int val = 0; val < 256; val++) {
             for (int x = 0; x < 4; x++) {
                 int dith4 = dither_matrix_4x4[y * 4 + x];
                 int dith2 = dither_matrix_2x2[y * 4 + x];
 
-                /* For R and B (5 bits) */
-                int rb4 = ((val << 3) + dith4) >> 6;
-                int rb2 = ((val << 3) + dith2) >> 6;
+                /* For R and B (5 bits): (colour << 1) - (colour >> 4) + (colour >> 7) + amount, then >> 4 */
+                int rb4 = ((val << 1) - (val >> 4) + (val >> 7) + dith4) >> 4;
+                int rb2 = ((val << 1) - (val >> 4) + (val >> 7) + dith2) >> 4;
                 if (rb4 > 31) rb4 = 31;
                 if (rb2 > 31) rb2 = 31;
 
-                /* For G (6 bits) */
-                int g4 = ((val << 2) + dith4) >> 5;
-                int g2 = ((val << 2) + dith2) >> 5;
+                /* For G (6 bits): (colour << 2) - (colour >> 4) + (colour >> 6) + amount, then >> 4 */
+                int g4 = ((val << 2) - (val >> 4) + (val >> 6) + dith4) >> 4;
+                int g2 = ((val << 2) - (val >> 4) + (val >> 6) + dith2) >> 4;
                 if (g4 > 63) g4 = 63;
                 if (g2 > 63) g2 = 63;
 
