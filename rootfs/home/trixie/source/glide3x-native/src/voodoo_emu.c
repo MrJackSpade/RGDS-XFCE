@@ -427,16 +427,10 @@ static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
             TEXTURE_PIPELINE(vs, active_tmu_index, x, dither4, r_textureMode,
                              iters, itert, iterw_tex, texel);
 
-            /* Debug: log first texel fetches */
-            extern int g_texel_log_count;
-            if (g_texel_log_count < 20) {
-                extern void trap_log(const char *fmt, ...);
-                g_texel_log_count++;
-                tmu_state *dbg_tmu = &vs->tmu[active_tmu_index];
-                trap_log("TEXEL #%d: tmu=%d texel=0x%08X lookup=%p palette[0]=0x%08X ram[0]=0x%02X fmt=%d\n",
-                        g_texel_log_count, active_tmu_index, texel, (void*)dbg_tmu->lookup,
-                        dbg_tmu->palette[0], dbg_tmu->ram[0],
-                        (r_textureMode >> 8) & 0xF);
+            /* Force compiler to not optimize away TMU access */
+            {
+                volatile rgb_t sink = texel;
+                (void)sink;
             }
 
             /* Texture combine based on fbzColorPath settings */

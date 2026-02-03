@@ -185,10 +185,6 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
         if (need_init) {
             /* Initialize new shadow buffer to black (or could copy from FB) */
             memset(g_lfb_shadow_buffer, 0, needed_size);
-
-            /* TRAP: Log shadow buffer init to black */
-            trap_log("SHADOW BUFFER TRAP: New shadow buffer initialized to BLACK (%zu bytes) for buffer=%d\n",
-                    needed_size, buffer);
         }
 
         /* Track shadow buffer parameters for unlock */
