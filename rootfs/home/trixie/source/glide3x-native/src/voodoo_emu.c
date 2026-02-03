@@ -17,21 +17,14 @@
 /* Debug logging from glide3x_state.c */
 extern void debug_log(const char *msg);
 
-/* Debug counters - reset each session via reset_debug_counters() */
-int g_texel_log_count = 0;
-int g_tri_debug_count = 0;
-
-void reset_debug_counters(void) {
-    g_texel_log_count = 0;
-    g_tri_debug_count = 0;
-}
+void reset_debug_counters(void) { }
 
 /*************************************
  * Reciprocal/log lookup table
  * (exported for use by voodoo_pipeline.h)
  *************************************/
 
-uint32_t voodoo_reciplog[(2 << RECIPLOG_LOOKUP_BITS) + 2];
+uint32_t voodoo_reciplog[(2 << RECIPLOG_LOOKUP_BITS) + 4];
 static int reciplog_initialized = 0;
 
 static void init_reciplog_table(void)

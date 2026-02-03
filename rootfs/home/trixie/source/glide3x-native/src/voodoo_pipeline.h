@@ -92,7 +92,7 @@ static inline int32_t clamp_val(int32_t val, int32_t min_v, int32_t max_v)
 #define LONGTYPE(x) ((int64_t)(x))
 
 /* External reciplog table - initialized in voodoo_emu.c */
-extern uint32_t voodoo_reciplog[(2 << RECIPLOG_LOOKUP_BITS) + 2];
+extern uint32_t voodoo_reciplog[(2 << RECIPLOG_LOOKUP_BITS) + 4];
 
 /* Fast reciprocal with log2 computation */
 static inline int64_t fast_reciplog(int64_t value, int32_t* log_2)
