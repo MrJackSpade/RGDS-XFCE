@@ -140,13 +140,6 @@ GrContext_t g_context = NULL;
 int g_initialized = 0;
 
 /*************************************
- * Black pixel write trap
- *************************************/
-int g_black_pixel_count = 0;
-int g_black_pixel_logged = 0;
-void *g_black_pixel_dest = NULL;
-
-/*************************************
  * Screen/display state
  *************************************/
 
