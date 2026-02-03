@@ -33,11 +33,18 @@ static void init_reciplog_table(void)
 
     /* Build the reciprocal/log table with paired entries */
     for (int i = 0; i <= (1 << RECIPLOG_LOOKUP_BITS) + 1; i++) {
-        uint32_t input = (uint32_t)i << (RECIPLOG_INPUT_PREC - RECIPLOG_LOOKUP_BITS);
+        /* Use 64-bit to avoid overflow when i >= 512 (512 << 23 = 2^32) */
+        uint64_t input64 = (uint64_t)i << (RECIPLOG_INPUT_PREC - RECIPLOG_LOOKUP_BITS);
+
+        /* Clamp to 32-bit max to avoid division issues */
+        uint32_t input = (input64 > 0xFFFFFFFF) ? 0xFFFFFFFF : (uint32_t)input64;
 
         /* reciprocal entry (even index) */
         if (input == 0) {
             voodoo_reciplog[i * 2] = 0xFFFFFFFF;
+        } else if (input == 0xFFFFFFFF) {
+            /* Near-minimum reciprocal for saturated input */
+            voodoo_reciplog[i * 2] = 1;
         } else {
             voodoo_reciplog[i * 2] = (uint32_t)((((uint64_t)1 << (RECIPLOG_LOOKUP_PREC + RECIPLOG_INPUT_PREC)) / input) >> (RECIPLOG_INPUT_PREC - RECIPLOG_LOOKUP_PREC + 10));
         }
@@ -47,7 +54,7 @@ static void init_reciplog_table(void)
             voodoo_reciplog[i * 2 + 1] = 0;
         } else {
             /* compute log2(input) as RECIPLOG_LOOKUP_PREC.0 fixed point */
-            double logval = log2((double)input / (double)(1ULL << RECIPLOG_INPUT_PREC));
+            double logval = log2((double)input64 / (double)(1ULL << RECIPLOG_INPUT_PREC));
             voodoo_reciplog[i * 2 + 1] = (uint32_t)((-logval) * (1 << RECIPLOG_LOOKUP_PREC));
         }
     }
@@ -600,6 +607,16 @@ void voodoo_triangle(voodoo_state *vs)
         int32_t scry = y;
         if (FBZMODE_Y_ORIGIN(regs[fbzMode].u))
             scry = (fbi->yorigin - y) & 0x3ff;
+
+        /* Clip Y to framebuffer bounds */
+        if (scry < 0 || scry >= (int32_t)fbi->height)
+            continue;
+
+        /* Clip X to framebuffer bounds */
+        if (istartx < 0) istartx = 0;
+        if (istopx > (int32_t)fbi->width) istopx = fbi->width;
+        if (istartx >= istopx)
+            continue;
 
         /* Get pointers for this scanline */
         uint16_t *dest = drawbuf + scry * fbi->rowpixels;
