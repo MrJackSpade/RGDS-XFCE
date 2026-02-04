@@ -130,6 +130,18 @@ $(TEST_TEXSIMPLE_TARGET): $(TARGET) $(TEST_TEXSIMPLE_SRCS)
 test-texsimple: $(TEST_TEXSIMPLE_TARGET)
 	@echo "Run with: wine ./test_texture_simple.exe"
 
+# Dual TMU test (multi-texture compositing)
+TEST_DUALTMU_TARGET = test_dual_tmu.exe
+TEST_DUALTMU_SRCS = test/test_dual_tmu.c
+
+$(TEST_DUALTMU_TARGET): $(TARGET) $(TEST_DUALTMU_SRCS)
+	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_DUALTMU_SRCS) $(TARGET)
+	@echo "Built $@"
+
+test-dualtmu: $(TEST_DUALTMU_TARGET)
+	@echo "Run with: wine ./test_dual_tmu.exe"
+	@echo "This test verifies dual TMU texture compositing"
+
 # Build all test executables
-tests: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET)
-	@echo "All tests built: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET)"
+tests: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET) $(TEST_DUALTMU_TARGET)
+	@echo "All tests built: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET) $(TEST_DUALTMU_TARGET)"

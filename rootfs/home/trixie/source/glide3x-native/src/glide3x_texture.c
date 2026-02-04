@@ -386,116 +386,6 @@ _grTexCalcBaseAddress( FxU32 start, GrLOD_t large_lod,
 }
 
 /*
- * Debug helper: Dump texture to BMP file
- */
-static void dump_texture_bmp(int tmu, FxU32 address, int width, int height, GrTextureFormat_t format, void *data)
-{
-    static int dir_created = 0;
-    if (!dir_created) {
-        CreateDirectoryA("C:\\textures", NULL);
-        dir_created = 1;
-    }
-
-    char filename[256];
-    snprintf(filename, sizeof(filename), "C:\\textures\\tmu%d_%08X_%dx%d_fmt%d.bmp",
-             tmu, address, width, height, format);
-
-    FILE *f = fopen(filename, "wb");
-    if (!f) return;
-
-    int bpp = get_texel_bytes(format);
-    int row_size = ((width * 3 + 3) / 4) * 4;  /* BMP rows are 4-byte aligned */
-    int pixel_data_size = row_size * height;
-
-    /* BMP header */
-    uint8_t header[54] = {
-        'B', 'M',                           /* Signature */
-        0, 0, 0, 0,                          /* File size (filled below) */
-        0, 0, 0, 0,                          /* Reserved */
-        54, 0, 0, 0,                         /* Pixel data offset */
-        40, 0, 0, 0,                         /* DIB header size */
-        0, 0, 0, 0,                          /* Width (filled below) */
-        0, 0, 0, 0,                          /* Height (filled below, negative for top-down) */
-        1, 0,                                /* Planes */
-        24, 0,                               /* Bits per pixel */
-        0, 0, 0, 0,                          /* Compression (none) */
-        0, 0, 0, 0,                          /* Image size */
-        0, 0, 0, 0,                          /* X pixels per meter */
-        0, 0, 0, 0,                          /* Y pixels per meter */
-        0, 0, 0, 0,                          /* Colors in color table */
-        0, 0, 0, 0                           /* Important colors */
-    };
-
-    int file_size = 54 + pixel_data_size;
-    header[2] = file_size & 0xFF;
-    header[3] = (file_size >> 8) & 0xFF;
-    header[4] = (file_size >> 16) & 0xFF;
-    header[5] = (file_size >> 24) & 0xFF;
-
-    header[18] = width & 0xFF;
-    header[19] = (width >> 8) & 0xFF;
-    header[20] = (width >> 16) & 0xFF;
-    header[21] = (width >> 24) & 0xFF;
-
-    /* Negative height for top-down */
-    int neg_height = -height;
-    header[22] = neg_height & 0xFF;
-    header[23] = (neg_height >> 8) & 0xFF;
-    header[24] = (neg_height >> 16) & 0xFF;
-    header[25] = (neg_height >> 24) & 0xFF;
-
-    fwrite(header, 1, 54, f);
-
-    /* Convert and write pixel data */
-    uint8_t *row = (uint8_t*)malloc(row_size);
-    if (!row) { fclose(f); return; }
-
-    for (int y = 0; y < height; y++) {
-        memset(row, 0, row_size);
-        for (int x = 0; x < width; x++) {
-            uint8_t r, g, b;
-
-            if (bpp == 2) {
-                uint16_t pixel = ((uint16_t*)data)[y * width + x];
-                switch (format) {
-                case GR_TEXFMT_RGB_565:
-                    r = ((pixel >> 11) & 0x1F) << 3;
-                    g = ((pixel >> 5) & 0x3F) << 2;
-                    b = (pixel & 0x1F) << 3;
-                    break;
-                case GR_TEXFMT_ARGB_1555:
-                    r = ((pixel >> 10) & 0x1F) << 3;
-                    g = ((pixel >> 5) & 0x1F) << 3;
-                    b = (pixel & 0x1F) << 3;
-                    break;
-                case GR_TEXFMT_ARGB_4444:
-                    r = ((pixel >> 8) & 0xF) << 4;
-                    g = ((pixel >> 4) & 0xF) << 4;
-                    b = (pixel & 0xF) << 4;
-                    break;
-                default:
-                    r = g = b = (pixel >> 8) & 0xFF;
-                    break;
-                }
-            } else {
-                /* 8-bit format - show as grayscale */
-                uint8_t pixel = ((uint8_t*)data)[y * width + x];
-                r = g = b = pixel;
-            }
-
-            /* BMP is BGR order */
-            row[x * 3 + 0] = b;
-            row[x * 3 + 1] = g;
-            row[x * 3 + 2] = r;
-        }
-        fwrite(row, 1, row_size, f);
-    }
-
-    free(row);
-    fclose(f);
-}
-
-/*
  * grTexMinAddress - Get minimum texture memory address
  *
  * Returns the lowest valid address for texture downloads on the TMU.
@@ -551,10 +441,6 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
-
-    /* DEBUG: Log grTexSource call */
-    trap_log("grTexSource: tmu=%d t=%d largeLod=%d smallLod=%d aspect=%d format=%d startAddr=0x%X\n",
-        tmu, t, info->largeLodLog2, info->smallLodLog2, info->aspectRatioLog2, info->format, startAddress);
 
     /*-------------------------------------------------------------
       Compute textureMode register
@@ -748,9 +634,6 @@ void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 eve
     /* Copy to TMU RAM */
     uint32_t dest_addr = startAddress & ts->mask;
 
-    /* Dump texture to BMP for visual debugging */
-    dump_texture_bmp(t, startAddress, tex_width, tex_height, info->format, info->data);
-
     if (dest_addr + total_size <= ts->mask + 1) {
         memcpy(&ts->ram[dest_addr], info->data, total_size);
     }
@@ -791,9 +674,6 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
 
     int bpp = get_texel_bytes(format);
     int tex_size = tex_width * tex_height * bpp;
-
-    /* Dump texture to BMP for visual debugging */
-    dump_texture_bmp(t, startAddress, tex_width, tex_height, format, data);
 
     uint32_t dest_addr = startAddress & ts->mask;
     if (dest_addr + tex_size <= ts->mask + 1) {
