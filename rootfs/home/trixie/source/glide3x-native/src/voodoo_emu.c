@@ -209,9 +209,9 @@ void voodoo_init_tmu(tmu_state *t, voodoo_reg *reg, int tmumem)
     t->reg = reg;
     t->regdirty = 1;
 
-    /* Initialize LOD settings */
-    t->lodmin = 0;
-    t->lodmax = 8;  /* 256x256 max */
+    /* Initialize LOD settings - start disabled (lodmin >= 8<<8 means disabled) */
+    t->lodmin = (8 << 8);  /* Disabled by default - grTexSource will enable */
+    t->lodmax = (8 << 6);  /* LOD 8 = 1x1 texture, scaled format */
     t->lodbias = 0;
     t->lodmask = 0x1FF;
 
@@ -321,189 +321,414 @@ static inline int32_t round_coordinate(float value)
 /*************************************
  * Rasterize a single scanline
  *************************************/
-
-static void raster_scanline(voodoo_state *vs, uint16_t *dest, uint16_t *depth,
-                            int32_t y, int32_t startx, int32_t stopx,
-                            int64_t iterr, int64_t iterg, int64_t iterb, int64_t itera,
-                            int32_t iterz, int64_t iterw,
-                            int64_t iters0, int64_t itert0, int64_t iterw0,
-                            int64_t iters1, int64_t itert1, int64_t iterw1,
-                            stats_block *stats)
+/* VALIDATED */
+static void raster_generic(voodoo_state* vs, uint32_t TMUS, uint32_t TEXMODE0,
+    uint32_t TEXMODE1, void* destbase, int32_t y,
+    const poly_extent* extent, stats_block *stats)
 {
+    const uint8_t* dither_lookup = NULL;
+    const uint8_t* dither4 = NULL;
+    const uint8_t* dither = NULL;
+
+    int32_t scry = y;
+    int32_t startx = extent->startx;
+    int32_t stopx = extent->stopx;
+
+    /* Quick references */
     const voodoo_reg *regs = vs->reg;
     const fbi_state *fbi = &vs->fbi;
     const tmu_state *tmu0 = &vs->tmu[0];
     const tmu_state *tmu1 = &vs->tmu[1];
-
-    /*
-     * Determine which TMU(s) are active based on lodmin.
-     * TMU is active if lodmin < (8 << 8). Games disable a TMU by setting lodmin >= 8.
-     * For single-texture rendering, only one TMU will be active.
-     */
-    int tmu0_active = (tmu0->lodmin < (8 << 8));
-    int tmu1_active = (tmu1->lodmin < (8 << 8));
-
-    /* Select the active TMU for texture fetches (prefer TMU1 if both active, as per hardware) */
-    int active_tmu_index = tmu1_active ? 1 : 0;
-    const tmu_state *active_tmu = &vs->tmu[active_tmu_index];
 
     const uint32_t r_fbzColorPath = regs[fbzColorPath].u;
     const uint32_t r_fbzMode = regs[fbzMode].u;
     const uint32_t r_alphaMode = regs[alphaMode].u;
     const uint32_t r_fogMode = regs[fogMode].u;
     const uint32_t r_zaColor = regs[zaColor].u;
-    const uint32_t r_textureMode = active_tmu->reg ? active_tmu->reg->u : 0;
+
     uint32_t r_stipple = regs[stipple].u;
 
-    /* Check if texture is enabled */
-    int texture_enabled = FBZCP_TEXTURE_ENABLE(r_fbzColorPath);
+    /* determine the screen Y */
+    if (FBZMODE_Y_ORIGIN(r_fbzMode)) {
+        scry = (fbi->yorigin - y) & 0x3ff;
+    }
 
-    /* Compute dither pointers */
-    const uint8_t *dither = NULL;
-    const uint8_t *dither4 = NULL;
-    const uint8_t *dither_lookup = NULL;
-
-    if (FBZMODE_ENABLE_DITHERING(r_fbzMode)) {
+    /* compute the dithering pointers */
+    if (FBZMODE_ENABLE_DITHERING(r_fbzMode))
+    {
         dither4 = &dither_matrix_4x4[(y & 3) * 4];
-        if (FBZMODE_DITHER_TYPE(r_fbzMode) == 0) {
+        if (FBZMODE_DITHER_TYPE(r_fbzMode) == 0)
+        {
             dither = dither4;
             dither_lookup = &dither4_lookup[(y & 3) << 11];
-        } else {
+        }
+        else
+        {
             dither = &dither_matrix_2x2[(y & 3) * 4];
             dither_lookup = &dither2_lookup[(y & 3) << 11];
         }
     }
 
-    /* Loop over pixels */
-    for (int32_t x = startx; x < stopx; x++) {
+    /* apply clipping */
+    if (FBZMODE_ENABLE_CLIPPING(r_fbzMode))
+    {
+        /* Y clipping buys us the whole scanline */
+        if (scry < (int32_t)((regs[clipLowYHighY].u >> 16) & 0x3ff) ||
+            scry >= (int32_t)(regs[clipLowYHighY].u & 0x3ff)) {
+            stats->pixels_in += stopx - startx;
+            /*stats->clip_fail += stopx - startx;*/
+            return;
+        }
+
+        /* X clipping */
+        int32_t tempclip = (regs[clipLeftRight].u >> 16) & 0x3ff;
+        if (startx < tempclip)
+        {
+            stats->pixels_in += tempclip - startx;
+            startx = tempclip;
+        }
+        tempclip = regs[clipLeftRight].u & 0x3ff;
+        if (stopx >= tempclip)
+        {
+            stats->pixels_in += stopx - tempclip;
+            stopx = tempclip - 1;
+        }
+    }
+
+    /* get pointers to the target buffer and depth buffer */
+    uint16_t* dest = (uint16_t*)destbase + scry * fbi->rowpixels;
+    uint16_t* depth = (fbi->auxoffs != (uint32_t)(~0))
+        ? ((uint16_t*)(fbi->ram + fbi->auxoffs) +
+            scry * fbi->rowpixels)
+        : NULL;
+
+    /* compute the starting parameters */
+    const int32_t dx = startx - (fbi->ax >> 4);
+    const int32_t dy = y - (fbi->ay >> 4);
+
+    int64_t iterr = fbi->startr + dy * fbi->drdy + dx * fbi->drdx;
+    int64_t iterg = fbi->startg + dy * fbi->dgdy + dx * fbi->dgdx;
+    int64_t iterb = fbi->startb + dy * fbi->dbdy + dx * fbi->dbdx;
+    int64_t itera = fbi->starta + dy * fbi->dady + dx * fbi->dadx;
+    int32_t iterz = fbi->startz + dy * fbi->dzdy + dx * fbi->dzdx;
+    int64_t iterw = fbi->startw + dy * fbi->dwdy + dx * fbi->dwdx;
+    int64_t iterw0 = 0;
+    int64_t iterw1 = 0;
+    int64_t iters0 = 0;
+    int64_t iters1 = 0;
+    int64_t itert0 = 0;
+    int64_t itert1 = 0;
+    if (TMUS >= 1)
+    {
+        iterw0 = tmu0->startw + dy * tmu0->dwdy + dx * tmu0->dwdx;
+        iters0 = tmu0->starts + dy * tmu0->dsdy + dx * tmu0->dsdx;
+        itert0 = tmu0->startt + dy * tmu0->dtdy + dx * tmu0->dtdx;
+    }
+    if (TMUS >= 2)
+    {
+        iterw1 = tmu1->startw + dy * tmu1->dwdy + dx * tmu1->dwdx;
+        iters1 = tmu1->starts + dy * tmu1->dsdy + dx * tmu1->dsdx;
+        itert1 = tmu1->startt + dy * tmu1->dtdy + dx * tmu1->dtdx;
+    }
+
+    /* loop in X */
+    for (int32_t x = startx; x < stopx; x++)
+    {
         rgb_union iterargb = { 0 };
+        rgb_union texel = { 0 };
 
-        /* Pixel pipeline begin - depth testing and stippling */
-        PIXEL_PIPELINE_BEGIN(vs, (*stats), x, y, r_fbzColorPath, r_fbzMode,
-                             iterz, iterw, r_zaColor, r_stipple);
+        /* pixel pipeline part 1 handles depth testing and stippling */
+        PIXEL_PIPELINE_BEGIN(vs, (*stats), x, y, r_fbzColorPath, r_fbzMode, iterz, iterw, r_zaColor, r_stipple);
 
-        /* Clamp iterated RGBA */
+        /* run the texture pipeline on TMU1 to produce a value in texel */
+        /* note that they set LOD min to 8 to "disable" a TMU */
+
+        if (TMUS >= 2 && vs->tmu[1].lodmin < (8 << 8)) {
+            TEXTURE_PIPELINE(vs, 1, x, dither4, TEXMODE1,
+                iters1, itert1, iterw1, texel.u);
+        }
+
+        /* run the texture pipeline on TMU0 to produce a final */
+        /* result in texel */
+        /* note that they set LOD min to 8 to "disable" a TMU */
+        if (TMUS >= 1 && tmu0->lodmin < (8 << 8)) {
+            if (!vs->send_config) {
+                TEXTURE_PIPELINE(vs, 0, x, dither4, TEXMODE0,
+                    iters0, itert0, iterw0, texel.u);
+            }
+            else {	/* send config data to the frame buffer */
+                texel.u = vs->tmu_config;
+            }
+        }
+
+        /* colorpath pipeline selects source colors and does blending */
         CLAMPED_ARGB(iterr, iterg, iterb, itera, r_fbzColorPath, iterargb);
 
-        /* Get base color from iterated values */
-        r = iterargb.rgb.r;
-        g = iterargb.rgb.g;
-        b = iterargb.rgb.b;
-        a = iterargb.rgb.a;
 
-        /* Apply texture if enabled */
-        if (texture_enabled) {
-            /* Use texture coordinates for the active TMU */
-            int64_t iters = (active_tmu_index == 1) ? iters1 : iters0;
-            int64_t itert = (active_tmu_index == 1) ? itert1 : itert0;
-            int64_t iterw_tex = (active_tmu_index == 1) ? iterw1 : iterw0;
+        int32_t blendr;
+        int32_t blendg;
+        int32_t blendb;
+        int32_t blenda;
+        rgb_union c_other;
+        rgb_union c_local;
 
-            rgb_t texel;
-            TEXTURE_PIPELINE(vs, active_tmu_index, x, dither4, r_textureMode,
-                             iters, itert, iterw_tex, texel);
+        /* compute c_other */
+        switch (FBZCP_CC_RGBSELECT(r_fbzColorPath))
+        {
+        case 0:		/* iterated RGB */
+            c_other.u = iterargb.u;
+            break;
+        case 1:		/* texture RGB */
+            c_other.u = texel.u;
+            break;
+        case 2:		/* color1 RGB */
+            c_other.u = regs[color1].u;
+            break;
+        case 3:	/* reserved */
+            c_other.u = 0;
+            break;
+        }
 
-            /* Force compiler to not optimize away TMU access */
+        /* handle chroma key */
+        APPLY_CHROMAKEY(vs, (*stats), r_fbzMode, c_other);
+
+        /* compute a_other */
+        switch (FBZCP_CC_ASELECT(r_fbzColorPath))
             {
-                volatile rgb_t sink = texel;
-                (void)sink;
+        case 0:		/* iterated alpha */
+            c_other.rgb.a = iterargb.rgb.a;
+            break;
+        case 1:		/* texture alpha */
+            c_other.rgb.a = texel.rgb.a;
+            break;
+        case 2:		/* color1 alpha */
+            c_other.rgb.a = regs[color1].rgb.a;
+            break;
+        case 3:	/* reserved */
+            c_other.rgb.a = 0;
+            break;
             }
 
-            /* Texture combine based on fbzColorPath settings */
-            rgb_union c_local;
-            c_local.rgb.r = r;
-            c_local.rgb.g = g;
-            c_local.rgb.b = b;
-            c_local.rgb.a = a;
+        /* handle alpha mask */
+        APPLY_ALPHAMASK(vs, (*stats), r_fbzMode, c_other.rgb.a);
 
-            rgb_union c_texel;
-            c_texel.u = texel;
+        /* handle alpha test */
+        APPLY_ALPHATEST(vs, (*stats), r_alphaMode, c_other.rgb.a);
 
-            /* Texture combine based on CC_RGBSELECT
-             *
-             * CC_RGBSELECT determines the "other" color source:
-             *   0 = Iterated (vertex) color
-             *   1 = Texture color
-             *   2 = Color1 register
-             *
-             * However, many games enable texturing via grAlphaCombine but don't
-             * call grColorCombine. In this case, CC_RGBSELECT remains 0 but the
-             * game still expects texture to be visible.
-             *
-             * For compatibility: when texture is enabled and CC_RGBSELECT=0,
-             * check if the combine equation bits suggest "pass through other".
-             * If CC_ZERO_OTHER is not set and no add/sub operations are set,
-             * use texture color as the output (decal mode).
-             */
-            switch (FBZCP_CC_RGBSELECT(r_fbzColorPath)) {
-            case 0:  /* Iterated color as "other" source */
-                /* Check if this looks like an unconfigured state where
-                 * the game expects texture output. If CC_ADD_CLOCAL is not
-                 * set (no local color contribution), use texture instead
-                 * of the likely-black iterated color.
-                 */
-                if (!FBZCP_CC_ZERO_OTHER(r_fbzColorPath) &&
-                    FBZCP_CC_ADD_ACLOCAL(r_fbzColorPath) == 0) {
-                    /* Decal mode fallback: use texture color directly */
-                    r = c_texel.rgb.r;
-                    g = c_texel.rgb.g;
-                    b = c_texel.rgb.b;
+        /* compute c_local */
+        if (FBZCP_CC_LOCALSELECT_OVERRIDE(r_fbzColorPath) == 0)
+        {
+            if (FBZCP_CC_LOCALSELECT(r_fbzColorPath) == 0) {
+                /* iterated RGB */
+                c_local.u = iterargb.u;
                 }
-                /* else: keep iterated color (for modulation or other effects) */
-                break;
-            case 1:  /* Texture color */
-                r = c_texel.rgb.r;
-                g = c_texel.rgb.g;
-                b = c_texel.rgb.b;
-                break;
-            case 2:  /* Color 1 register */
-                r = regs[color1].rgb.r;
-                g = regs[color1].rgb.g;
-                b = regs[color1].rgb.b;
-                break;
-            default:
-                break;
+            else {
+                /* color0 RGB */
+                c_local.u = regs[color0].u;
             }
+        }
+        else
+        {
+            if ((texel.rgb.a & 0x80) == 0) {
+                /* iterated RGB */
+                c_local.u = iterargb.u;
+            }
+            else {
+                /* color0 RGB */
+                c_local.u = regs[color0].u;
+            }
+        }
 
-            /* Handle alpha select */
-            switch (FBZCP_CC_ASELECT(r_fbzColorPath)) {
-            case 0:  /* Iterated alpha */
+        /* compute a_local */
+        switch (FBZCP_CCA_LOCALSELECT(r_fbzColorPath))
+        {
+        case 0:		/* iterated alpha */
+            c_local.rgb.a = iterargb.rgb.a;
                 break;
-            case 1:  /* Texture alpha */
-                a = c_texel.rgb.a;
+        case 1:		/* color0 alpha */
+            c_local.rgb.a = regs[color0].rgb.a;
                 break;
-            case 2:  /* Color 1 alpha */
-                a = regs[color1].rgb.a;
+        case 2:		/* clamped iterated Z[27:20] */
+        {
+            int temp;
+            CLAMPED_Z(iterz, r_fbzColorPath, temp);
+            c_local.rgb.a = (uint8_t)temp;
                 break;
-            default:
+        }
+        case 3:		/* clamped iterated W[39:32] */
+        {
+            int temp;
+            CLAMPED_W(iterw, r_fbzColorPath, temp);			/* Voodoo 2 only */
+            c_local.rgb.a = (uint8_t)temp;
                 break;
             }
         }
 
-        /* Pixel pipeline modify - fogging and alpha blend */
-        PIXEL_PIPELINE_MODIFY(vs, dither, dither4, x, r_fbzMode, r_fbzColorPath,
-                              r_alphaMode, r_fogMode, iterz, iterw, iterargb);
+        /* select zero or c_other */
+        if (FBZCP_CC_ZERO_OTHER(r_fbzColorPath) == 0)
+        {
+            r = c_other.rgb.r;
+            g = c_other.rgb.g;
+            b = c_other.rgb.b;
+        }
+        else {
+            r = g = b = 0;
+        }
 
-        /* Pixel pipeline finish - write to framebuffer */
+        /* select zero or a_other */
+        if (FBZCP_CCA_ZERO_OTHER(r_fbzColorPath) == 0) {
+            a = c_other.rgb.a;
+        }
+        else {
+            a = 0;
+        }
+
+        /* subtract c_local */
+        if (FBZCP_CC_SUB_CLOCAL(r_fbzColorPath))
+        {
+            r -= c_local.rgb.r;
+            g -= c_local.rgb.g;
+            b -= c_local.rgb.b;
+        }
+
+        /* subtract a_local */
+        if (FBZCP_CCA_SUB_CLOCAL(r_fbzColorPath)) {
+            a -= c_local.rgb.a;
+        }
+
+        /* blend RGB */
+        switch (FBZCP_CC_MSELECT(r_fbzColorPath))
+        {
+        default:	/* reserved */
+        case 0:		/* 0 */
+            blendr = blendg = blendb = 0;
+                break;
+        case 1:		/* c_local */
+            blendr = c_local.rgb.r;
+            blendg = c_local.rgb.g;
+            blendb = c_local.rgb.b;
+            break;
+        case 2:		/* a_other */
+            blendr = blendg = blendb = c_other.rgb.a;
+            break;
+        case 3:		/* a_local */
+            blendr = blendg = blendb = c_local.rgb.a;
+            break;
+        case 4:		/* texture alpha */
+            blendr = blendg = blendb = texel.rgb.a;
+            break;
+        case 5:		/* texture RGB (Voodoo 2 only) */
+            blendr = texel.rgb.r;
+            blendg = texel.rgb.g;
+            blendb = texel.rgb.b;
+            break;
+        }
+
+        /* blend alpha */
+        switch (FBZCP_CCA_MSELECT(r_fbzColorPath))
+        {
+        default:	/* reserved */
+        case 0:		/* 0 */
+            blenda = 0;
+            break;
+        case 1:		/* a_local */
+        case 3:
+            blenda = c_local.rgb.a;
+            break;
+        case 2:		/* a_other */
+            blenda = c_other.rgb.a;
+            break;
+        case 4:		/* texture alpha */
+            blenda = texel.rgb.a;
+            break;
+        }
+
+        /* reverse the RGB blend */
+        if (!FBZCP_CC_REVERSE_BLEND(r_fbzColorPath))
+        {
+            blendr ^= 0xff;
+            blendg ^= 0xff;
+            blendb ^= 0xff;
+        }
+
+        /* reverse the alpha blend */
+        if (!FBZCP_CCA_REVERSE_BLEND(r_fbzColorPath)) {
+            blenda ^= 0xff;
+        }
+
+        /* do the blend */
+        r = (r * (blendr + 1)) >> 8;
+        g = (g * (blendg + 1)) >> 8;
+        b = (b * (blendb + 1)) >> 8;
+        a = (a * (blenda + 1)) >> 8;
+
+        /* add clocal or alocal to RGB */
+        switch (FBZCP_CC_ADD_ACLOCAL(r_fbzColorPath))
+        {
+        case 3:		/* reserved */
+        case 0:		/* nothing */
+                break;
+        case 1:		/* add c_local */
+            r += c_local.rgb.r;
+            g += c_local.rgb.g;
+            b += c_local.rgb.b;
+                break;
+        case 2:		/* add_alocal */
+            r += c_local.rgb.a;
+            g += c_local.rgb.a;
+            b += c_local.rgb.a;
+                break;
+            }
+
+        /* add clocal or alocal to alpha */
+        if (FBZCP_CCA_ADD_ACLOCAL(r_fbzColorPath)) {
+            a += c_local.rgb.a;
+        }
+
+        /* clamp */
+        r = clamp_to_uint8(r);
+        g = clamp_to_uint8(g);
+        b = clamp_to_uint8(b);
+        a = clamp_to_uint8(a);
+
+        /* invert */
+        if (FBZCP_CC_INVERT_OUTPUT(r_fbzColorPath))
+        {
+            r ^= 0xff;
+            g ^= 0xff;
+            b ^= 0xff;
+        }
+        if (FBZCP_CCA_INVERT_OUTPUT(r_fbzColorPath)) {
+            a ^= 0xff;
+        }
+
+        /* pixel pipeline part 2 handles fog, alpha, and final output */
+        PIXEL_PIPELINE_MODIFY(vs, dither, dither4, x,
+            r_fbzMode, r_fbzColorPath, r_alphaMode, r_fogMode,
+            iterz, iterw, iterargb);
         PIXEL_PIPELINE_FINISH(vs, dither_lookup, x, dest, depth, r_fbzMode);
-
         PIXEL_PIPELINE_END((*stats));
 
-        /* Update iterators */
+        /* update the iterated parameters */
         iterr += fbi->drdx;
         iterg += fbi->dgdx;
         iterb += fbi->dbdx;
         itera += fbi->dadx;
         iterz += fbi->dzdx;
         iterw += fbi->dwdx;
-
-        /* Update texture iterators for both TMUs */
+        if (TMUS >= 1)
+        {
+            iterw0 += tmu0->dwdx;
         iters0 += tmu0->dsdx;
         itert0 += tmu0->dtdx;
-        iterw0 += tmu0->dwdx;
+        }
+        if (TMUS >= 2)
+        {
+            iterw1 += tmu1->dwdx;
         iters1 += tmu1->dsdx;
         itert1 += tmu1->dtdx;
-        iterw1 += tmu1->dwdx;
     }
+}
 }
 
 /*************************************

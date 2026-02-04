@@ -5,3 +5,5 @@ rootfs/tmp/
 sanitize_sd_image.ps1
 backups/
 rootfs/home/trixie/source/glide3x-native/references/
+/rootfs/home/trixie/source/glide3x-native/.vs
+/rootfs/home/trixie/source/glide3x-native/textures
