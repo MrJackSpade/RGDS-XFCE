@@ -83,3 +83,5 @@ EXPORTS
     grDebugGetTexParams@8 = grDebugGetTexParams@8
     _grDebugHexDump@12 = grDebugHexDump@12
     grDebugHexDump@12 = grDebugHexDump@12
+    _grDebugGetChipmask@0 = grDebugGetChipmask@0
+    grDebugGetChipmask@0 = grDebugGetChipmask@0

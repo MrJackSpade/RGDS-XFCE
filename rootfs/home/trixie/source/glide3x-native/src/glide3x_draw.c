@@ -402,6 +402,22 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
         tmu1->dsdy = (int64_t)(ds1dy * 4294967296.0);
         tmu1->dtdy = (int64_t)(dt1dy * 4294967296.0);
         tmu1->dwdy = (int64_t)(dw1dy * 4294967296.0);
+
+        /* DEBUG: Log TMU1 setup values */
+        {
+            static int tmu1_setup_logged = 0;
+            if (tmu1_setup_logged < 5) {
+                trap_log("TMU1 setup[%d]: va.sow1=%.2f va.tow1=%.2f vb.sow1=%.2f vb.tow1=%.2f "
+                    "vc.sow1=%.2f vc.tow1=%.2f\n",
+                    tmu1_setup_logged,
+                    va.sow1, va.tow1, vb.sow1, vb.tow1, vc.sow1, vc.tow1);
+                trap_log("  starts=0x%llX startt=0x%llX startw=0x%llX\n",
+                    (unsigned long long)tmu1->starts,
+                    (unsigned long long)tmu1->startt,
+                    (unsigned long long)tmu1->startw);
+                tmu1_setup_logged++;
+            }
+        }
     }
 
     /* Call the software rasterizer */

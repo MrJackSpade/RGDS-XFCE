@@ -142,3 +142,17 @@ void __stdcall grDebugHexDump(const char *label, const void *data, FxU32 size)
     (void)size;
     (void)label;
 }
+
+/*
+ * grDebugGetChipmask - Get the current chipmask value
+ *
+ * @return: Chipmask value (0x01=FBI, 0x02=TMU0, 0x04=TMU1)
+ *
+ * This shows which chips are enabled for rendering.
+ * If TMU1 (0x04) is not set, dual-TMU effects won't work.
+ */
+FxU32 __stdcall grDebugGetChipmask(void)
+{
+    if (!g_voodoo) return 0;
+    return g_voodoo->chipmask;
+}

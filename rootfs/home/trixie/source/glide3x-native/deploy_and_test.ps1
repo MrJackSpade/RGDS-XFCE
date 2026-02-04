@@ -17,6 +17,7 @@ $LocalTestLfb = "test_lfb_stride.exe"
 $LocalTestTexture = "test_texture.exe"
 $LocalTestTexMem = "test_texture_memory.exe"
 $LocalTestTexSimple = "test_texture_simple.exe"
+$LocalTestDualTmu = "test_dual_tmu.exe"
 $RemoteLogPath = "/home/trixie/.wine-hangover/drive_c/glide3x_debug.log"
 $LocalLogPath = "glide3x_debug.log"
 $RemoteTexturesPath = "/home/trixie/.wine-hangover/drive_c/textures"
@@ -52,6 +53,7 @@ put $LocalTestLfb
 put $LocalTestTexture
 put $LocalTestTexMem
 put $LocalTestTexSimple
+put $LocalTestDualTmu
 bye
 "@
 Write-Host "Deploying DLL and test executables..."
@@ -80,9 +82,10 @@ if ($Test) {
         "texture" { "test_texture.exe" }
         "texmem" { "test_texture_memory.exe" }
         "texsimple" { "test_texture_simple.exe" }
+        "dualtmu" { "test_dual_tmu.exe" }
         "glide" { "test_glide.exe" }
         default {
-            Write-Error "Unknown test: $Test. Available: lfb, texture, texmem, texsimple, glide"
+            Write-Error "Unknown test: $Test. Available: lfb, texture, texmem, texsimple, dualtmu, glide"
             exit 1
         }
     }

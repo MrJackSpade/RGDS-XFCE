@@ -197,12 +197,19 @@ GrContext_t __stdcall grSstWinOpen(
                         &g_voodoo->tmu[0],
                         &g_voodoo->reg[TMU0_REG_BASE],
                         2 * 1024 * 1024);
+        /* Enable TMU0 in chipmask per DOSBox voodoo.cpp line 7253 */
+        g_voodoo->chipmask |= 0x02;
+
         voodoo_init_tmu(g_voodoo,
                         &g_voodoo->tmu[1],
                         &g_voodoo->reg[TMU1_REG_BASE],
                         2 * 1024 * 1024);
+        /* Enable TMU1 in chipmask per DOSBox voodoo.cpp line 7257 */
+        g_voodoo->chipmask |= 0x04;
     } else {
         debug_log("glide3x: grSstWinOpen - TMUs already initialized, preserving textures\n");
+        /* Ensure chipmask is still set even if TMUs were preserved */
+        g_voodoo->chipmask |= 0x06;  /* TMU0 + TMU1 */
     }
 
     /* Initialize vertex layout to default (disabled) */

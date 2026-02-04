@@ -741,10 +741,46 @@ static void raster_generic(voodoo_state* vs, uint32_t TMUS, uint32_t TEXMODE0,
         /* run the texture pipeline on TMU1 to produce a value in texel */
         /* note that they set LOD min to 8 to "disable" a TMU */
 
+        /* DEBUG: Log TMU1 entry conditions */
+        {
+            static int tmu1_cond_logged = 0;
+            if (tmu1_cond_logged < 5) {
+                trap_log("TMU1 check: TMUS=%u tmu1->lodmin=%u threshold=%u enters=%s\n",
+                    TMUS, tmu1->lodmin, (8 << 8),
+                    (TMUS >= 2 && tmu1->lodmin < (8 << 8)) ? "YES" : "NO");
+                tmu1_cond_logged++;
+            }
+        }
+
         if (TMUS >= 2 && tmu1->lodmin < (8 << 8)) {
             rgb_union c_zero = { .u = 0 };
+
+            /* DEBUG: Log TMU1 iterator values and TEXMODE1 before sampling */
+            {
+                static int tmu1_iter_logged = 0;
+                if (tmu1_iter_logged < 10) {
+                    trap_log("TMU1 iter[%d]: x=%d TEXMODE1=0x%08X format=%u\n",
+                        tmu1_iter_logged, x, TEXMODE1, TEXMODE_FORMAT(TEXMODE1));
+                    trap_log("  iters1=0x%llX itert1=0x%llX iterw1=0x%llX lodbasetemp=%d wmask=%u hmask=%u\n",
+                        (unsigned long long)iters1, (unsigned long long)itert1, (unsigned long long)iterw1,
+                        tmu1->lodbasetemp, tmu1->wmask, tmu1->hmask);
+                    tmu1_iter_logged++;
+                }
+            }
+
             TEXTURE_PIPELINE(tmu1, x, dither4, TEXMODE1, c_zero,
                 tmu1->lookup, tmu1->lodbasetemp, iters1, itert1, iterw1, texel);
+
+            /* DEBUG: Log TMU1 texel result */
+            {
+                static int tmu1_texel_logged = 0;
+                if (tmu1_texel_logged < 10) {
+                    trap_log("TMU1 texel[%d]: result=0x%08X (R=%u G=%u B=%u A=%u)\n",
+                        tmu1_texel_logged, texel.u,
+                        texel.rgb.r, texel.rgb.g, texel.rgb.b, texel.rgb.a);
+                    tmu1_texel_logged++;
+                }
+            }
         }
 
         /* run the texture pipeline on TMU0 to produce a final */
@@ -1081,6 +1117,14 @@ static void recompute_texture_params(tmu_state* t)
     int bppscale;
     uint32_t base;
     int lod;
+
+    /* DEBUG: Log tLOD register value */
+    static int recompute_logged = 0;
+    if (recompute_logged < 10) {
+        trap_log("recompute_texture_params: tLOD=0x%08X lodmin_field=%u\n",
+            t->reg[tLOD].u, TEXLOD_LODMIN(t->reg[tLOD].u));
+        recompute_logged++;
+    }
 
     /* extract LOD parameters */
     t->lodmin = TEXLOD_LODMIN(t->reg[tLOD].u) << 6;

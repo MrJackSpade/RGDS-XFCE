@@ -552,6 +552,10 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
 
+    /* DEBUG: Log grTexSource call */
+    trap_log("grTexSource: tmu=%d t=%d largeLod=%d smallLod=%d aspect=%d format=%d startAddr=0x%X\n",
+        tmu, t, info->largeLodLog2, info->smallLodLog2, info->aspectRatioLog2, info->format, startAddress);
+
     /*-------------------------------------------------------------
       Compute textureMode register
       SDK gtex.c lines 2853-2932
@@ -903,7 +907,7 @@ void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
 
     if (!ts->reg) return;
 
-    uint32_t val = ts->reg->u;
+    uint32_t val = ts->reg[textureMode].u;
 
     /* Clear texture combine bits (RGB and Alpha) */
     val &= ~(TEXMODE_TC_BITS_MASK | TEXMODE_TCA_BITS_MASK);
@@ -968,7 +972,7 @@ void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
     if (alpha_invert)
         val |= TEXMODE_TCA_INVERT_OUTPUT_BIT;
 
-    ts->reg->u = val;
+    ts->reg[textureMode].u = val;
 }
 
 /*
@@ -985,7 +989,7 @@ void __stdcall grTexFilterMode(GrChipID_t tmu, GrTextureFilterMode_t minfilter_m
 
     if (!ts->reg) return;
 
-    uint32_t val = ts->reg->u;
+    uint32_t val = ts->reg[textureMode].u;
     val &= ~TEXMODE_FILTER_MASK;
 
     if (minfilter_mode == GR_TEXTUREFILTER_BILINEAR)
@@ -993,7 +997,7 @@ void __stdcall grTexFilterMode(GrChipID_t tmu, GrTextureFilterMode_t minfilter_m
     if (magfilter_mode == GR_TEXTUREFILTER_BILINEAR)
         val |= TEXMODE_MAGNIFICATION_FILTER_BIT;
 
-    ts->reg->u = val;
+    ts->reg[textureMode].u = val;
 }
 
 /*
@@ -1001,7 +1005,7 @@ void __stdcall grTexFilterMode(GrChipID_t tmu, GrTextureFilterMode_t minfilter_m
  */
 void __stdcall grTexClampMode(GrChipID_t tmu, GrTextureClampMode_t s_clamp, GrTextureClampMode_t t_clamp)
 {
-    
+
     if (!g_voodoo) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
@@ -1009,7 +1013,7 @@ void __stdcall grTexClampMode(GrChipID_t tmu, GrTextureClampMode_t s_clamp, GrTe
 
     if (!ts->reg) return;
 
-    uint32_t val = ts->reg->u;
+    uint32_t val = ts->reg[textureMode].u;
     val &= ~(TEXMODE_CLAMP_S_BIT | TEXMODE_CLAMP_T_BIT);
 
     if (s_clamp == GR_TEXTURECLAMP_CLAMP)
@@ -1017,7 +1021,7 @@ void __stdcall grTexClampMode(GrChipID_t tmu, GrTextureClampMode_t s_clamp, GrTe
     if (t_clamp == GR_TEXTURECLAMP_CLAMP)
         val |= TEXMODE_CLAMP_T_BIT;
 
-    ts->reg->u = val;
+    ts->reg[textureMode].u = val;
 }
 
 /*
