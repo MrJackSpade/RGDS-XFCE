@@ -26,114 +26,31 @@
  * Debug logging implementation
  *************************************/
 
-FILE *g_debug_log = NULL;
-static FILE *g_trap_log = NULL;
-int g_call_count = 0;
-
-/* Deduplication state for consecutive identical messages */
-static char g_last_msg[512] = {0};
-static int g_last_msg_count = 0;
+static FILE *g_debug_log = NULL;
+static int g_debug_log_first_access = 1;
 
 /*
- * debug_log_output - Internal function to write a message
+ * debug_log - Write a formatted message to the debug log file
  *
- * Outputs to both file and Windows debug console.
+ * Creates/truncates the log file on first call. All output is flushed
+ * immediately to ensure logs are captured even if the application crashes.
  */
-static void debug_log_output(const char *msg)
+void debug_log(const char *fmt, ...)
 {
     if (!g_debug_log) {
-        g_debug_log = fopen("C:\\glide3x_debug.log", "w");
+        if (g_debug_log_first_access) {
+            DeleteFileA("C:\\glide3x_debug.log");
+            g_debug_log_first_access = 0;
+        }
+        g_debug_log = fopen("C:\\glide3x_debug.log", "a");
     }
     if (g_debug_log) {
-        fputs(msg, g_debug_log);
-        fflush(g_debug_log);
-    }
-    OutputDebugStringA(msg);
-}
-
-/*
- * trap_log - Write a trap message to the debug log file
- *
- * This function is always enabled (unlike debug_log which can be disabled).
- * Used by diagnostic traps to catch black pixel writes.
- */
-static int trap_log_first_access = 1;
-void trap_log(const char *fmt, ...)
-{
-    if (!g_trap_log) {
-        if (trap_log_first_access) {
-            DeleteFileA("C:\\glide3x_debug.log");
-            trap_log_first_access = 0;
-        }
-        g_trap_log = fopen("C:\\glide3x_debug.log", "a");
-    }
-    if (g_trap_log) {
         va_list args;
         va_start(args, fmt);
-        vfprintf(g_trap_log, fmt, args);
+        vfprintf(g_debug_log, fmt, args);
         va_end(args);
-        fflush(g_trap_log);
+        fflush(g_debug_log);
     }
-}
-
-/*
- * debug_log_flush - Flush any pending deduplicated message
- *
- * Call this before shutdown to ensure the last message and its
- * count are written to the log.
- *
- * Only outputs if count > 1 (duplicates occurred). Messages with
- * count == 1 were already output on first occurrence.
- */
-void debug_log_flush(void)
-{
-    if (g_last_msg_count > 1) {
-        char buf[600];
-        /* Remove trailing newline from stored message for formatting */
-        size_t len = strlen(g_last_msg);
-        if (len > 0 && g_last_msg[len - 1] == '\n') {
-            g_last_msg[len - 1] = '\0';
-        }
-        snprintf(buf, sizeof(buf), "%s (Called %d times)\n", g_last_msg, g_last_msg_count);
-        debug_log_output(buf);
-    }
-    /* Note: count == 1 means message was already output, no action needed */
-    g_last_msg[0] = '\0';
-    g_last_msg_count = 0;
-}
-
-/*
- * debug_log - Write a message to the debug log file
- *
- * Creates the log file on first call. All output is flushed immediately
- * to ensure logs are captured even if the application crashes.
- *
- * Deduplicates consecutive identical messages by counting them and
- * outputting "message (Called N times)" when a different message arrives.
- *
- * Also outputs to Windows debug console via OutputDebugStringA()
- * so messages appear in debugger output windows.
- */
-void debug_log(const char *msg)
-{
-    /* LOGGING DISABLED - uncomment below to re-enable */
-    (void)msg;
-    return;
-
-    /*
-    if (g_last_msg_count > 0 && strcmp(msg, g_last_msg) == 0) {
-        g_last_msg_count++;
-        return;
-    }
-
-    debug_log_flush();
-
-    strncpy(g_last_msg, msg, sizeof(g_last_msg) - 1);
-    g_last_msg[sizeof(g_last_msg) - 1] = '\0';
-    g_last_msg_count = 1;
-
-    debug_log_output(msg);
-    */
 }
 
 /*************************************
@@ -243,8 +160,11 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
         }
         /* Destroy window to prevent invalid WndProc callbacks */
         display_destroy_window();
-        /* Flush any pending log messages with counts */
-        debug_log_flush();
+        /* Close log file if open */
+        if (g_debug_log) {
+            fclose(g_debug_log);
+            g_debug_log = NULL;
+        }
         break;
     }
     return TRUE;

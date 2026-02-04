@@ -18,6 +18,8 @@ $LocalTestTexture = "test_texture.exe"
 $LocalTestTexMem = "test_texture_memory.exe"
 $LocalTestTexSimple = "test_texture_simple.exe"
 $LocalTestDualTmu = "test_dual_tmu.exe"
+$LocalTestAlpha = "test_alpha_blend.exe"
+$LocalTestDualTmuAlpha = "test_dual_tmu_alpha.exe"
 $RemoteLogPath = "/home/trixie/.wine-hangover/drive_c/glide3x_debug.log"
 $LocalLogPath = "glide3x_debug.log"
 $RemoteTexturesPath = "/home/trixie/.wine-hangover/drive_c/textures"
@@ -54,6 +56,8 @@ put $LocalTestTexture
 put $LocalTestTexMem
 put $LocalTestTexSimple
 put $LocalTestDualTmu
+put $LocalTestAlpha
+put $LocalTestDualTmuAlpha
 bye
 "@
 Write-Host "Deploying DLL and test executables..."
@@ -71,7 +75,7 @@ if ($DeployOnly) {
     Write-Host "  cd '${RemoteTestPath}'"
     Write-Host "  DISPLAY=:0 WINEPREFIX=~/.wine-hangover wine test_texture.exe"
     Write-Host ""
-    Write-Host "Available tests: -Test lfb, -Test texture, -Test texmem, -Test glide"
+    Write-Host "Available tests: -Test lfb, -Test texture, -Test texmem, -Test alpha, -Test glide"
     exit 0
 }
 
@@ -83,9 +87,11 @@ if ($Test) {
         "texmem" { "test_texture_memory.exe" }
         "texsimple" { "test_texture_simple.exe" }
         "dualtmu" { "test_dual_tmu.exe" }
+        "alpha" { "test_alpha_blend.exe" }
+        "dualtmualpha" { "test_dual_tmu_alpha.exe" }
         "glide" { "test_glide.exe" }
         default {
-            Write-Error "Unknown test: $Test. Available: lfb, texture, texmem, texsimple, dualtmu, glide"
+            Write-Error "Unknown test: $Test. Available: lfb, texture, texmem, texsimple, dualtmu, alpha, dualtmualpha, glide"
             exit 1
         }
     }

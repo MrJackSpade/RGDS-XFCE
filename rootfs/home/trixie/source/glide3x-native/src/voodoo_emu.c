@@ -19,7 +19,7 @@
 #include "glide3x.h"
 
 /* Debug logging from glide3x_state.c */
-extern void debug_log(const char *msg);
+#include "glide3x_state.h"
 
 /* Forward declarations */
 static void recompute_texture_params(tmu_state* t);

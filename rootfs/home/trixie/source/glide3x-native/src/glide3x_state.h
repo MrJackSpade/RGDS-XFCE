@@ -28,31 +28,8 @@
  * The log file is created on first write and flushed after each entry.
  *************************************/
 
-extern FILE *g_debug_log;
-extern int g_call_count;
-
-/* Write a message to the debug log */
-void debug_log(const char *msg);
-
-/* Flush any pending deduplicated log message */
-void debug_log_flush(void);
-
-/* Write a trap message to the debug log (always enabled) */
-void trap_log(const char *fmt, ...);
-
-/* Original logging macros - uncomment to re-enable:
-#define LOG_FUNC() do { \
-    char _dbg[128]; \
-    snprintf(_dbg, sizeof(_dbg), "glide3x: %s\n", __func__); \
-    debug_log(_dbg); \
-} while(0)
-
-#define LOG(fmt, ...) do { \
-    char _dbg[256]; \
-    snprintf(_dbg, sizeof(_dbg), "glide3x: " fmt "\n", ##__VA_ARGS__); \
-    debug_log(_dbg); \
-} while(0)
-*/
+/* Write a formatted message to the debug log */
+void debug_log(const char *fmt, ...);
 
 /*************************************
  * Core Glide state

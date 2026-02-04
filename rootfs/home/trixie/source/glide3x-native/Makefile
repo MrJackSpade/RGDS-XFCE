@@ -142,6 +142,30 @@ test-dualtmu: $(TEST_DUALTMU_TARGET)
 	@echo "Run with: wine ./test_dual_tmu.exe"
 	@echo "This test verifies dual TMU texture compositing"
 
+# Alpha blending test
+TEST_ALPHA_TARGET = test_alpha_blend.exe
+TEST_ALPHA_SRCS = test/test_alpha_blend.c
+
+$(TEST_ALPHA_TARGET): $(TARGET) $(TEST_ALPHA_SRCS)
+	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_ALPHA_SRCS) $(TARGET)
+	@echo "Built $@"
+
+test-alpha: $(TEST_ALPHA_TARGET)
+	@echo "Run with: wine ./test_alpha_blend.exe"
+	@echo "This test diagnoses alpha blending issues"
+
+# Dual TMU alpha blending test (Diablo 2 sprite scenario)
+TEST_DUALTMU_ALPHA_TARGET = test_dual_tmu_alpha.exe
+TEST_DUALTMU_ALPHA_SRCS = test/test_dual_tmu_alpha.c
+
+$(TEST_DUALTMU_ALPHA_TARGET): $(TARGET) $(TEST_DUALTMU_ALPHA_SRCS)
+	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_DUALTMU_ALPHA_SRCS) $(TARGET)
+	@echo "Built $@"
+
+test-dualtmu-alpha: $(TEST_DUALTMU_ALPHA_TARGET)
+	@echo "Run with: wine ./test_dual_tmu_alpha.exe"
+	@echo "This test diagnoses dual TMU alpha blending (D2 sprite issue)"
+
 # Build all test executables
-tests: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET) $(TEST_DUALTMU_TARGET)
-	@echo "All tests built: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET) $(TEST_DUALTMU_TARGET)"
+tests: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET) $(TEST_DUALTMU_TARGET) $(TEST_ALPHA_TARGET) $(TEST_DUALTMU_ALPHA_TARGET)
+	@echo "All tests built: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET) $(TEST_DUALTMU_TARGET) $(TEST_ALPHA_TARGET)"
