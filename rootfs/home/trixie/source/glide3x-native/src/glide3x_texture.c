@@ -780,7 +780,7 @@ void __stdcall grTexCombine(GrChipID_t tmu, GrCombineFunction_t rgb_function,
                   GrCombineFactor_t rgb_factor, GrCombineFunction_t alpha_function,
                   GrCombineFactor_t alpha_factor, FxBool rgb_invert, FxBool alpha_invert)
 {
-   if (!g_voodoo) return;
+    if (!g_voodoo) return;
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
@@ -965,16 +965,12 @@ void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
             {
                 const uint32_t* pal = (const uint32_t*)data;
                 for (int i = 0; i < 256; i++) {
-                    uint32_t color = pal[i];
-                    /* If color format is ABGR, swap R and B to convert to ARGB */
-                    if (g_color_format == GR_COLORFORMAT_ABGR) {
-                        uint32_t a = (color >> 24) & 0xFF;
-                        uint32_t b = (color >> 16) & 0xFF;
-                        uint32_t g = (color >> 8) & 0xFF;
-                        uint32_t r = color & 0xFF;
-                        color = (a << 24) | (r << 16) | (g << 8) | b;
-                    }
-                    ts->palette[i] = color;
+                    /*
+                     * Palette data is always in ARGB format regardless of grColorFormat.
+                     * The SDK's _grTexDownloadPalette does NOT call _grSwizzleColor.
+                     * Games provide palette data pre-formatted in ARGB.
+                     */
+                    ts->palette[i] = pal[i];
                 }
             }
             break;

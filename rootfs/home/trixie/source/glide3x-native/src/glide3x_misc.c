@@ -134,7 +134,6 @@ void __stdcall grDitherMode(GrDitherMode_t mode)
  */
 void __stdcall grChromakeyMode(GrChromakeyMode_t mode)
 {
-    
     if (!g_voodoo) return;
 
     uint32_t val = g_voodoo->reg[fbzMode].u;
@@ -150,14 +149,54 @@ void __stdcall grChromakeyMode(GrChromakeyMode_t mode)
  * grChromakeyValue - Set chromakey color
  *
  * Parameters:
- *   value - 32-bit ARGB color to treat as transparent
- *           Typically bright magenta (0xFFFF00FF) or similar
+ *   value - 32-bit color to treat as transparent (in game's color format)
+ *
+ * The SDK's _grSwizzleColor converts from game's color format to internal ARGB.
+ * Palette data is already in ARGB format (not converted), so chromakey must
+ * also be in ARGB to match during the comparison.
  */
 void __stdcall grChromakeyValue(GrColor_t value)
 {
-    
     if (!g_voodoo) return;
-    g_voodoo->reg[chromaKey].u = value;
+
+    /* Convert from game's color format to internal ARGB format
+     * (matches SDK's _grSwizzleColor function in diglide.c) */
+    uint32_t argb;
+    switch (g_color_format) {
+    case GR_COLORFORMAT_ARGB:  /* 0xAARRGGBB - already in ARGB */
+        argb = value;
+        break;
+    case GR_COLORFORMAT_ABGR:  /* 0xAABBGGRR - swap R and B */
+        {
+            uint32_t r = value & 0x00ff;
+            uint32_t b = (value >> 16) & 0xff;
+            argb = (value & 0xff00ff00) | (r << 16) | b;
+        }
+        break;
+    case GR_COLORFORMAT_RGBA:  /* 0xRRGGBBAA - rotate to ARGB */
+        {
+            uint32_t b = (value & 0x0000ff00) >> 8;
+            uint32_t g = (value & 0x00ff0000) >> 16;
+            uint32_t r = (value & 0xff000000) >> 24;
+            uint32_t a = (value & 0x000000ff);
+            argb = (a << 24) | (r << 16) | (g << 8) | b;
+        }
+        break;
+    case GR_COLORFORMAT_BGRA:  /* 0xBBGGRRAA - rotate and swap to ARGB */
+        {
+            uint32_t b = (value & 0xff000000) >> 24;
+            uint32_t g = (value & 0x00ff0000) >> 16;
+            uint32_t r = (value & 0x0000ff00) >> 8;
+            uint32_t a = (value & 0x000000ff);
+            argb = (a << 24) | (r << 16) | (g << 8) | b;
+        }
+        break;
+    default:
+        argb = value;
+        break;
+    }
+
+    g_voodoo->reg[chromaKey].u = argb;
 }
 
 /*

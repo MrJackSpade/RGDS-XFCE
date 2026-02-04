@@ -59,13 +59,6 @@
 void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
 {
     g_clear_count++;
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grBufferClear #%d (color=0x%08X, alpha=%u, depth=0x%08X)\n",
-                 g_clear_count, color, alpha, depth);
-        debug_log(dbg);
-    }
 
     if (!g_voodoo || !g_voodoo->active) return;
 
@@ -90,7 +83,6 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
 
     /* Early return if nothing to clear */
     if (!doColor && !doDepth) {
-        debug_log("glide3x: grBufferClear skipped (both masks disabled)\n");
         return;
     }
 

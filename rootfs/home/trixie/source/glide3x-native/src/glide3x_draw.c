@@ -295,14 +295,6 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
         vc.sow1 = c->sow; vc.tow1 = c->tow;  /* Copy to both TMUs */
     }
 
-    {
-        char dbg[256];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grDrawTriangle #%d a=(%.1f,%.1f) b=(%.1f,%.1f) c=(%.1f,%.1f)\n",
-                 g_triangle_count, va.x, va.y, vb.x, vb.y, vc.x, vc.y);
-        debug_log(dbg);
-    }
-
     /* Get vertex positions with viewport offset */
     float ax = va.x + (float)g_voodoo->vp_x;
     float ay = va.y + (float)g_voodoo->vp_y;
@@ -429,12 +421,6 @@ void __stdcall grDrawVertexArray(FxU32 mode, FxU32 count, void *pointers)
     FxU32 i;
 
     g_draw_call_count++;
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grDrawVertexArray(mode=%u, count=%u)\n", mode, count);
-        debug_log(dbg);
-    }
 
     if (count < 3) return;
 
@@ -490,13 +476,6 @@ void __stdcall grDrawVertexArrayContiguous(FxU32 mode, FxU32 count, void *vertic
     FxU32 i;
 
     g_draw_call_count++;
-    {
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "glide3x: grDrawVertexArrayContiguous(mode=%u, count=%u, stride=%u)\n",
-                 mode, count, stride);
-        debug_log(dbg);
-    }
 
     if (count < 3 || stride == 0) return;
 

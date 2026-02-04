@@ -47,22 +47,17 @@
  */
 void __stdcall grGlideInit(void)
 {
-    debug_log("glide3x: grGlideInit called\n");
-
     if (g_initialized) {
-        debug_log("glide3x: grGlideInit - already initialized\n");
         return;
     }
 
     /* Create voodoo emulator state */
     g_voodoo = voodoo_create();
     if (!g_voodoo) {
-        debug_log("glide3x: Failed to create voodoo state\n");
         return;
     }
 
     g_initialized = 1;
-    debug_log("glide3x: grGlideInit complete\n");
 }
 
 /*
@@ -88,10 +83,7 @@ void __stdcall grGlideInit(void)
  */
 void __stdcall grGlideShutdown(void)
 {
-    debug_log("glide3x: grGlideShutdown called\n");
-
     if (!g_initialized) {
-        debug_log("glide3x: grGlideShutdown - not initialized\n");
         return;
     }
 
@@ -108,7 +100,6 @@ void __stdcall grGlideShutdown(void)
     }
 
     g_initialized = 0;
-    debug_log("glide3x: grGlideShutdown complete\n");
 }
 
 /*

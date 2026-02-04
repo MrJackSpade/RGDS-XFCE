@@ -89,11 +89,6 @@ GrContext_t __stdcall grSstWinOpen(
     /* Store color format for palette interpretation */
     g_color_format = colorFormat;
 
-    snprintf(dbg, sizeof(dbg),
-             "glide3x: grSstWinOpen(hwnd=0x%x, res=%d, origin=%d, colorFmt=%d)\n",
-             (unsigned int)hwnd, resolution, origin, colorFormat);
-    debug_log(dbg);
-
     /* Auto-initialize if app forgot to call grGlideInit */
     if (!g_initialized) {
         grGlideInit();
@@ -101,16 +96,11 @@ GrContext_t __stdcall grSstWinOpen(
 
     /* Return existing context if already open */
     if (g_context) {
-        debug_log("glide3x: grSstWinOpen - context already open\n");
         return g_context;
     }
 
     /* Get resolution dimensions */
     get_resolution(resolution, &g_screen_width, &g_screen_height);
-    snprintf(dbg, sizeof(dbg),
-             "glide3x: grSstWinOpen - resolution %dx%d\n",
-             g_screen_width, g_screen_height);
-    debug_log(dbg);
 
     /*
      * Initialize FBI (Frame Buffer Interface)
@@ -129,7 +119,6 @@ GrContext_t __stdcall grSstWinOpen(
      *   Offset W*H*4: Triple buffer (if enabled)
      *   Offset W*H*6: Depth buffer
      */
-    debug_log("glide3x: grSstWinOpen - init FBI\n");
 
     /* Check if FBI needs full initialization or just dimension update */
     int fbi_was_initialized = (g_voodoo->fbi.ram != NULL &&
@@ -137,7 +126,6 @@ GrContext_t __stdcall grSstWinOpen(
                                g_voodoo->fbi.height == g_screen_height);
 
     if (fbi_was_initialized) {
-        debug_log("glide3x: grSstWinOpen - FBI already initialized, preserving buffers\n");
         /* Skip reinitialization to preserve framebuffer content */
     } else {
         voodoo_init_fbi(&g_voodoo->fbi, 4 * 1024 * 1024);
@@ -188,7 +176,6 @@ GrContext_t __stdcall grSstWinOpen(
      * before calling grSstWinOpen again).
      */
     if (g_voodoo->tmu[0].ram == NULL) {
-        debug_log("glide3x: grSstWinOpen - init TMUs (first time)\n");
         /* tmushare must be initialized first - TMU init references its lookup tables */
         voodoo_init_tmu_shared(&g_voodoo->tmushare);
         /* TMU register base addresses per DOSBox/hardware spec.
@@ -207,7 +194,6 @@ GrContext_t __stdcall grSstWinOpen(
         /* Enable TMU1 in chipmask per DOSBox voodoo.cpp line 7257 */
         g_voodoo->chipmask |= 0x04;
     } else {
-        debug_log("glide3x: grSstWinOpen - TMUs already initialized, preserving textures\n");
         /* Ensure chipmask is still set even if TMUs were preserved */
         g_voodoo->chipmask |= 0x06;  /* TMU0 + TMU1 */
     }
@@ -226,9 +212,7 @@ GrContext_t __stdcall grSstWinOpen(
     g_voodoo->vl_q1_offset = -1;
 
     /* Initialize display output */
-    debug_log("glide3x: grSstWinOpen - init display\n");
     if (!display_init(g_screen_width, g_screen_height, (HWND)hwnd)) {
-        debug_log("glide3x: Failed to initialize display\n");
         return NULL;
     }
 
@@ -271,7 +255,6 @@ GrContext_t __stdcall grSstWinOpen(
     g_voodoo->active = true;
     g_context = (GrContext_t)g_voodoo;
 
-    debug_log("glide3x: grSstWinOpen complete\n");
     return g_context;
 }
 
@@ -298,14 +281,12 @@ FxBool __stdcall grSstWinClose(GrContext_t context)
     
 
     if (context != g_context) {
-        debug_log("glide3x: grSstWinClose - invalid context\n");
         return FXFALSE;
     }
 
     display_shutdown();
     g_context = NULL;
 
-    debug_log("glide3x: grSstWinClose complete\n");
     return FXTRUE;
 }
 
@@ -334,6 +315,5 @@ FxBool __stdcall grSelectContext(GrContext_t context)
         return FXTRUE;
     }
 
-    debug_log("glide3x: grSelectContext - invalid context\n");
     return FXFALSE;
 }

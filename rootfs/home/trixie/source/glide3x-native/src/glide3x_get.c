@@ -71,10 +71,6 @@
  */
 FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
 {
-    char dbg[128];
-    snprintf(dbg, sizeof(dbg), "glide3x: grGet(pname=%u, plength=%u)\n", pname, plength);
-    debug_log(dbg);
-
     if (!params || plength < 4) return 0;
 
     switch (pname) {
@@ -179,8 +175,6 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
         return 4;
 
     default:
-        snprintf(dbg, sizeof(dbg), "glide3x: grGet UNKNOWN pname=%u\n", pname);
-        debug_log(dbg);
         *params = 0;
         return 4;
     }
@@ -201,10 +195,6 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
  */
 const char* __stdcall grGetString(FxU32 pname)
 {
-    char dbg[128];
-    snprintf(dbg, sizeof(dbg), "glide3x: grGetString(pname=%u)\n", pname);
-    debug_log(dbg);
-
     switch (pname) {
     case GR_EXTENSION:
         /* Space-separated extension list
@@ -373,9 +363,6 @@ GrProc __stdcall grGetProcAddress(char *procName)
  */
 FxBool __stdcall grSstQueryHardware(GrHwConfiguration *hwconfig)
 {
-    
-    debug_log("glide3x: grSstQueryHardware called\n");
-
     if (!hwconfig) return FXFALSE;
 
     hwconfig->hwVersion = 0x0200;  /* Voodoo 2 */
@@ -392,9 +379,6 @@ FxBool __stdcall grSstQueryHardware(GrHwConfiguration *hwconfig)
  */
 FxU32 __stdcall grSstQueryBoards(GrHwConfiguration *hwconfig)
 {
-    
-    debug_log("glide3x: grSstQueryBoards called\n");
-
     if (hwconfig) {
         grSstQueryHardware(hwconfig);
     }

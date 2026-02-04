@@ -142,15 +142,11 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
     switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
-        /* Delete old log file to start fresh */
-        DeleteFileA("glide3x_debug.log");
-        debug_log("glide3x: DLL_PROCESS_ATTACH\n");
         /* Disable thread library calls for performance */
         DisableThreadLibraryCalls(hinstDLL);
         break;
 
     case DLL_PROCESS_DETACH:
-        debug_log("glide3x: DLL_PROCESS_DETACH\n");
         /*
          * Emergency cleanup if app didn't call grGlideShutdown().
          * This can happen if app crashes or calls ExitProcess().
