@@ -126,20 +126,42 @@ static int get_texel_bytes(GrTextureFormat_t format)
 /*
  * Helper: Get Voodoo format index for TEXTUREMODE register
  */
+/*
+ * Voodoo hardware texture format mapping:
+ *   0: RGB 3-3-2 (8-bit)
+ *   1: YIQ 4-2-2 (8-bit, NCC)
+ *   2: A 8 (8-bit alpha)
+ *   3: I 8 (8-bit intensity)
+ *   4: AI 4-4 (8-bit alpha-intensity)
+ *   5: P 8 (8-bit palette)
+ *   6: P 8 with alpha from texel
+ *   7: Reserved
+ *   8: ARGB 8-3-3-2 (16-bit)
+ *   9: AYIQ 8-4-2-2 (16-bit, NCC with alpha)
+ *  10: RGB 5-6-5 (16-bit)
+ *  11: ARGB 1-5-5-5 (16-bit)
+ *  12: ARGB 4-4-4-4 (16-bit)
+ *  13: AI 8-8 (16-bit alpha-intensity)
+ *  14: AP 8-8 (16-bit alpha + palette)
+ *  15: Reserved
+ *
+ * Format < 8: 8-bit textures (1 byte per texel)
+ * Format >= 8: 16-bit textures (2 bytes per texel)
+ */
 static int get_voodoo_format(GrTextureFormat_t format)
 {
     switch (format) {
-    case GR_TEXFMT_8BIT:           return 0;
-    case GR_TEXFMT_YIQ_422:        return 1;
-    case GR_TEXFMT_ALPHA_8:        return 2;
-    case GR_TEXFMT_INTENSITY_8:    return 3;
-    case GR_TEXFMT_ALPHA_INTENSITY_44: return 4;
-    case GR_TEXFMT_RGB_565:        return 5;
-    case GR_TEXFMT_ARGB_1555:      return 6;
-    case GR_TEXFMT_ARGB_4444:      return 7;
-    case GR_TEXFMT_ALPHA_INTENSITY_88: return 8;
-    case GR_TEXFMT_P_8:            return 9;
-    default:                       return 5;  /* Default RGB565 */
+    case GR_TEXFMT_8BIT:               return 0;   /* RGB 3-3-2 (same as GR_TEXFMT_RGB_332) */
+    case GR_TEXFMT_YIQ_422:            return 1;   /* YIQ 4-2-2 */
+    case GR_TEXFMT_ALPHA_8:            return 2;   /* A 8 */
+    case GR_TEXFMT_INTENSITY_8:        return 3;   /* I 8 */
+    case GR_TEXFMT_ALPHA_INTENSITY_44: return 4;   /* AI 4-4 */
+    case GR_TEXFMT_P_8:                return 5;   /* P 8 */
+    case GR_TEXFMT_RGB_565:            return 10;  /* RGB 5-6-5 */
+    case GR_TEXFMT_ARGB_1555:          return 11;  /* ARGB 1-5-5-5 */
+    case GR_TEXFMT_ARGB_4444:          return 12;  /* ARGB 4-4-4-4 */
+    case GR_TEXFMT_ALPHA_INTENSITY_88: return 13;  /* AI 8-8 */
+    default:                           return 10;  /* Default RGB565 */
     }
 }
 
@@ -154,6 +176,329 @@ static int get_tex_size(GrLOD_t lod)
     if (lod < 0) lod = 0;
     if (lod > 8) lod = 8;
     return 1 << lod;  /* 2^lod: lod=8 -> 256, lod=0 -> 1 */
+}
+
+/*---------------------------------------------------------------------------
+** _grTexCalcBaseAddress support tables and function
+** Copied from SDK ditex.c
+**---------------------------------------------------------------------------*/
+
+#define G3_ASPECT_TRANSLATE(__aspect) (0x3 - (__aspect))
+#define SST_TEXTURE_ALIGN       0x10UL
+#define SST_TEXTURE_ALIGN_MASK  (SST_TEXTURE_ALIGN - 0x01UL)
+
+/* Bits per texel for each format - SDK ditex.c line 233 */
+static const FxU32 _grBitsPerTexel[] =
+{
+  0x08,  /* GR_TEXFMT_8BIT == GR_TEXFMT_RGB_332    */
+  0x08,  /* GR_TEXFMT_YIQ_422                      */
+  0x08,  /* GR_TEXFMT_ALPHA_8                      */
+  0x08,  /* GR_TEXFMT_INTENSITY_8                  */
+  0x08,  /* GR_TEXFMT_ALPHA_INTENSITY_44           */
+  0x08,  /* GR_TEXFMT_P_8                          */
+  0x08,  /* GR_TEXFMT_RSVD0 == GR_TEXFMT_P_8_6666  */
+  0x10,  /* GR_TEXFMT_RSVD1                        */
+  0x10,  /* GR_TEXFMT_16BIT == GR_TEXFMT_ARGB_8332 */
+  0x10,  /* GR_TEXFMT_AYIQ_8422                    */
+  0x10,  /* GR_TEXFMT_RGB_565                      */
+  0x10,  /* GR_TEXFMT_ARGB_1555                    */
+  0x10,  /* GR_TEXFMT_ARGB_4444                    */
+  0x10,  /* GR_TEXFMT_ALPHA_INTENSITY_88           */
+  0x10,  /* GR_TEXFMT_AP_88                        */
+  0x00,  /* GR_TEXFMT_RSVD2                        */
+};
+
+/* Mipmap offset table - SDK ditex.c line 1064 */
+static const FxI32 _grMipMapOffset[4][16] =
+{
+  {  /* 8:1 and 1:8 aspect ratios */
+      10927, /* Sum(256x32, 128x16, 64x8, 32x4, 16x2, 8x1, 4x1, 2x1, 1x1)    */
+      10926, /* Sum(256x32, 128x16, 64x8, 32x4, 16x2, 8x1, 4x1, 2x1)         */
+      10924, /* Sum(256x32, 128x16, 64x8, 32x4, 16x2, 8x1, 4x1)              */
+      10920, /* Sum(256x32, 128x16, 64x8, 32x4, 16x2, 8x1)                   */
+      10912, /* Sum(256x32, 128x16, 64x8, 32x4, 16x2)                        */
+      10880, /* Sum(256x32, 128x16, 64x8, 32x4)                              */
+      10752, /* Sum(256x32, 128x16, 64x8)                                    */
+      10240, /* Sum(256x32, 128x16)                                          */
+       8192, /* Sum(256x32)                                                  */
+          0, /* Base address (beginning of 256x32 level)                     */
+     -32768, /* - Sum(512x64)                                                */
+    -163840, /* - Sum(1024x128, 512x64)                                      */
+    -688128, /* - Sum(2048x256, 1024x128, 512x64)                            */
+  },
+  {  /* 4:1 and 1:4 aspect ratios */
+       21847, /* Sum(256x64, 128x32, 64x16, 32x8, 16x4, 8x2, 4x1, 2x1, 1x1)  */
+       21846, /* Sum(256x64, 128x32, 64x16, 32x8, 16x4, 8x2, 4x1, 2x1)       */
+       21844, /* Sum(256x64, 128x32, 64x16, 32x8, 16x4, 8x2, 4x1)            */
+       21840, /* Sum(256x64, 128x32, 64x16, 32x8, 16x4, 8x2)                 */
+       21824, /* Sum(256x64, 128x32, 64x16, 32x8, 16x4)                      */
+       21760, /* Sum(256x64, 128x32, 64x16, 32x8)                            */
+       21504, /* Sum(256x64, 128x32, 64x16)                                  */
+       20480, /* Sum(256x64, 128x32)                                         */
+       16384, /* Sum(256x64)                                                 */
+           0, /* Base address (beginning of 256x64 level)                    */
+      -65536, /* - Sum(512x128)                                              */
+     -327680, /* - Sum(1024x256, 512x128)                                    */
+    -1376256, /* - Sum(2048x512, 1024x256, 512x128)                          */
+  },
+  {  /* 2:1 and 1:2 aspect ratios */
+       43691, /* Sum(256x128, 128x64, 64x32, 32x16, 16x8, 8x4, 4x2, 2x1, 1x1)*/
+       43690, /* Sum(256x128, 128x64, 64x32, 32x16, 16x8, 8x4, 4x2, 2x1)     */
+       43688, /* Sum(256x128, 128x64, 64x32, 32x16, 16x8, 8x4, 4x2)          */
+       43680, /* Sum(256x128, 128x64, 64x32, 32x16, 16x8, 8x4)               */
+       43648, /* Sum(256x128, 128x64, 64x32, 32x16, 16x8)                    */
+       43520, /* Sum(256x128, 128x64, 64x32, 32x16)                          */
+       43008, /* Sum(256x128, 128x64, 64x32)                                 */
+       40960, /* Sum(256x128, 128x64)                                        */
+       32768, /* Sum(256x128)                                                */
+           0, /* Base address (beginning of 256x128 level)                   */
+     -131072, /* - Sum(512x256)                                              */
+     -655360, /* - Sum(1024x512, 512x256)                                    */
+    -2752512, /* - Sum(2048x1024, 1024x512, 512x256)                         */
+  },
+  {  /* 1:1 aspect ratio */
+       87381, /* Sum(256x256, 128x128, 64x64, 32x32, 16x16, 8x8, 4x4, 2x2, 1)*/
+       87380, /* Sum(256x256, 128x128, 64x64, 32x32, 16x16, 8x8, 4x4, 2x2)   */
+       87376, /* Sum(256x256, 128x128, 64x64, 32x32, 16x16, 8x8, 4x4)        */
+       87360, /* Sum(256x256, 128x128, 64x64, 32x32, 16x16, 8x8)             */
+       87296, /* Sum(256x256, 128x128, 64x64, 32x32, 16x16)                  */
+       87040, /* Sum(256x256, 128x128, 64x64, 32x32)                         */
+       86016, /* Sum(256x256, 128x128, 64x64)                                */
+       81920, /* Sum(256x256, 128x128)                                       */
+       65536, /* Sum(256x256)                                                */
+           0, /* Base address (beginning of 256x256 level)                   */
+     -262144, /* - Sum(512x512)                                              */
+    -1310720, /* - Sum(1024x1024, 512x512)                                   */
+    -5505024, /* - Sum(2048x2048, 1024x1024, 512x512)                        */
+  },
+};
+
+/* Mipmap offset table for trilinear split - SDK ditex.c line 1316 */
+static const FxI32 _grMipMapOffset_Tsplit[4][16] =
+{
+  {  /* 8:1 and 1:8 aspect ratios */
+        8741, /* Sum(256x32, 64x8, 16x2, 4x1, 1x1)         */
+        2186, /* Sum(128x16, 32x4, 8x1, 2x1)               */
+        8740, /* Sum(256x32, 64x8, 16x2, 4x1)              */
+        2184, /* Sum(128x16, 32x4, 8x1)                    */
+        8736, /* Sum(256x32, 64x8, 16x2)                   */
+        2176, /* Sum(128x16, 32x4)                         */
+        8704, /* Sum(256x32, 64x8)                         */
+        2048, /* Sum(128x16)                               */
+        8192, /* Sum(256x32)                               */
+           0, /* Base address (beginning of 128x16 level)  */
+           0, /* Base address (beginning of 256x32 level)  */
+      -32768, /* - Sum(512x64)                             */
+     -131072, /* - Sum(1024x128)                           */
+     -557056, /* - Sum(2048x256, 512x64)                   */
+  },
+  {  /* 4:1 and 1:4 aspect ratios */
+       17477, /* Sum(256x64, 64x16, 16x4, 4x1, 1x1)        */
+        4370, /* Sum(128x32, 32x8, 8x2, 2x1)               */
+       17476, /* Sum(256x64, 64x16, 16x4, 4x1)             */
+        4368, /* Sum(128x32, 32x8, 8x2)                    */
+       17472, /* Sum(256x64, 64x16, 16x4)                  */
+        4352, /* Sum(128x32, 32x8)                         */
+       17408, /* Sum(256x64, 64x16)                        */
+        4096, /* Sum(128x32)                               */
+       16384, /* Sum(256x64)                               */
+           0, /* Base address (beginning of 128x32 level)  */
+           0, /* Base address (beginning of 256x64 level)  */
+      -65536, /* - Sum(512x128)                            */
+     -262144, /* - Sum(1024x256)                           */
+    -1114112, /* - Sum(2048x512, 512x128)                  */
+  },
+  {  /* 2:1 and 1:2 aspect ratios */
+       34953, /* Sum(256x128, 64x32, 16x8, 4x2, 1x1)       */
+        8738, /* Sum(128x64, 32x16, 8x4, 2x1)              */
+       34952, /* Sum(256x128, 64x32, 16x8, 4x2)            */
+        8736, /* Sum(128x64, 32x16, 8x4)                   */
+       34944, /* Sum(256x128, 64x32, 16x8)                 */
+        8704, /* Sum(128x64, 32x16)                        */
+       34816, /* Sum(256x128, 64x32)                       */
+        8192, /* Sum(128x64)                               */
+       32768, /* Sum(256x128)                              */
+           0, /* Base address (beginning of 128x64 level)  */
+           0, /* Base address (beginning of 256x128 level) */
+     -131072, /* - Sum(512x256)                            */
+     -524288, /* - Sum(1024x512)                           */
+    -2228224, /* - Sum(2048x1024, 512x256)                 */
+  },
+  {  /* 1:1 aspect ratio */
+       69905, /* Sum(256x256, 64x64, 16x16, 4x4, 1x1)      */
+       17476, /* Sum(128x128, 32x32, 8x8, 2x2)             */
+       69904, /* Sum(256x256, 64x64, 16x16, 4x4)           */
+       17472, /* Sum(128x128, 32x32, 8x8)                  */
+       69888, /* Sum(256x256, 64x64, 16x16)                */
+       17408, /* Sum(128x128, 32x32)                       */
+       69632, /* Sum(256x256, 64x64)                       */
+       16384, /* Sum(128x128)                              */
+       65536, /* Sum(256x256)                              */
+           0, /* Base address (beginning of 128x128 level) */
+           0, /* Base address (beginning of 256x256 level) */
+     -262144, /* - Sum(512x512)                            */
+    -1048576, /* - Sum(1024x1024)                          */
+    -4456448, /* - Sum(2048x2048, 512x512)                 */
+  },
+};
+
+/*---------------------------------------------------------------------------
+** _grTexCalcBaseAddress
+** Copied from SDK ditex.c line 1748
+**---------------------------------------------------------------------------*/
+static FxU32
+_grTexCalcBaseAddress( FxU32 start, GrLOD_t large_lod,
+                       GrAspectRatio_t aspect, GrTextureFormat_t format,
+                       FxU32 odd_even_mask )
+{
+  FxU32 sum_of_lod_sizes;
+
+  /* Validate format */
+  if (format >= sizeof(_grBitsPerTexel)/sizeof(_grBitsPerTexel[0]) ||
+      _grBitsPerTexel[format] == 0) {
+    trap_log("_grTexCalcBaseAddress: invalid format %d\n", format);
+    return start;
+  }
+
+  /* Mirror aspect ratios: 1:2, 1:4, 1:8 use same offsets as 2:1, 4:1, 8:1 */
+  if ( aspect > G3_ASPECT_TRANSLATE(GR_ASPECT_LOG2_1x1) )
+    aspect = G3_ASPECT_TRANSLATE(GR_ASPECT_LOG2_1x8) - aspect;
+
+  if ( odd_even_mask == GR_MIPMAPLEVELMASK_BOTH ) {
+    sum_of_lod_sizes = _grMipMapOffset[aspect][large_lod + 1];
+  } else {
+    if (((odd_even_mask == GR_MIPMAPLEVELMASK_EVEN) && (large_lod & 1)) ||
+        ((odd_even_mask == GR_MIPMAPLEVELMASK_ODD) && !(large_lod & 1)))
+      large_lod += 1;
+    else
+      large_lod += 2;
+
+    sum_of_lod_sizes = _grMipMapOffset_Tsplit[aspect][large_lod];
+  }
+
+  /* Convert from texels to bytes */
+  sum_of_lod_sizes *= _grBitsPerTexel[format]; /* bits  */
+  sum_of_lod_sizes >>= 3;                      /* bytes */
+
+  /* Clamp the size down to alignment boundary */
+  sum_of_lod_sizes &= ~SST_TEXTURE_ALIGN_MASK;
+
+  trap_log("_grTexCalcBaseAddress: start=0x%X large_lod=%d aspect=%d format=%d evenOdd=%d -> sum=0x%X base=0x%X\n",
+           start, large_lod, aspect, format, odd_even_mask, sum_of_lod_sizes, start - sum_of_lod_sizes);
+
+  return ( start - sum_of_lod_sizes );
+}
+
+/*
+ * Debug helper: Dump texture to BMP file
+ */
+static void dump_texture_bmp(int tmu, FxU32 address, int width, int height, GrTextureFormat_t format, void *data)
+{
+    static int dir_created = 0;
+    if (!dir_created) {
+        CreateDirectoryA("C:\\textures", NULL);
+        dir_created = 1;
+    }
+
+    char filename[256];
+    snprintf(filename, sizeof(filename), "C:\\textures\\tmu%d_%08X_%dx%d_fmt%d.bmp",
+             tmu, address, width, height, format);
+
+    FILE *f = fopen(filename, "wb");
+    if (!f) return;
+
+    int bpp = get_texel_bytes(format);
+    int row_size = ((width * 3 + 3) / 4) * 4;  /* BMP rows are 4-byte aligned */
+    int pixel_data_size = row_size * height;
+
+    /* BMP header */
+    uint8_t header[54] = {
+        'B', 'M',                           /* Signature */
+        0, 0, 0, 0,                          /* File size (filled below) */
+        0, 0, 0, 0,                          /* Reserved */
+        54, 0, 0, 0,                         /* Pixel data offset */
+        40, 0, 0, 0,                         /* DIB header size */
+        0, 0, 0, 0,                          /* Width (filled below) */
+        0, 0, 0, 0,                          /* Height (filled below, negative for top-down) */
+        1, 0,                                /* Planes */
+        24, 0,                               /* Bits per pixel */
+        0, 0, 0, 0,                          /* Compression (none) */
+        0, 0, 0, 0,                          /* Image size */
+        0, 0, 0, 0,                          /* X pixels per meter */
+        0, 0, 0, 0,                          /* Y pixels per meter */
+        0, 0, 0, 0,                          /* Colors in color table */
+        0, 0, 0, 0                           /* Important colors */
+    };
+
+    int file_size = 54 + pixel_data_size;
+    header[2] = file_size & 0xFF;
+    header[3] = (file_size >> 8) & 0xFF;
+    header[4] = (file_size >> 16) & 0xFF;
+    header[5] = (file_size >> 24) & 0xFF;
+
+    header[18] = width & 0xFF;
+    header[19] = (width >> 8) & 0xFF;
+    header[20] = (width >> 16) & 0xFF;
+    header[21] = (width >> 24) & 0xFF;
+
+    /* Negative height for top-down */
+    int neg_height = -height;
+    header[22] = neg_height & 0xFF;
+    header[23] = (neg_height >> 8) & 0xFF;
+    header[24] = (neg_height >> 16) & 0xFF;
+    header[25] = (neg_height >> 24) & 0xFF;
+
+    fwrite(header, 1, 54, f);
+
+    /* Convert and write pixel data */
+    uint8_t *row = (uint8_t*)malloc(row_size);
+    if (!row) { fclose(f); return; }
+
+    for (int y = 0; y < height; y++) {
+        memset(row, 0, row_size);
+        for (int x = 0; x < width; x++) {
+            uint8_t r, g, b;
+
+            if (bpp == 2) {
+                uint16_t pixel = ((uint16_t*)data)[y * width + x];
+                switch (format) {
+                case GR_TEXFMT_RGB_565:
+                    r = ((pixel >> 11) & 0x1F) << 3;
+                    g = ((pixel >> 5) & 0x3F) << 2;
+                    b = (pixel & 0x1F) << 3;
+                    break;
+                case GR_TEXFMT_ARGB_1555:
+                    r = ((pixel >> 10) & 0x1F) << 3;
+                    g = ((pixel >> 5) & 0x1F) << 3;
+                    b = (pixel & 0x1F) << 3;
+                    break;
+                case GR_TEXFMT_ARGB_4444:
+                    r = ((pixel >> 8) & 0xF) << 4;
+                    g = ((pixel >> 4) & 0xF) << 4;
+                    b = (pixel & 0xF) << 4;
+                    break;
+                default:
+                    r = g = b = (pixel >> 8) & 0xFF;
+                    break;
+                }
+            } else {
+                /* 8-bit format - show as grayscale */
+                uint8_t pixel = ((uint8_t*)data)[y * width + x];
+                r = g = b = pixel;
+            }
+
+            /* BMP is BGR order */
+            row[x * 3 + 0] = b;
+            row[x * 3 + 1] = g;
+            row[x * 3 + 2] = r;
+        }
+        fwrite(row, 1, row_size, f);
+    }
+
+    free(row);
+    fclose(f);
+
+    trap_log("  -> Dumped to %s\n", filename);
 }
 
 /*
@@ -198,6 +543,13 @@ FxU32 __stdcall grTexMaxAddress(GrChipID_t tmu)
  *
  * After this call, triangles rendered will use this texture
  * (assuming texturing is enabled in the color combine).
+ *
+ * This function writes three hardware registers:
+ *   - textureMode: texture format and filtering settings
+ *   - tLOD: LOD range, aspect ratio, evenOdd settings
+ *   - texBaseAddr: base address in texture memory
+ *
+ * Reference: SDK gtex.c lines 2853-2998
  */
 void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, GrTexInfo *info)
 {
@@ -206,78 +558,154 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
 
-    (void)evenOdd;
+    trap_log("grTexSource: tmu=%d addr=0x%X fmt=%d largeLod=%d smallLod=%d aspect=%d evenOdd=%d\n",
+             t, startAddress, info->format, info->largeLodLog2, info->smallLodLog2,
+             info->aspectRatioLog2, evenOdd);
 
-    /* Calculate texture dimensions */
-    int tex_width = get_tex_size(info->largeLodLog2);
-    int tex_height = tex_width;
+    /*-------------------------------------------------------------
+      Compute textureMode register
+      SDK gtex.c lines 2853-2932
+      -------------------------------------------------------------*/
+    uint32_t texMode = ts->reg[textureMode].u;
 
-    /* Adjust for aspect ratio */
-    switch (info->aspectRatioLog2) {
-    case GR_ASPECT_LOG2_8x1: tex_height = tex_width >> 3; break;
-    case GR_ASPECT_LOG2_4x1: tex_height = tex_width >> 2; break;
-    case GR_ASPECT_LOG2_2x1: tex_height = tex_width >> 1; break;
-    case GR_ASPECT_LOG2_1x1: break;
-    case GR_ASPECT_LOG2_1x2: tex_width = tex_height >> 1; break;
-    case GR_ASPECT_LOG2_1x4: tex_width = tex_height >> 2; break;
-    case GR_ASPECT_LOG2_1x8: tex_width = tex_height >> 3; break;
-    }
+    /* Clear format bits, preserve filtering/clamp settings */
+    texMode &= ~TEXMODE_FORMAT_MASK;
 
-    ts->wmask = tex_width - 1;
-    ts->hmask = tex_height - 1;
+    /* Convert Glide format to Voodoo hardware format */
+    int vfmt = get_voodoo_format(info->format);
+    
+    /* Set format and enable perspective/W clamp (SDK lines 2929-2932) */
+    texMode |= (vfmt << TEXMODE_FORMAT_SHIFT);
+    /* SST_TPERSP_ST and SST_TCLAMPW are handled by grHints/grTexFilterMode */
+    
+    ts->reg[textureMode].u = texMode;
 
-    /* Calculate bytes per texel for mipmap offset calculation */
-    int bpp = get_texel_bytes(info->format);
+    /*-------------------------------------------------------------
+      Compute tLOD register (keep LODBIAS intact)
+      SDK gtex.c lines 2934-2962
+      
+      SDK uses _g3LodXlat macro to translate Glide LOD to hardware LOD:
+        _g3LodXlat(lod, tBig) = g3LodXlat_base[tBig] - lod
+        For tBig=false (textures ≤256): = 8 - lod
+      
+      Glide LOD: 8=256x256, 6=64x64, 0=1x1 (log2 of size)
+      Hardware LOD: 0=largest mipmap, higher=smaller mipmaps
+      -------------------------------------------------------------*/
+    
+    /* _g3LodXlat translation for non-big textures */
+    int largeLOD = 8 - info->largeLodLog2;
+    int smallLOD = 8 - info->smallLodLog2;
+    
+    /* G3_ASPECT_TRANSLATE: SDK uses 0x3 - aspect for aspect ratio indexing */
+    int aspectTranslated = 0x3 - info->aspectRatioLog2;
 
-    /* Set base address and calculate mipmap level offsets
-     * lodoffset[0] = largest LOD (base), lodoffset[8] = smallest LOD (1x1)
-     */
-    FxU32 offset = startAddress & ts->mask;
-    ts->lodoffset[0] = offset;
+    /* Bit definitions for tLOD register (from voodoo_defs.h) */
+    #define TLOD_LODMIN_SHIFT       0
+    #define TLOD_LODMIN_MASK        0x3F
+    #define TLOD_LODMAX_SHIFT       6
+    #define TLOD_LODMAX_MASK        (0x3F << 6)
+    #define TLOD_LOD_ODD            (1 << 18)
+    #define TLOD_LOD_TSPLIT         (1 << 19)
+    #define TLOD_LOD_S_IS_WIDER     (1 << 20)
+    #define TLOD_LOD_ASPECT_SHIFT   21
+    #define TLOD_LOD_ASPECT_MASK    (0x3 << 21)
+    #define TLOD_LOD_FRACBITS       2
 
-    /* Calculate offsets for each mipmap level */
-    int w = tex_width;
-    int h = tex_height;
-    for (int lod = 1; lod <= 8; lod++) {
-        offset += w * h * bpp;
-        w = (w > 1) ? w >> 1 : 1;
-        h = (h > 1) ? h >> 1 : 1;
-        ts->lodoffset[lod] = offset & ts->mask;
-    }
+    /* Read current tLOD to preserve LODBIAS (bits 12-17) */
+    uint32_t tLod = ts->reg[tLOD].u;
 
-    /* Set format in TEXTUREMODE register */
-    uint32_t texmode = ts->reg ? ts->reg->u : 0;
-    texmode &= ~TEXMODE_FORMAT_MASK;
-    texmode |= (get_voodoo_format(info->format) << TEXMODE_FORMAT_SHIFT);
-    if (ts->reg) ts->reg->u = texmode;
+    /* Clear bits we're going to set */
+    tLod &= ~(TLOD_LODMIN_MASK | TLOD_LODMAX_MASK |
+              TLOD_LOD_ASPECT_MASK | TLOD_LOD_TSPLIT |
+              TLOD_LOD_ODD | TLOD_LOD_S_IS_WIDER);
 
-    /* Set lookup table based on format */
-    switch (info->format) {
-    case GR_TEXFMT_RGB_332:
-        ts->lookup = g_voodoo->tmushare.rgb332;
+    /* SST_TLOD_MINMAX_INT: (largeLOD << 2) | (smallLOD << 8)
+     * This puts integer LOD values into 4.2 fixed point format */
+    tLod |= ((largeLOD << TLOD_LOD_FRACBITS) << TLOD_LODMIN_SHIFT);
+    tLod |= ((smallLOD << TLOD_LOD_FRACBITS) << TLOD_LODMAX_SHIFT);
+
+    /* Set evenOdd bits - SDK _gr_evenOdd_xlate_table */
+    switch (evenOdd) {
+    case GR_MIPMAPLEVELMASK_EVEN:
+        tLod |= TLOD_LOD_TSPLIT;
         break;
-    case GR_TEXFMT_ALPHA_8:
-        ts->lookup = g_voodoo->tmushare.alpha8;
+    case GR_MIPMAPLEVELMASK_ODD:
+        tLod |= TLOD_LOD_TSPLIT | TLOD_LOD_ODD;
         break;
-    case GR_TEXFMT_INTENSITY_8:
-        ts->lookup = g_voodoo->tmushare.int8;
-        break;
-    case GR_TEXFMT_ALPHA_INTENSITY_44:
-        ts->lookup = g_voodoo->tmushare.ai44;
-        break;
-    case GR_TEXFMT_P_8:
-        ts->lookup = ts->palette;
-        break;
+    case GR_MIPMAPLEVELMASK_BOTH:
     default:
-        ts->lookup = NULL;  /* 16-bit formats don't need lookup */
+        /* No additional bits */
         break;
     }
 
-    ts->regdirty = 1;
+    /* Set aspect ratio bits - SDK _gr_aspect_xlate_table */
+    switch (aspectTranslated) {
+    case 0: /* 8:1 */
+        tLod |= (3 << TLOD_LOD_ASPECT_SHIFT) | TLOD_LOD_S_IS_WIDER;
+        break;
+    case 1: /* 4:1 */
+        tLod |= (2 << TLOD_LOD_ASPECT_SHIFT) | TLOD_LOD_S_IS_WIDER;
+        break;
+    case 2: /* 2:1 */
+        tLod |= (1 << TLOD_LOD_ASPECT_SHIFT) | TLOD_LOD_S_IS_WIDER;
+        break;
+    case 3: /* 1:1 */
+        /* No bits set */
+        break;
+    case 4: /* 1:2 */
+        tLod |= (1 << TLOD_LOD_ASPECT_SHIFT);
+        break;
+    case 5: /* 1:4 */
+        tLod |= (2 << TLOD_LOD_ASPECT_SHIFT);
+        break;
+    case 6: /* 1:8 */
+        tLod |= (3 << TLOD_LOD_ASPECT_SHIFT);
+        break;
+    }
 
-    /* Note: TMU selection for rendering is now based on lodmin, not this call.
-     * grTexSource configures the specified TMU's texture source; the rasterizer
-     * uses whichever TMU has lodmin < (8 << 8). */
+    ts->reg[tLOD].u = tLod;
+
+    /*-------------------------------------------------------------
+      Compute texBaseAddr register
+      SDK gtex.c lines 2843-2847, uses _grTexCalcBaseAddress
+
+      The SDK returns a byte address that may wrap negative. We need
+      to convert this to DOSBox's register format which stores
+      addresses divided by 8 (TEXADDR_SHIFT=3, TEXADDR_MASK=0x0fffff).
+
+      For DOSBox: base = (texBaseAddr.u & TEXADDR_MASK) << TEXADDR_SHIFT
+      So we store: texBaseAddr.u = (byteAddress & tmu_mask) >> 3
+      -------------------------------------------------------------*/
+    {
+        FxU32 baseAddress = _grTexCalcBaseAddress(startAddress,
+                                                   info->largeLodLog2,
+                                                   G3_ASPECT_TRANSLATE(info->aspectRatioLog2),
+                                                   info->format,
+                                                   evenOdd);
+        /* Mask to texture memory size and convert to DOSBox register format */
+        FxU32 maskedBase = baseAddress & ts->mask;  /* Wrap to 2MB */
+        FxU32 regValue = maskedBase >> 3;           /* Convert to 8-byte units */
+        ts->reg[texBaseAddr].u = regValue;
+
+        trap_log("  -> voodoo_format=%d textureMode=0x%08X tLOD=0x%08X\n",
+                 vfmt, texMode, tLod);
+        trap_log("  -> _grTexCalcBaseAddress=0x%08X masked=0x%08X texBaseAddr.u=0x%08X\n",
+                 baseAddress, maskedBase, regValue);
+    }
+
+    /*-------------------------------------------------------------
+      Set tmu_state fields for DOSBox compatibility
+      These are extracted by recompute_texture_params but we set
+      them here for consistency.
+      -------------------------------------------------------------*/
+    ts->lodmin = TEXLOD_LODMIN(tLod) << 6;
+    ts->lodmax = TEXLOD_LODMAX(tLod) << 6;
+
+    trap_log("  -> ts->lodmin=%d ts->lodmax=%d (ilod=%d)\n",
+             ts->lodmin, ts->lodmax, ts->lodmin >> 8);
+
+    /* Mark registers as dirty so recompute_texture_params will run */
+    ts->regdirty = 1;
 }
 
 /*
@@ -303,6 +731,9 @@ void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 eve
     tmu_state *ts = &g_voodoo->tmu[t];
 
     (void)evenOdd;
+
+    trap_log("grTexDownloadMipMap: tmu=%d addr=0x%X fmt=%d largeLod=%d smallLod=%d aspect=%d data=%p\n",
+             t, startAddress, info->format, info->largeLodLog2, info->smallLodLog2, info->aspectRatioLog2, info->data);
 
     int tex_width = get_tex_size(info->largeLodLog2);
     int tex_height = tex_width;
@@ -333,6 +764,24 @@ void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 eve
 
     /* Copy to TMU RAM */
     uint32_t dest_addr = startAddress & ts->mask;
+
+    trap_log("  -> size=%dx%d bpp=%d total_size=%d dest_addr=0x%X\n",
+             tex_width, tex_height, bpp, total_size, dest_addr);
+
+    /* Log first few pixels for debugging */
+    if (bpp == 2) {
+        uint16_t *src16 = (uint16_t*)info->data;
+        trap_log("  -> first pixels: %04X %04X %04X %04X\n",
+                 src16[0], src16[1], src16[2], src16[3]);
+    } else {
+        uint8_t *src8 = (uint8_t*)info->data;
+        trap_log("  -> first bytes: %02X %02X %02X %02X\n",
+                 src8[0], src8[1], src8[2], src8[3]);
+    }
+
+    /* Dump texture to BMP for visual debugging */
+    dump_texture_bmp(t, startAddress, tex_width, tex_height, info->format, info->data);
+
     if (dest_addr + total_size <= ts->mask + 1) {
         memcpy(&ts->ram[dest_addr], info->data, total_size);
     }
@@ -355,6 +804,9 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
     (void)evenOdd;
     (void)largeLod;
 
+    trap_log("grTexDownloadMipMapLevel: tmu=%d addr=0x%X thisLod=%d largeLod=%d fmt=%d data=%p\n",
+             t, startAddress, thisLod, largeLod, format, data);
+
     int tex_width = get_tex_size(thisLod);
     int tex_height = tex_width;
 
@@ -373,6 +825,11 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
 
     int bpp = get_texel_bytes(format);
     int tex_size = tex_width * tex_height * bpp;
+
+    trap_log("  -> size=%dx%d bpp=%d tex_size=%d\n", tex_width, tex_height, bpp, tex_size);
+
+    /* Dump texture to BMP for visual debugging */
+    dump_texture_bmp(t, startAddress, tex_width, tex_height, format, data);
 
     uint32_t dest_addr = startAddress & ts->mask;
     if (dest_addr + tex_size <= ts->mask + 1) {
@@ -614,12 +1071,16 @@ void __stdcall grTexMipMapMode(GrChipID_t tmu, GrMipMapMode_t mode, FxBool lodBl
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
 
+    /* LOD values use DOSBox scaled format: actual_lod << 6
+     * For mipmap disable: use only LOD 0 (largest mip)
+     * For mipmap enable: use full LOD range 0-8
+     */
     if (mode == GR_MIPMAP_DISABLE) {
-        ts->lodmin = 0;
-        ts->lodmax = 0;
+        ts->lodmin = 0 << 6;
+        ts->lodmax = 0 << 6;
     } else {
-        ts->lodmin = 0;
-        ts->lodmax = 8;
+        ts->lodmin = 0 << 6;
+        ts->lodmax = 8 << 6;
     }
 
     (void)lodBlend;

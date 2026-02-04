@@ -205,12 +205,74 @@ typedef struct {
     uint8_t read_result;
 } dac_state;
 
+static const uint8_t register_alias_map[0x40] =
+{
+    status,		0x004 / 4,	vertexAx,	vertexAy,
+    vertexBx,	vertexBy,	vertexCx,	vertexCy,
+    startR,		dRdX,		dRdY,		startG,
+    dGdX,		dGdY,		startB,		dBdX,
+    dBdY,		startZ,		dZdX,		dZdY,
+    startA,		dAdX,		dAdY,		startS,
+    dSdX,		dSdY,		startT,		dTdX,
+    dTdY,		startW,		dWdX,		dWdY,
+
+    triangleCMD,0x084 / 4,	fvertexAx,	fvertexAy,
+    fvertexBx,	fvertexBy,	fvertexCx,	fvertexCy,
+    fstartR,	fdRdX,		fdRdY,		fstartG,
+    fdGdX,		fdGdY,		fstartB,	fdBdX,
+    fdBdY,		fstartZ,	fdZdX,		fdZdY,
+    fstartA,	fdAdX,		fdAdY,		fstartS,
+    fdSdX,		fdSdY,		fstartT,	fdTdX,
+    fdTdY,		fstartW,	fdWdX,		fdWdY
+};
+
+/*************************************
+ * Triangle worker (multithreaded)
+ *************************************/
+
+#include <stdatomic.h>
+#include <pthread.h>
+
+#define TRIANGLE_WORKER_MAX_THREADS 8
+#define TRIANGLE_WORKER_MAX_WORK_UNITS ((TRIANGLE_WORKER_MAX_THREADS + 1) * 4)
+
+typedef struct {
+    int num_threads;
+    int num_work_units;
+
+    bool disable_bilinear_filter;
+
+    atomic_bool threads_active;
+
+    uint16_t *drawbuf;
+
+    poly_vertex v1;
+    poly_vertex v2;
+    poly_vertex v3;
+
+    int32_t v1y;
+    int32_t v3y;
+    int32_t totalpix;
+
+    pthread_t threads[TRIANGLE_WORKER_MAX_THREADS];
+
+    /* Worker threads start working when this gets reset to 0 */
+    atomic_int work_index;
+
+    atomic_int done_count;
+
+    /* Synchronization primitives */
+    pthread_mutex_t mutex;
+    pthread_cond_t cond;
+} triangle_worker;
+
 /*************************************
  * Main Voodoo state
  *************************************/
 
 typedef struct {
     uint8_t     chipmask;         /* available chips */
+    uint8_t     vtype;            /* Voodoo type (VOODOO_1, VOODOO_2, etc.) */
 
     voodoo_reg  reg[0x400];       /* raw registers */
     const uint8_t *regaccess;     /* register access flags */
@@ -222,13 +284,21 @@ typedef struct {
     tmu_shared_state tmushare;
     uint32_t    tmu_config;
 
+    /* PCI configuration */
+    struct {
+        uint32_t init_enable;
+    } pci;
+
     bool        send_config;
     bool        clock_enabled;
     bool        output_on;
     bool        active;
 
-    /* For thread stats (simplified - single threaded for now) */
-    stats_block thread_stats;
+    /* Triangle worker for multithreaded rendering */
+    triangle_worker tworker;
+
+    /* Per-thread stats */
+    stats_block thread_stats[TRIANGLE_WORKER_MAX_WORK_UNITS];
 
     /* Clip rectangle */
     int32_t     clip_left, clip_right;
@@ -276,6 +346,8 @@ static inline int32_t clamp_to_uint8(int32_t val)
     return val;
 }
 
+
+
 /*************************************
  * Function prototypes
  *************************************/
@@ -284,13 +356,14 @@ static inline int32_t clamp_to_uint8(int32_t val)
 voodoo_state* voodoo_create(void);
 void voodoo_destroy(voodoo_state *v);
 void voodoo_init_fbi(fbi_state *f, int fbmem);
-void voodoo_init_tmu(tmu_state *t, voodoo_reg *reg, int tmumem);
+void voodoo_init_tmu(voodoo_state *vs, tmu_state *t, voodoo_reg *reg, int tmem);
 void voodoo_init_tmu_shared(tmu_shared_state *s);
 
 /* Rendering */
+void setup_and_draw_triangle(voodoo_state *v);
 void voodoo_triangle(voodoo_state *v);
 void voodoo_fastfill(voodoo_state *v);
-void voodoo_swapbuffer(voodoo_state *v);
+void voodoo_swapbuffer(voodoo_state *v, uint32_t data);
 
 /* Register access */
 uint32_t voodoo_reg_read(voodoo_state *v, uint32_t offset);

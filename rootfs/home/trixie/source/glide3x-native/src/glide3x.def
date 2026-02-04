@@ -70,3 +70,16 @@ EXPORTS
     _grErrorSetCallback@4 = grErrorSetCallback@4
     _grLoadGammaTable@16 = grLoadGammaTable@16
     _guGammaCorrectionRGB@12 = guGammaCorrectionRGB@12
+    ; Debug/diagnostic functions for testing (export with and without underscore)
+    _grDebugReadTexMemory@16 = grDebugReadTexMemory@16
+    grDebugReadTexMemory@16 = grDebugReadTexMemory@16
+    _grDebugGetTexMemorySize@4 = grDebugGetTexMemorySize@4
+    grDebugGetTexMemorySize@4 = grDebugGetTexMemorySize@4
+    _grDebugDumpTexMemory@8 = grDebugDumpTexMemory@8
+    grDebugDumpTexMemory@8 = grDebugDumpTexMemory@8
+    _grDebugGetTexLodOffset@8 = grDebugGetTexLodOffset@8
+    grDebugGetTexLodOffset@8 = grDebugGetTexLodOffset@8
+    _grDebugGetTexParams@8 = grDebugGetTexParams@8
+    grDebugGetTexParams@8 = grDebugGetTexParams@8
+    _grDebugHexDump@12 = grDebugHexDump@12
+    grDebugHexDump@12 = grDebugHexDump@12

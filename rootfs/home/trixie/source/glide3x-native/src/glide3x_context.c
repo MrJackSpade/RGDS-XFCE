@@ -189,13 +189,18 @@ GrContext_t __stdcall grSstWinOpen(
      */
     if (g_voodoo->tmu[0].ram == NULL) {
         debug_log("glide3x: grSstWinOpen - init TMUs (first time)\n");
-        voodoo_init_tmu(&g_voodoo->tmu[0],
-                        &g_voodoo->reg[textureMode],
-                        2 * 1024 * 1024);
-        voodoo_init_tmu(&g_voodoo->tmu[1],
-                        &g_voodoo->reg[textureMode + 0x100/4],
-                        2 * 1024 * 1024);
+        /* tmushare must be initialized first - TMU init references its lookup tables */
         voodoo_init_tmu_shared(&g_voodoo->tmushare);
+        /* TMU register base addresses per DOSBox/hardware spec.
+         * This allows t->reg[textureMode] etc. to access the correct absolute register */
+        voodoo_init_tmu(g_voodoo,
+                        &g_voodoo->tmu[0],
+                        &g_voodoo->reg[TMU0_REG_BASE],
+                        2 * 1024 * 1024);
+        voodoo_init_tmu(g_voodoo,
+                        &g_voodoo->tmu[1],
+                        &g_voodoo->reg[TMU1_REG_BASE],
+                        2 * 1024 * 1024);
     } else {
         debug_log("glide3x: grSstWinOpen - TMUs already initialized, preserving textures\n");
     }

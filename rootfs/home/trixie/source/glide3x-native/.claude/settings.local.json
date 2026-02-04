@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "Bash(powershell.exe -File deploy_and_test.ps1 -Test texsimple -NoBuild)",
+      "Bash(powershell.exe:*)"
     ]
   }
 }

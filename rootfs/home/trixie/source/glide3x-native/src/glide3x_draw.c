@@ -375,15 +375,17 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
         compute_gradients(ax, ay, bx, by, cx, cy, va.tow0, vb.tow0, vc.tow0, &dt0dx, &dt0dy);
         compute_gradients(ax, ay, bx, by, cx, cy, va.oow, vb.oow, vc.oow, &dw0dx, &dw0dy);
 
-        tmu0->starts = (int64_t)(va.sow0 * 262144.0);
-        tmu0->startt = (int64_t)(va.tow0 * 262144.0);
-        tmu0->startw = (int64_t)(va.oow * 1073741824.0);
-        tmu0->dsdx = (int64_t)(ds0dx * 262144.0);
-        tmu0->dtdx = (int64_t)(dt0dx * 262144.0);
-        tmu0->dwdx = (int64_t)(dw0dx * 1073741824.0);
-        tmu0->dsdy = (int64_t)(ds0dy * 262144.0);
-        tmu0->dtdy = (int64_t)(dt0dy * 262144.0);
-        tmu0->dwdy = (int64_t)(dw0dy * 1073741824.0);
+        /* S,T data is 14.18 formatted in Glide, convert to 16.32 internal format
+         * per DOSBox voodoo.cpp: float_to_int64(data, 32) scales by 2^32 */
+        tmu0->starts = (int64_t)(va.sow0 * 4294967296.0);
+        tmu0->startt = (int64_t)(va.tow0 * 4294967296.0);
+        tmu0->startw = (int64_t)(va.oow * 4294967296.0);
+        tmu0->dsdx = (int64_t)(ds0dx * 4294967296.0);
+        tmu0->dtdx = (int64_t)(dt0dx * 4294967296.0);
+        tmu0->dwdx = (int64_t)(dw0dx * 4294967296.0);
+        tmu0->dsdy = (int64_t)(ds0dy * 4294967296.0);
+        tmu0->dtdy = (int64_t)(dt0dy * 4294967296.0);
+        tmu0->dwdy = (int64_t)(dw0dy * 4294967296.0);
 
         /* TMU1 texture coordinates */
         float ds1dx, ds1dy, dt1dx, dt1dy, dw1dx, dw1dy;
@@ -391,15 +393,15 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
         compute_gradients(ax, ay, bx, by, cx, cy, va.tow1, vb.tow1, vc.tow1, &dt1dx, &dt1dy);
         compute_gradients(ax, ay, bx, by, cx, cy, va.oow, vb.oow, vc.oow, &dw1dx, &dw1dy);
 
-        tmu1->starts = (int64_t)(va.sow1 * 262144.0);
-        tmu1->startt = (int64_t)(va.tow1 * 262144.0);
-        tmu1->startw = (int64_t)(va.oow * 1073741824.0);
-        tmu1->dsdx = (int64_t)(ds1dx * 262144.0);
-        tmu1->dtdx = (int64_t)(dt1dx * 262144.0);
-        tmu1->dwdx = (int64_t)(dw1dx * 1073741824.0);
-        tmu1->dsdy = (int64_t)(ds1dy * 262144.0);
-        tmu1->dtdy = (int64_t)(dt1dy * 262144.0);
-        tmu1->dwdy = (int64_t)(dw1dy * 262144.0);
+        tmu1->starts = (int64_t)(va.sow1 * 4294967296.0);
+        tmu1->startt = (int64_t)(va.tow1 * 4294967296.0);
+        tmu1->startw = (int64_t)(va.oow * 4294967296.0);
+        tmu1->dsdx = (int64_t)(ds1dx * 4294967296.0);
+        tmu1->dtdx = (int64_t)(dt1dx * 4294967296.0);
+        tmu1->dwdx = (int64_t)(dw1dx * 4294967296.0);
+        tmu1->dsdy = (int64_t)(ds1dy * 4294967296.0);
+        tmu1->dtdy = (int64_t)(dt1dy * 4294967296.0);
+        tmu1->dwdy = (int64_t)(dw1dy * 4294967296.0);
     }
 
     /* Call the software rasterizer */

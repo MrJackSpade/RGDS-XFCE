@@ -1,5 +1,5 @@
 param(
-    [switch]$TestOnly,      # Only run the LFB stride test, not Diablo 2
+    [string]$Test,          # Test to run: "lfb", "texture", "texmem", "glide" (or empty for Diablo 2)
     [switch]$DeployOnly,    # Only build and deploy, don't run anything
     [switch]$NoBuild        # Skip build step (use existing binaries)
 )
@@ -14,10 +14,20 @@ $RemoteTestPath = "/home/trixie/.wine-hangover/drive_c/glide3x_tests"
 $LocalDll = "build/glide3x.dll"
 $LocalTestGlide = "test_glide.exe"
 $LocalTestLfb = "test_lfb_stride.exe"
+$LocalTestTexture = "test_texture.exe"
+$LocalTestTexMem = "test_texture_memory.exe"
+$LocalTestTexSimple = "test_texture_simple.exe"
 $RemoteLogPath = "/home/trixie/.wine-hangover/drive_c/glide3x_debug.log"
 $LocalLogPath = "glide3x_debug.log"
 $RemoteTexturesPath = "/home/trixie/.wine-hangover/drive_c/textures"
 $LocalTexturesPath = "textures"
+$RemoteTmuDumpPath = "/home/trixie/.wine-hangover/drive_c"
+$LocalDiagnosticsPath = "diagnostics"
+
+# Clear textures directories (local and remote)
+Write-Host "Clearing textures directories..."
+if (Test-Path $LocalTexturesPath) { Remove-Item $LocalTexturesPath -Recurse -Force }
+& "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -rf '${RemoteTexturesPath}'"
 
 if (-not $NoBuild) {
     Write-Host "Building project (including tests)..."
@@ -39,6 +49,9 @@ cd "${RemoteTestPath}"
 put $LocalDll
 put $LocalTestGlide
 put $LocalTestLfb
+put $LocalTestTexture
+put $LocalTestTexMem
+put $LocalTestTexSimple
 bye
 "@
 Write-Host "Deploying DLL and test executables..."
@@ -54,35 +67,78 @@ if ($DeployOnly) {
     Write-Host "Deploy-only mode. To run tests manually:"
     Write-Host "  ssh ${RemoteUser}@${RemoteHost}"
     Write-Host "  cd '${RemoteTestPath}'"
-    Write-Host "  DISPLAY=:0 WINEPREFIX=~/.wine-hangover wine test_lfb_stride.exe"
+    Write-Host "  DISPLAY=:0 WINEPREFIX=~/.wine-hangover wine test_texture.exe"
+    Write-Host ""
+    Write-Host "Available tests: -Test lfb, -Test texture, -Test texmem, -Test glide"
     exit 0
 }
 
-if ($TestOnly) {
-    Write-Host "=== Running LFB Stride Test (ZARDBLIZ bug reproduction) ==="
+# Run a specific test if requested
+if ($Test) {
+    $TestExe = switch ($Test.ToLower()) {
+        "lfb" { "test_lfb_stride.exe" }
+        "texture" { "test_texture.exe" }
+        "texmem" { "test_texture_memory.exe" }
+        "texsimple" { "test_texture_simple.exe" }
+        "glide" { "test_glide.exe" }
+        default {
+            Write-Error "Unknown test: $Test. Available: lfb, texture, texmem, texsimple, glide"
+            exit 1
+        }
+    }
+
+    Write-Host "=== Running Test: $Test ($TestExe) ==="
     Write-Host ""
 
-    # Clear any old logs
+    # Clear any old logs and dumps
     if (Test-Path $LocalLogPath) { Remove-Item $LocalLogPath }
-    & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -f '${RemoteLogPath}'"
+    if (Test-Path $LocalDiagnosticsPath) { Remove-Item $LocalDiagnosticsPath -Recurse -Force }
+    New-Item -ItemType Directory -Path $LocalDiagnosticsPath -Force | Out-Null
+    & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -f '${RemoteLogPath}' '${RemoteTmuDumpPath}/tmu0_dump.bin' '${RemoteTmuDumpPath}/tmu0_full_dump.bin'"
 
-    $TestCmd = "export DISPLAY=:0 && cd '${RemoteTestPath}' && WINEPREFIX=~/.wine-hangover /usr/bin/wine test_lfb_stride.exe 2>&1"
+    $TestCmd = "export DISPLAY=:0 && cd '${RemoteTestPath}' && WINEPREFIX=~/.wine-hangover /usr/bin/wine $TestExe 2>&1"
 
-    Write-Host "Executing test..."
-    & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" $TestCmd
+    Write-Host "Executing test (interactive tests require input on remote display)..."
+    & "C:\Windows\System32\OpenSSH\ssh.exe" -t "${RemoteUser}@${RemoteHost}" $TestCmd
+    $TestExitCode = $LASTEXITCODE
 
     Write-Host ""
-    Write-Host "Fetching debug log..."
+    Write-Host "Fetching debug log and diagnostics..."
     $SftpScriptLog = @"
 get "${RemoteLogPath}" $LocalLogPath
+get "${RemoteTmuDumpPath}/tmu0_dump.bin" "${LocalDiagnosticsPath}/tmu0_dump.bin"
+get "${RemoteTmuDumpPath}/tmu0_full_dump.bin" "${LocalDiagnosticsPath}/tmu0_full_dump.bin"
 bye
 "@
-    $SftpScriptLog | & "C:\Windows\System32\OpenSSH\sftp.exe" "${RemoteUser}@${RemoteHost}"
+    $ErrorActionPreference = "Continue"
+    $SftpScriptLog | & "C:\Windows\System32\OpenSSH\sftp.exe" "${RemoteUser}@${RemoteHost}" 2>$null
+    $ErrorActionPreference = "Stop"
 
     Write-Host ""
     Write-Host "=== Debug Log (last 50 lines) ==="
-    Get-Content $LocalLogPath -Tail 50
-    exit 0
+    if (Test-Path $LocalLogPath) {
+        Get-Content $LocalLogPath -Tail 50
+    }
+    else {
+        Write-Host "(No log file found)"
+    }
+
+    # Report diagnostics
+    Write-Host ""
+    Write-Host "=== Diagnostics ==="
+    $DiagFiles = Get-ChildItem $LocalDiagnosticsPath -ErrorAction SilentlyContinue
+    if ($DiagFiles) {
+        foreach ($f in $DiagFiles) {
+            Write-Host "  $($f.Name) - $($f.Length) bytes"
+        }
+        Write-Host ""
+        Write-Host "TMU dumps saved to: $LocalDiagnosticsPath"
+        Write-Host "Use hex editor to examine TMU memory contents"
+    }
+    else {
+        Write-Host "(No diagnostic dumps generated)"
+    }
+    exit $TestExitCode
 }
 
 # Default: Run Diablo II
@@ -92,10 +148,7 @@ Write-Host "Executing Diablo II on remote host..."
 if (Test-Path $LocalLogPath) { Remove-Item $LocalLogPath }
 & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -f '${RemoteLogPath}'"
 
-# Clear textures directories (local and remote)
-Write-Host "Clearing textures directories..."
-if (Test-Path $LocalTexturesPath) { Remove-Item $LocalTexturesPath -Recurse -Force }
-& "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -rf '${RemoteTexturesPath}'"
+
 
 $RunCmd = "export DISPLAY=:0 && cd '${RemotePath}' && ODLL=libwow64fex.dll WINEPREFIX=~/.wine-hangover /usr/bin/wine `'Diablo II.exe`' -3dfx -w 2>&1"
 

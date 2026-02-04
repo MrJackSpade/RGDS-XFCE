@@ -371,6 +371,17 @@ typedef FxI32 GrAspectRatio_t;
 #define GR_ASPECT_LOG2_1x8  -3   /* 1:8 (e.g., 32x256) */
 
 /*
+ * Mipmap Level Mask - Which mipmap levels to include
+ *
+ * For split mipmap storage (even/odd levels on different TMUs for SLI),
+ * these masks control which levels are affected by download/source operations.
+ * Most applications use GR_MIPMAPLEVELMASK_BOTH for all levels.
+ */
+#define GR_MIPMAPLEVELMASK_EVEN  0x1   /* Even-numbered LODs (0, 2, 4, 6, 8) */
+#define GR_MIPMAPLEVELMASK_ODD   0x2   /* Odd-numbered LODs (1, 3, 5, 7) */
+#define GR_MIPMAPLEVELMASK_BOTH  0x3   /* All LODs */
+
+/*
  * GrTexInfo - Texture descriptor structure
  *
  * This structure describes a texture's properties for download and binding.

@@ -23,6 +23,17 @@ typedef enum {
  *************************************/
 
 #define MAX_TMU                 2
+
+/* Chip register base indices in the voodoo_state reg[] array.
+ * Used for register dispatch and TMU initialization.
+ * TMU registers are accessed as t->reg[textureMode], t->reg[tLOD], etc.
+ * where t->reg points to &v->reg[TMU0_REG_BASE] or &v->reg[TMU1_REG_BASE].
+ * TMU1 is at offset 0x400 bytes (0x100 dwords) from TMU0 per hardware spec. */
+#define FBI_REG_BASE            0x000
+#define TMU0_REG_BASE           0x100
+#define TMU1_REG_BASE           0x200
+#define TMU2_REG_BASE           0x300
+
 #define RECIPLOG_LOOKUP_BITS    9
 #define RECIPLOG_INPUT_PREC     32
 #define RECIPLOG_LOOKUP_PREC    22
@@ -335,6 +346,19 @@ typedef enum {
 #define TEXLOD_TDIRECT_WRITE(val)           (((val) >> 27) & 1)
 
 /*************************************
+ * TEXDETAIL register bits
+ *************************************/
+
+#define TEXDETAIL_DETAIL_MAX(val)           (((val) >> 0) & 0xff)
+#define TEXDETAIL_DETAIL_BIAS(val)          (((val) >> 8) & 0x3f)
+#define TEXDETAIL_DETAIL_SCALE(val)         (((val) >> 14) & 7)
+#define TEXDETAIL_RGB_MIN_FILTER(val)       (((val) >> 17) & 1)
+#define TEXDETAIL_RGB_MAG_FILTER(val)       (((val) >> 18) & 1)
+#define TEXDETAIL_ALPHA_MIN_FILTER(val)     (((val) >> 19) & 1)
+#define TEXDETAIL_ALPHA_MAG_FILTER(val)     (((val) >> 20) & 1)
+#define TEXDETAIL_SEPARATE_RGBA_FILTER(val) (((val) >> 21) & 1)
+
+/*************************************
  * TREXINIT register bits
  *************************************/
 
@@ -451,6 +475,8 @@ typedef enum {
     fbiInit5     = 0x244/4,
     fbiInit6     = 0x248/4,
     fbiInit7     = 0x24c/4,
+    fbiSwapHistory = 0x258/4,
+    fbiTrianglesOut = 0x25c/4,
     sSetupMode   = 0x260/4,
     sVx          = 0x264/4,
     sVy          = 0x268/4,

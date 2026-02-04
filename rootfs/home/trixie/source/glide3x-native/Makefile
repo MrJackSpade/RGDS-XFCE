@@ -12,7 +12,7 @@ CFLAGS += -DWIN32 -D_WIN32 -DNDEBUG -DGLIDE3X_EXPORTS
 
 LDFLAGS = -shared -Wl,--enable-stdcall-fixup
 LDFLAGS += -static-libgcc -static-libstdc++
-LIBS = -lgdi32 -lddraw -ldxguid
+LIBS = -lgdi32 -lddraw -ldxguid -Wl,-Bstatic -lpthread -Wl,-Bdynamic
 
 # Source files - broken out into modules
 # Note: glide3x.c is the monolithic file, now replaced by broken-out modules
@@ -30,6 +30,7 @@ SRCS = src/glide3x_state.c \
        src/glide3x_fog.c \
        src/glide3x_misc.c \
        src/glide3x_get.c \
+       src/glide3x_debug.c \
        src/voodoo_emu.c \
        src/display_ddraw.c \
        src/glide3x_screenshot.c
@@ -94,6 +95,41 @@ test-lfb: $(TEST_LFB_TARGET)
 	@echo "Run with: wine ./test_lfb_stride.exe"
 	@echo "This test reproduces the D2 title screen stride bug"
 
+# Texture rendering test
+TEST_TEX_TARGET = test_texture.exe
+TEST_TEX_SRCS = test/test_texture.c
+
+$(TEST_TEX_TARGET): $(TARGET) $(TEST_TEX_SRCS)
+	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_TEX_SRCS) $(TARGET)
+	@echo "Built $@"
+
+test-texture: $(TEST_TEX_TARGET)
+	@echo "Run with: wine ./test_texture.exe"
+	@echo "This test validates texture rendering"
+
+# Texture memory verification test (rigorous write/read roundtrip)
+TEST_TEXMEM_TARGET = test_texture_memory.exe
+TEST_TEXMEM_SRCS = test/test_texture_memory.c
+
+$(TEST_TEXMEM_TARGET): $(TARGET) $(TEST_TEXMEM_SRCS)
+	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_TEXMEM_SRCS) $(TARGET)
+	@echo "Built $@"
+
+test-texmem: $(TEST_TEXMEM_TARGET)
+	@echo "Run with: wine ./test_texture_memory.exe"
+	@echo "This test verifies texture memory write/read roundtrip"
+
+# Simple texture test (16x16 with unique values per pixel)
+TEST_TEXSIMPLE_TARGET = test_texture_simple.exe
+TEST_TEXSIMPLE_SRCS = test/test_texture_simple.c
+
+$(TEST_TEXSIMPLE_TARGET): $(TARGET) $(TEST_TEXSIMPLE_SRCS)
+	$(CC) -O0 -g -Wall -Wextra -I./src -o $@ $(TEST_TEXSIMPLE_SRCS) $(TARGET)
+	@echo "Built $@"
+
+test-texsimple: $(TEST_TEXSIMPLE_TARGET)
+	@echo "Run with: wine ./test_texture_simple.exe"
+
 # Build all test executables
-tests: $(TEST_TARGET) $(TEST_LFB_TARGET)
-	@echo "All tests built: $(TEST_TARGET) $(TEST_LFB_TARGET)"
+tests: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET)
+	@echo "All tests built: $(TEST_TARGET) $(TEST_LFB_TARGET) $(TEST_TEX_TARGET) $(TEST_TEXMEM_TARGET) $(TEST_TEXSIMPLE_TARGET)"
