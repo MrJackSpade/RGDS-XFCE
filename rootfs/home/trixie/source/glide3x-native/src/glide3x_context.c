@@ -264,10 +264,6 @@ GrContext_t __stdcall grSstWinOpen(
     g_voodoo->active = true;
     g_context = (GrContext_t)g_voodoo;
 
-    /* Reset debug counters for fresh logging each session */
-    extern void reset_debug_counters(void);
-    reset_debug_counters();
-
     debug_log("glide3x: grSstWinOpen complete\n");
     return g_context;
 }

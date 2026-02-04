@@ -30,11 +30,6 @@ static void triangle_worker_run(triangle_worker *tworker);
 /* Global voodoo state for worker threads (set before triangle_worker_run) */
 static voodoo_state *v = NULL;
 
-/* Debug counter for pixel-level logging */
-static int raster_debug_count = 0;
-
-void reset_debug_counters(void) { }
-
 /*************************************
  *
  *  Float-to-int conversions
@@ -768,14 +763,6 @@ static void raster_generic(voodoo_state* vs, uint32_t TMUS, uint32_t TEXMODE0,
         /* colorpath pipeline selects source colors and does blending */
         CLAMPED_ARGB(iterr, iterg, iterb, itera, r_fbzColorPath, iterargb);
 
-        /* DEBUG: Log first 16 texel samples */
-        if (raster_debug_count < 256) {
-            raster_debug_count++;
-            trap_log("SAMPLE[%03d] x=%d y=%d texel=0x%08X s=%lld t=%lld w=%lld\n",
-                     raster_debug_count, x, y, texel.u,
-                     (long long)iters0, (long long)itert0, (long long)iterw0);
-        }
-
         int32_t blendr;
         int32_t blendg;
         int32_t blendb;
@@ -1095,18 +1082,10 @@ static void recompute_texture_params(tmu_state* t)
     uint32_t base;
     int lod;
 
-    trap_log("recompute_texture_params: t->reg=%p tLOD=0x%X textureMode=0x%X texBaseAddr=0x%X\n",
-             (void*)t->reg, tLOD, textureMode, texBaseAddr);
-    trap_log("  t->reg[tLOD].u=0x%08X t->reg[textureMode].u=0x%08X t->reg[texBaseAddr].u=0x%08X\n",
-             t->reg[tLOD].u, t->reg[textureMode].u, t->reg[texBaseAddr].u);
-
     /* extract LOD parameters */
     t->lodmin = TEXLOD_LODMIN(t->reg[tLOD].u) << 6;
     t->lodmax = TEXLOD_LODMAX(t->reg[tLOD].u) << 6;
     t->lodbias = (int8_t)(TEXLOD_LODBIAS(t->reg[tLOD].u) << 2) << 4;
-
-    trap_log("  extracted: lodmin=%d lodmax=%d lodbias=%d (8<<8=%d, TMU disabled if lodmin >= this)\n",
-             t->lodmin, t->lodmax, t->lodbias, 8 << 8);
 
     /* determine which LODs are present */
     t->lodmask = 0x1ff;
@@ -1576,8 +1555,6 @@ static void sum_statistics(stats_block *dest, const stats_block *src)
     dest->afunc_fail += src->afunc_fail;
 }
 
-static int triangle_debug_count = 0;
-
 static void triangle_worker_work(const triangle_worker *tworker,
     const int32_t work_start, const int32_t work_end)
 {
@@ -1585,21 +1562,6 @@ static void triangle_worker_work(const triangle_worker *tworker,
     uint32_t tmus = 0;
     uint32_t texmode0 = 0;
     uint32_t texmode1 = 0;
-
-    int do_debug = (triangle_debug_count < 5);
-    if (do_debug) {
-        triangle_debug_count++;
-        trap_log("triangle_worker_work: fbiInit3=0x%08X fbzColorPath=0x%08X chipmask=0x%02X\n",
-                 v->reg[fbiInit3].u, v->reg[fbzColorPath].u, v->chipmask);
-        trap_log("  FBIINIT3_DISABLE_TMUS=%d FBZCP_TEXTURE_ENABLE=%d\n",
-                 FBIINIT3_DISABLE_TMUS(v->reg[fbiInit3].u),
-                 FBZCP_TEXTURE_ENABLE(v->reg[fbzColorPath].u));
-        trap_log("  TMU0: lodmin=%d lodmax=%d reg=%p reg[textureMode].u=0x%08X\n",
-                 v->tmu[0].lodmin, v->tmu[0].lodmax, (void*)v->tmu[0].reg,
-                 v->tmu[0].reg ? v->tmu[0].reg[textureMode].u : 0);
-        trap_log("  TMU1: lodmin=%d lodmax=%d reg=%p\n",
-                 v->tmu[1].lodmin, v->tmu[1].lodmax, (void*)v->tmu[1].reg);
-    }
 
     if (!FBIINIT3_DISABLE_TMUS(v->reg[fbiInit3].u) && FBZCP_TEXTURE_ENABLE(v->reg[fbzColorPath].u))
     {
@@ -1615,11 +1577,6 @@ static void triangle_worker_work(const triangle_worker *tworker,
             texmode0 &= ~6;
             texmode1 &= ~6;
         }
-        if (do_debug) {
-            trap_log("  -> tmus=%d texmode0=0x%08X texmode1=0x%08X\n", tmus, texmode0, texmode1);
-        }
-    } else if (do_debug) {
-        trap_log("  -> texturing DISABLED\n");
     }
 
     /* compute the slopes for each portion of the triangle */

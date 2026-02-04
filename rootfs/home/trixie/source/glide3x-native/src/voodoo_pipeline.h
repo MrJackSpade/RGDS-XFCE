@@ -952,16 +952,10 @@ do																				\
 		/* point sampled */														\
 																				\
 		uint32_t texel0;															\
-		static int tex_dbg = 0;													\
-		int32_t s_before = s, t_before = t;										\
 																				\
 		/* adjust S/T for the LOD and strip off the fractions */				\
 		s >>= ilod + 18;														\
 		t >>= ilod + 18;														\
-		if (tex_dbg++ < 16) {													\
-			trap_log("TEXPIPE: s_in=%d t_in=%d s_out=%d t_out=%d ilod=%d smax=%d texbase=0x%X\n", \
-				s_before, t_before, s, t, ilod, smax, texbase);					\
-		}														\
 																				\
 		/* clamp/wrap S/T if necessary */										\
 		if (TEXMODE_CLAMP_S(TEXMODE))											\

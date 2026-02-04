@@ -7,3 +7,5 @@ backups/
 rootfs/home/trixie/source/glide3x-native/references/
 /rootfs/home/trixie/source/glide3x-native/.vs
 /rootfs/home/trixie/source/glide3x-native/textures
+rootfs/home/trixie/source/glide3x-native/src/verification/
+*.png

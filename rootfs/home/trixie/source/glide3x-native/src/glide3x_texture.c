@@ -356,7 +356,6 @@ _grTexCalcBaseAddress( FxU32 start, GrLOD_t large_lod,
   /* Validate format */
   if (format >= sizeof(_grBitsPerTexel)/sizeof(_grBitsPerTexel[0]) ||
       _grBitsPerTexel[format] == 0) {
-    trap_log("_grTexCalcBaseAddress: invalid format %d\n", format);
     return start;
   }
 
@@ -382,9 +381,6 @@ _grTexCalcBaseAddress( FxU32 start, GrLOD_t large_lod,
 
   /* Clamp the size down to alignment boundary */
   sum_of_lod_sizes &= ~SST_TEXTURE_ALIGN_MASK;
-
-  trap_log("_grTexCalcBaseAddress: start=0x%X large_lod=%d aspect=%d format=%d evenOdd=%d -> sum=0x%X base=0x%X\n",
-           start, large_lod, aspect, format, odd_even_mask, sum_of_lod_sizes, start - sum_of_lod_sizes);
 
   return ( start - sum_of_lod_sizes );
 }
@@ -497,8 +493,6 @@ static void dump_texture_bmp(int tmu, FxU32 address, int width, int height, GrTe
 
     free(row);
     fclose(f);
-
-    trap_log("  -> Dumped to %s\n", filename);
 }
 
 /*
@@ -557,10 +551,6 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
 
     int t = (tmu == GR_TMU0) ? 0 : 1;
     tmu_state *ts = &g_voodoo->tmu[t];
-
-    trap_log("grTexSource: tmu=%d addr=0x%X fmt=%d largeLod=%d smallLod=%d aspect=%d evenOdd=%d\n",
-             t, startAddress, info->format, info->largeLodLog2, info->smallLodLog2,
-             info->aspectRatioLog2, evenOdd);
 
     /*-------------------------------------------------------------
       Compute textureMode register
@@ -686,11 +676,6 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
         FxU32 maskedBase = baseAddress & ts->mask;  /* Wrap to 2MB */
         FxU32 regValue = maskedBase >> 3;           /* Convert to 8-byte units */
         ts->reg[texBaseAddr].u = regValue;
-
-        trap_log("  -> voodoo_format=%d textureMode=0x%08X tLOD=0x%08X\n",
-                 vfmt, texMode, tLod);
-        trap_log("  -> _grTexCalcBaseAddress=0x%08X masked=0x%08X texBaseAddr.u=0x%08X\n",
-                 baseAddress, maskedBase, regValue);
     }
 
     /*-------------------------------------------------------------
@@ -700,9 +685,6 @@ void __stdcall grTexSource(GrChipID_t tmu, FxU32 startAddress, FxU32 evenOdd, Gr
       -------------------------------------------------------------*/
     ts->lodmin = TEXLOD_LODMIN(tLod) << 6;
     ts->lodmax = TEXLOD_LODMAX(tLod) << 6;
-
-    trap_log("  -> ts->lodmin=%d ts->lodmax=%d (ilod=%d)\n",
-             ts->lodmin, ts->lodmax, ts->lodmin >> 8);
 
     /* Mark registers as dirty so recompute_texture_params will run */
     ts->regdirty = 1;
@@ -731,9 +713,6 @@ void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 eve
     tmu_state *ts = &g_voodoo->tmu[t];
 
     (void)evenOdd;
-
-    trap_log("grTexDownloadMipMap: tmu=%d addr=0x%X fmt=%d largeLod=%d smallLod=%d aspect=%d data=%p\n",
-             t, startAddress, info->format, info->largeLodLog2, info->smallLodLog2, info->aspectRatioLog2, info->data);
 
     int tex_width = get_tex_size(info->largeLodLog2);
     int tex_height = tex_width;
@@ -765,20 +744,6 @@ void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 eve
     /* Copy to TMU RAM */
     uint32_t dest_addr = startAddress & ts->mask;
 
-    trap_log("  -> size=%dx%d bpp=%d total_size=%d dest_addr=0x%X\n",
-             tex_width, tex_height, bpp, total_size, dest_addr);
-
-    /* Log first few pixels for debugging */
-    if (bpp == 2) {
-        uint16_t *src16 = (uint16_t*)info->data;
-        trap_log("  -> first pixels: %04X %04X %04X %04X\n",
-                 src16[0], src16[1], src16[2], src16[3]);
-    } else {
-        uint8_t *src8 = (uint8_t*)info->data;
-        trap_log("  -> first bytes: %02X %02X %02X %02X\n",
-                 src8[0], src8[1], src8[2], src8[3]);
-    }
-
     /* Dump texture to BMP for visual debugging */
     dump_texture_bmp(t, startAddress, tex_width, tex_height, info->format, info->data);
 
@@ -804,9 +769,6 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
     (void)evenOdd;
     (void)largeLod;
 
-    trap_log("grTexDownloadMipMapLevel: tmu=%d addr=0x%X thisLod=%d largeLod=%d fmt=%d data=%p\n",
-             t, startAddress, thisLod, largeLod, format, data);
-
     int tex_width = get_tex_size(thisLod);
     int tex_height = tex_width;
 
@@ -825,8 +787,6 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
 
     int bpp = get_texel_bytes(format);
     int tex_size = tex_width * tex_height * bpp;
-
-    trap_log("  -> size=%dx%d bpp=%d tex_size=%d\n", tex_width, tex_height, bpp, tex_size);
 
     /* Dump texture to BMP for visual debugging */
     dump_texture_bmp(t, startAddress, tex_width, tex_height, format, data);

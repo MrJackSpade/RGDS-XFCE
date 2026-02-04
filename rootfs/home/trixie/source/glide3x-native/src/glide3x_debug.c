@@ -78,8 +78,6 @@ FxBool __stdcall grDebugDumpTexMemory(GrChipID_t tmu, const char *filename)
     fwrite(ts->ram, 1, ts->mask + 1, f);
     fclose(f);
 
-    trap_log("grDebugDumpTexMemory: Dumped TMU%d (%u bytes) to %s\n",
-             t, ts->mask + 1, filename);
     return FXTRUE;
 }
 
@@ -140,36 +138,7 @@ void __stdcall grDebugGetTexParams(GrChipID_t tmu, FxU32 *params)
  */
 void __stdcall grDebugHexDump(const char *label, const void *data, FxU32 size)
 {
-    if (!data || size == 0) return;
-    if (size > 256) size = 256;
-
-    const uint8_t *bytes = (const uint8_t *)data;
-
-    trap_log("=== HEX DUMP: %s (%u bytes) ===\n", label ? label : "data", size);
-
-    for (FxU32 i = 0; i < size; i += 16) {
-        char line[80];
-        int pos = snprintf(line, sizeof(line), "%04X: ", i);
-
-        /* Hex bytes */
-        for (int j = 0; j < 16 && i + j < size; j++) {
-            pos += snprintf(line + pos, sizeof(line) - pos, "%02X ", bytes[i + j]);
-        }
-        /* Pad if less than 16 bytes */
-        for (int j = size - i; j < 16; j++) {
-            pos += snprintf(line + pos, sizeof(line) - pos, "   ");
-        }
-
-        /* ASCII representation */
-        pos += snprintf(line + pos, sizeof(line) - pos, " |");
-        for (int j = 0; j < 16 && i + j < size; j++) {
-            uint8_t c = bytes[i + j];
-            pos += snprintf(line + pos, sizeof(line) - pos, "%c",
-                           (c >= 32 && c < 127) ? c : '.');
-        }
-        snprintf(line + pos, sizeof(line) - pos, "|");
-
-        trap_log("%s\n", line);
-    }
-    trap_log("=== END HEX DUMP ===\n");
+    (void)data;
+    (void)size;
+    (void)label;
 }
