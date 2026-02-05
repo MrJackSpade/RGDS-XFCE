@@ -139,20 +139,10 @@
  *                  FXFALSE);
  *   Note: "LOCAL" function with "OTHER" source means use other directly.
  */
-/* Track color combine calls for debugging */
-static int g_colorcombine_count = 0;
-
 void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t factor,
                     GrCombineLocal_t local, GrCombineOther_t other, FxBool invert)
 {
-    g_colorcombine_count++;
-
-    /* ALWAYS log - critical for debugging rendering issues */
-    DEBUG_VERBOSE("grColorCombine #%d: func=%d, factor=%d, local=%d, other=%d, invert=%d\n",
-                  g_colorcombine_count, function, factor, local, other, invert);
-
     if (!g_voodoo) {
-        DEBUG_VERBOSE("grColorCombine: returning VOID\n");
         return;
     }
 
@@ -287,7 +277,6 @@ void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t fa
     }
 
     g_voodoo->reg[fbzColorPath].u = val;
-    DEBUG_VERBOSE("grColorCombine: returning VOID\n");
 }
 
 /*
@@ -329,17 +318,10 @@ void __stdcall grColorCombine(GrCombineFunction_t function, GrCombineFactor_t fa
  *   - Alpha test (conditional pixel discard)
  *   - Alpha blend (mixing with framebuffer)
  */
-static int g_alphacombine_count = 0;
-
 void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t factor,
                     GrCombineLocal_t local, GrCombineOther_t other, FxBool invert)
 {
-    g_alphacombine_count++;
-    DEBUG_VERBOSE("grAlphaCombine #%d: func=%d, factor=%d, local=%d, other=%d, invert=%d\n",
-                  g_alphacombine_count, function, factor, local, other, invert);
-
     if (!g_voodoo) {
-        DEBUG_VERBOSE("grAlphaCombine: returning VOID\n");
         return;
     }
 
@@ -454,7 +436,6 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
     }
 
     g_voodoo->reg[fbzColorPath].u = val;
-    DEBUG_VERBOSE("grAlphaCombine: returning VOID\n");
 }
 
 /*
@@ -497,16 +478,10 @@ void __stdcall grAlphaCombine(GrCombineFunction_t function, GrCombineFactor_t fa
  * Games often set it once during initialization and rely on vertex colors
  * for most variation.
  */
-static int g_constantcolor_count = 0;
-
 void __stdcall grConstantColorValue(GrColor_t value)
 {
-    g_constantcolor_count++;
-    DEBUG_VERBOSE("grConstantColorValue #%d: value=0x%08X\n", g_constantcolor_count, value);
-    
     g_constant_color = value;
     if (g_voodoo) {
         g_voodoo->reg[color0].u = value;
     }
-    DEBUG_VERBOSE("grConstantColorValue: returning VOID\n");
 }

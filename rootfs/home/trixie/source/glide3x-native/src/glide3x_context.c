@@ -79,8 +79,6 @@ GrContext_t __stdcall grSstWinOpen(
     int numColorBuffers,
     int numAuxBuffers)
 {
-
-
     /* Suppress unused parameter warnings */
     (void)refresh;
     (void)numColorBuffers;

@@ -198,6 +198,43 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
     /* Send to display */
     display_present(presentbuf, g_voodoo->fbi.width, g_voodoo->fbi.height);
 
+    /*
+     * FPS tracking - log frames per second every second
+     *
+     * This provides a performance baseline for optimization work.
+     * We count frames and report once per second.
+     */
+    {
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+
+        /* Initialize FPS tracking on first frame */
+        if (!g_fps_initialized) {
+            QueryPerformanceFrequency(&g_fps_freq);
+            g_fps_last_report_time = now;
+            g_fps_frame_count = 0;
+            g_fps_initialized = 1;
+        }
+
+        g_fps_frame_count++;
+
+        /* Check if one second has elapsed */
+        double elapsed_sec = (double)(now.QuadPart - g_fps_last_report_time.QuadPart)
+                           / (double)g_fps_freq.QuadPart;
+
+        if (elapsed_sec >= 1.0) {
+            /* Log FPS with current resolution */
+            debug_log("FPS: %d (resolution: %dx%d)\n",
+                      g_fps_frame_count,
+                      g_screen_width,
+                      g_screen_height);
+
+            /* Reset for next second */
+            g_fps_frame_count = 0;
+            g_fps_last_report_time = now;
+        }
+    }
+
     /* Reset LFB lock tracking for next frame */
     g_lfb_buffer_locked = -1;
 

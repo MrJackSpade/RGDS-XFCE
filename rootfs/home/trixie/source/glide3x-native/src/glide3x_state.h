@@ -28,22 +28,8 @@
  * The log file is created on first write and flushed after each entry.
  *************************************/
 
-/* Enable verbose logging - set to 1 to enable detailed transition debugging */
-#define GLIDE_DEBUG_VERBOSE 1
-
-/* Track 640x480 mode switches - only log after second switch */
-extern int g_640x480_switch_count;
-extern int g_logging_enabled;
-
 /* Write a formatted message to the debug log */
 void debug_log(const char *fmt, ...);
-
-/* Verbose logging macro - only logs when GLIDE_DEBUG_VERBOSE is enabled */
-#if GLIDE_DEBUG_VERBOSE
-#define DEBUG_VERBOSE(...) debug_log(__VA_ARGS__)
-#else
-#define DEBUG_VERBOSE(...) ((void)0)
-#endif
 
 /*************************************
  * Core Glide state
@@ -170,6 +156,22 @@ extern int g_lfb_shadow_height;
 extern GrBuffer_t g_lfb_shadow_target;  /* Which buffer to write to on unlock */
 
 
+
+/*************************************
+ * FPS tracking for performance baseline
+ *************************************/
+
+/* Frame counter for current second */
+extern int g_fps_frame_count;
+
+/* Timestamp of last FPS report (QueryPerformanceCounter value) */
+extern LARGE_INTEGER g_fps_last_report_time;
+
+/* Performance counter frequency (cached) */
+extern LARGE_INTEGER g_fps_freq;
+
+/* Whether FPS tracking has been initialized */
+extern int g_fps_initialized;
 
 /*************************************
  * Display interface

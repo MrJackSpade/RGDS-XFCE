@@ -200,7 +200,6 @@ static inline rgb_t rgba_bilinear_filter(rgb_t rgb00, rgb_t rgb01, rgb_t rgb10,
  * Dithering macro
  *************************************/
 
-extern void debug_log(const char *fmt, ...);
 #define APPLY_DITHER(FBZMODE, XX, DITHER_LOOKUP, RR, GG, BB)                \
 do                                                                          \
 {                                                                           \

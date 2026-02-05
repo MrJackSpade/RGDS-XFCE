@@ -31,10 +31,6 @@ static int g_debug_log_first_access = 1;
 static LARGE_INTEGER g_debug_log_start_time;
 static LARGE_INTEGER g_debug_log_freq;
 
-/* Track 640x480 mode switches - only log after second switch */
-int g_640x480_switch_count = 0;
-int g_logging_enabled = 0;
-
 /*
  * debug_log - Write a formatted message to the debug log file
  *
@@ -44,9 +40,6 @@ int g_logging_enabled = 0;
  */
 void debug_log(const char *fmt, ...)
 {
-    /* Only log after second 640x480 switch to focus on the problem area */
-    if (!g_logging_enabled) return;
-
     if (!g_debug_log) {
         if (g_debug_log_first_access) {
             DeleteFileA("C:\\glide3x_debug.log");
@@ -105,6 +98,15 @@ size_t g_lfb_shadow_buffer_size = 0;
 int g_lfb_shadow_width = 0;
 int g_lfb_shadow_height = 0;
 GrBuffer_t g_lfb_shadow_target = 0;
+
+/*************************************
+ * FPS tracking for performance baseline
+ *************************************/
+
+int g_fps_frame_count = 0;
+LARGE_INTEGER g_fps_last_report_time = {0};
+LARGE_INTEGER g_fps_freq = {0};
+int g_fps_initialized = 0;
 
 
 /*************************************

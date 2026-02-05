@@ -24,7 +24,7 @@ else
 endif
 
 CFLAGS = -O2 -Wall -Wextra $(ARCH_CFLAGS)
-CFLAGS += -I./src -I./simde/simde
+CFLAGS += -I./src
 CFLAGS += -DWIN32 -D_WIN32 -DNDEBUG -DGLIDE3X_EXPORTS
 
 LDFLAGS = $(ARCH_LDFLAGS)

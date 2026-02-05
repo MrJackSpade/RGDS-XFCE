@@ -123,15 +123,9 @@
  * factor. The most common mode is WITH_TABLE_ON_W for automatic
  * distance-based fog.
  */
-static int g_fogmode_count = 0;
-
 void __stdcall grFogMode(GrFogMode_t mode)
 {
-    g_fogmode_count++;
-    DEBUG_VERBOSE("grFogMode #%d: mode=%d\n", g_fogmode_count, mode);
-
     if (!g_voodoo) {
-        DEBUG_VERBOSE("grFogMode: returning VOID\n");
         return;
     }
 
@@ -143,7 +137,6 @@ void __stdcall grFogMode(GrFogMode_t mode)
      *   Bits 3-4: Fog source (0=W, 1=Z, 2=alpha, 3=fogcoord)
      */
     g_voodoo->reg[fogMode].u = mode;
-    DEBUG_VERBOSE("grFogMode: returning VOID\n");
 }
 
 /*
@@ -166,19 +159,12 @@ void __stdcall grFogMode(GrFogMode_t mode)
  * The fog color should generally match or complement the sky/background
  * to avoid obvious color discontinuities at the fog boundary.
  */
-static int g_fogcolorvalue_count = 0;
-
 void __stdcall grFogColorValue(GrColor_t fogcolor)
 {
-    g_fogcolorvalue_count++;
-    DEBUG_VERBOSE("grFogColorValue #%d: color=0x%08X\n", g_fogcolorvalue_count, fogcolor);
-
     if (!g_voodoo) {
-        DEBUG_VERBOSE("grFogColorValue: returning VOID\n");
         return;
     }
     g_voodoo->reg[fogColor].u = fogcolor;
-    DEBUG_VERBOSE("grFogColorValue: returning VOID\n");
 }
 
 /*
@@ -214,15 +200,9 @@ void __stdcall grFogColorValue(GrColor_t fogcolor)
  *   }
  *   grFogTable(table);
  */
-static int g_fogtable_count = 0;
-
 void __stdcall grFogTable(const GrFog_t ft[])
 {
-    g_fogtable_count++;
-    DEBUG_VERBOSE("grFogTable #%d: table=%p\n", g_fogtable_count, ft);
-
     if (!g_voodoo || !ft) {
-        DEBUG_VERBOSE("grFogTable: returning VOID\n");
         return;
     }
 
@@ -250,5 +230,4 @@ void __stdcall grFogTable(const GrFog_t ft[])
         /* Pack value and delta: lower 8 bits = value, bits 8-15 = delta */
         g_voodoo->fbi.fogblend[i] = ((uint32_t)(uint8_t)delta << 8) | value;
     }
-    DEBUG_VERBOSE("grFogTable: returning VOID\n");
 }

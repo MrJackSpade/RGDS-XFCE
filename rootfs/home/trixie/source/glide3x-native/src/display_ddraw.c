@@ -10,20 +10,6 @@
 #include <windows.h>
 #include <ddraw.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdarg.h>
-
-/* Forward declare debug_log from glide3x_state.c */
-extern void debug_log(const char *fmt, ...);
-
-/* Enable verbose display logging */
-#define DISPLAY_DEBUG_VERBOSE 1
-
-#if DISPLAY_DEBUG_VERBOSE
-#define DISPLAY_LOG(...) debug_log(__VA_ARGS__)
-#else
-#define DISPLAY_LOG(...) ((void)0)
-#endif
 
 /* DirectDraw interfaces */
 static LPDIRECTDRAW g_dd = NULL;
@@ -138,22 +124,14 @@ int display_init(int width, int height, HWND hWindow)
     HRESULT hr;
     DDSURFACEDESC2 ddsd;
 
-    DISPLAY_LOG("=== display_init CALLED ===\n");
-    DISPLAY_LOG("  width=%d, height=%d, hWindow=%p\n", width, height, hWindow);
-    DISPLAY_LOG("  Existing state: g_hwnd=%p, g_dd7=%p, g_primary=%p, g_backbuf=%p\n",
-                g_hwnd, g_dd7, g_primary, g_backbuf);
-
     g_width = width;
     g_height = height;
 
     /* Create window */
     g_hwnd = create_window(width, height, hWindow);
     if (!g_hwnd) {
-        OutputDebugStringA("display_ddraw: Failed to create window\n");
-        DISPLAY_LOG("  ERROR: Failed to create window\n");
         return 0;
     }
-    DISPLAY_LOG("  Window created/reused: g_hwnd=%p\n", g_hwnd);
 
     /* Create DirectDraw object */
     hr = DirectDrawCreate(NULL, &g_dd, NULL);
@@ -208,12 +186,9 @@ int display_init(int width, int height, HWND hWindow)
 
     hr = IDirectDraw7_CreateSurface(g_dd7, &ddsd, &g_backbuf, NULL);
     if (FAILED(hr)) {
-        DISPLAY_LOG("  ERROR: CreateSurface (backbuf) failed hr=0x%08lX\n", hr);
         goto fail;
     }
 
-    DISPLAY_LOG("=== display_init SUCCESS ===\n");
-    DISPLAY_LOG("  g_dd7=%p, g_primary=%p, g_backbuf=%p\n", g_dd7, g_primary, g_backbuf);
     return 1;
 
 fail:
@@ -224,31 +199,22 @@ fail:
 /* Shutdown DirectDraw */
 void display_shutdown(void)
 {
-    DISPLAY_LOG("=== display_shutdown CALLED ===\n");
-    DISPLAY_LOG("  State before: g_backbuf=%p, g_primary=%p, g_dd7=%p, g_dd=%p\n",
-                g_backbuf, g_primary, g_dd7, g_dd);
-
     if (g_backbuf) {
         IDirectDrawSurface7_Release(g_backbuf);
         g_backbuf = NULL;
-        DISPLAY_LOG("  Released g_backbuf\n");
     }
     if (g_primary) {
         IDirectDrawSurface7_Release(g_primary);
         g_primary = NULL;
-        DISPLAY_LOG("  Released g_primary\n");
     }
     if (g_dd7) {
         IDirectDraw7_Release(g_dd7);
         g_dd7 = NULL;
-        DISPLAY_LOG("  Released g_dd7\n");
     }
     if (g_dd) {
         IDirectDraw_Release(g_dd);
         g_dd = NULL;
-        DISPLAY_LOG("  Released g_dd\n");
     }
-    DISPLAY_LOG("=== display_shutdown DONE ===\n");
 }
 
 /* Explicitly destroy window (called on DLL detach) */
@@ -262,8 +228,6 @@ void display_destroy_window(void)
     }
 }
 
-static int g_present_count = 0;
-
 /* Present framebuffer to screen */
 void display_present(uint16_t *framebuffer, int width, int height)
 {
@@ -271,36 +235,8 @@ void display_present(uint16_t *framebuffer, int width, int height)
     DDSURFACEDESC2 ddsd;
     MSG msg;
 
-    g_present_count++;
-
     if (!g_backbuf || !g_primary) {
-        DISPLAY_LOG("display_present #%d: early return (backbuf=%p, primary=%p)\n",
-                    g_present_count, g_backbuf, g_primary);
         return;
-    }
-
-    /* ALWAYS log - critical for debugging rendering issues */
-    {
-        DISPLAY_LOG("display_present #%d: %dx%d, framebuffer=%p\n",
-                    g_present_count, width, height, framebuffer);
-
-        /* Log first few pixel values for debugging */
-        if (g_present_count < 5) {
-            DISPLAY_LOG("  First 8 pixels: %04X %04X %04X %04X %04X %04X %04X %04X\n",
-                        framebuffer[0], framebuffer[1], framebuffer[2], framebuffer[3],
-                        framebuffer[4], framebuffer[5], framebuffer[6], framebuffer[7]);
-        }
-    }
-
-    /* Check if framebuffer has non-zero pixels (sample multiple rows) */
-    {
-        int nonzero_row0 = 0, nonzero_mid = 0;
-        int sample_count = (width < 100) ? width : 100;
-        int mid_row = height / 2;
-        for (int i = 0; i < sample_count; i++) {
-            if (framebuffer[i] != 0) nonzero_row0++;
-            if (framebuffer[mid_row * width + i] != 0) nonzero_mid++;
-        }
     }
 
     /* Process window messages */
