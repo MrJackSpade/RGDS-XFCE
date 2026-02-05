@@ -106,17 +106,6 @@ int g_lfb_shadow_width = 0;
 int g_lfb_shadow_height = 0;
 GrBuffer_t g_lfb_shadow_target = 0;
 
-/*************************************
- * Statistics counters
- *************************************/
-
-int g_clear_count = 0;
-int g_swap_count = 0;
-int g_triangle_count = 0;
-int g_draw_call_count = 0;
-int g_lfb_lock_count = 0;
-int g_lfb_unlock_count = 0;
-int g_lfb_write_count = 0;
 
 /*************************************
  * Resolution mapping

@@ -58,22 +58,11 @@
  */
 void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
 {
-    g_clear_count++;
-
-    /* ALWAYS log - critical for debugging rendering issues */
-    DEBUG_VERBOSE("grBufferClear #%d ENTRY: voodoo=%p, active=%d\n",
-                  g_clear_count, g_voodoo, g_voodoo ? g_voodoo->active : 0);
-
     if (!g_voodoo || !g_voodoo->active) {
-        DEBUG_VERBOSE("grBufferClear #%d: early return (voodoo=%p, active=%d)\n",
-                      g_clear_count, g_voodoo, g_voodoo ? g_voodoo->active : 0);
-        DEBUG_VERBOSE("grBufferClear: returning VOID\n");
         return;
     }
 
     /* Log clear parameters */
-    DEBUG_VERBOSE("grBufferClear #%d: color=0x%08X, depth=0x%08X, render_buffer=%d\n",
-                  g_clear_count, color, depth, g_render_buffer);
 
     (void)alpha;  /* Alpha stored in aux buffer if enabled */
 
@@ -96,7 +85,6 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
 
     /* Early return if nothing to clear */
     if (!doColor && !doDepth) {
-        DEBUG_VERBOSE("grBufferClear: returning VOID (nothing to clear)\n");
         return;
     }
 
@@ -154,7 +142,6 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
             }
         }
     }
-    DEBUG_VERBOSE("grBufferClear: returning VOID\n");
 }
 
 /*
@@ -189,51 +176,24 @@ void __stdcall grBufferClear(GrColor_t color, GrAlpha_t alpha, FxU32 depth)
  */
 void __stdcall grBufferSwap(FxU32 swap_interval)
 {
-    g_swap_count++;
-
-    /* ALWAYS log - critical for debugging rendering issues */
-    DEBUG_VERBOSE("grBufferSwap #%d ENTRY: voodoo=%p, active=%d\n",
-                  g_swap_count, g_voodoo, g_voodoo ? g_voodoo->active : 0);
-
     if (!g_voodoo || !g_voodoo->active) {
-        DEBUG_VERBOSE("grBufferSwap #%d: early return (voodoo=%p, active=%d)\n",
-                      g_swap_count, g_voodoo, g_voodoo ? g_voodoo->active : 0);
-        DEBUG_VERBOSE("grBufferSwap: returning VOID\n");
         return;
     }
 
     (void)swap_interval;  /* Ignored - we don't do vsync */
 
     uint16_t *presentbuf;
-    int presenting_front = 0;
-
     /* Determine which buffer to present */
     if (g_lfb_buffer_locked == GR_BUFFER_FRONTBUFFER) {
         /* LFB writes went to front buffer - present that */
         presentbuf = (uint16_t*)(g_voodoo->fbi.ram +
                                  g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]);
-        presenting_front = 1;
     } else {
         /* Normal case: present the back buffer */
         presentbuf = (uint16_t*)(g_voodoo->fbi.ram +
                                  g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf]);
     }
 
-    /* Sample the buffer to see if it has content */
-    int nonzero = 0;
-    int width = g_voodoo->fbi.width;
-    int height = g_voodoo->fbi.height;
-    for (int i = 0; i < 100 && i < width * height; i++) {
-        if (presentbuf[i] != 0) nonzero++;
-    }
-    DEBUG_VERBOSE("grBufferSwap #%d: presenting %s buffer (idx=%d), offset=%d\n",
-                  g_swap_count,
-                  presenting_front ? "FRONT" : "BACK",
-                  presenting_front ? g_voodoo->fbi.frontbuf : g_voodoo->fbi.backbuf,
-                  presenting_front ? g_voodoo->fbi.rgboffs[g_voodoo->fbi.frontbuf]
-                                   : g_voodoo->fbi.rgboffs[g_voodoo->fbi.backbuf]);
-    DEBUG_VERBOSE("  triangles_since_last_swap=%d, nonzero_pixels_sample=%d/100\n",
-                  g_triangle_count, nonzero);
 
     /* Send to display */
     display_present(presentbuf, g_voodoo->fbi.width, g_voodoo->fbi.height);
@@ -245,7 +205,6 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
     uint8_t temp = g_voodoo->fbi.frontbuf;
     g_voodoo->fbi.frontbuf = g_voodoo->fbi.backbuf;
     g_voodoo->fbi.backbuf = temp;
-    DEBUG_VERBOSE("grBufferSwap: returning VOID\n");
 }
 
 /*
@@ -270,16 +229,10 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
  * - Debugging (see rendering as it happens)
  * - Overlay effects drawn after the main swap
  */
-static int g_renderbuffer_count = 0;
 
 void __stdcall grRenderBuffer(GrBuffer_t buffer)
 {
-    g_renderbuffer_count++;
 
-    /* ALWAYS log - critical for debugging rendering issues */
-    DEBUG_VERBOSE("grRenderBuffer #%d: buffer=%d (%s)\n",
-                  g_renderbuffer_count, buffer,
-                  buffer == GR_BUFFER_FRONTBUFFER ? "FRONT" : "BACK");
 
     if (buffer == GR_BUFFER_FRONTBUFFER) {
         g_render_buffer = 0;
@@ -294,5 +247,4 @@ void __stdcall grRenderBuffer(GrBuffer_t buffer)
         val |= (g_render_buffer << FBZMODE_DRAW_BUFFER_SHIFT);
         g_voodoo->reg[fbzMode].u = val;
     }
-    DEBUG_VERBOSE("grRenderBuffer: returning VOID\n");
 }

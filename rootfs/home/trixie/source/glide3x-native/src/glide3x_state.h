@@ -169,17 +169,7 @@ extern int g_lfb_shadow_width;
 extern int g_lfb_shadow_height;
 extern GrBuffer_t g_lfb_shadow_target;  /* Which buffer to write to on unlock */
 
-/*************************************
- * Statistics counters (for debugging)
- *************************************/
 
-extern int g_clear_count;
-extern int g_swap_count;
-extern int g_triangle_count;
-extern int g_draw_call_count;
-extern int g_lfb_lock_count;
-extern int g_lfb_unlock_count;
-extern int g_lfb_write_count;
 
 /*************************************
  * Display interface

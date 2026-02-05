@@ -45,29 +45,20 @@
  * - Map memory-mapped registers
  * - Initialize driver state structures
  */
-static int g_init_count = 0;
-static int g_shutdown_count = 0;
 
 void __stdcall grGlideInit(void)
 {
-    g_init_count++;
-    DEBUG_VERBOSE("=== grGlideInit #%d CALLED === (g_initialized=%d, g_voodoo=%p)\n",
-                  g_init_count, g_initialized, g_voodoo);
-
     if (g_initialized) {
-        DEBUG_VERBOSE("  Already initialized, returning\n");
         return;
     }
 
     /* Create voodoo emulator state */
     g_voodoo = voodoo_create();
     if (!g_voodoo) {
-        DEBUG_VERBOSE("  ERROR: voodoo_create() returned NULL!\n");
         return;
     }
 
     g_initialized = 1;
-    DEBUG_VERBOSE("  SUCCESS: g_voodoo=%p, g_initialized=%d\n", g_voodoo, g_initialized);
 }
 
 /*
@@ -93,31 +84,23 @@ void __stdcall grGlideInit(void)
  */
 void __stdcall grGlideShutdown(void)
 {
-    g_shutdown_count++;
-    DEBUG_VERBOSE("=== grGlideShutdown #%d CALLED === (g_initialized=%d, g_voodoo=%p, g_context=%p)\n",
-                  g_shutdown_count, g_initialized, g_voodoo, g_context);
-
     if (!g_initialized) {
-        DEBUG_VERBOSE("  Not initialized, returning\n");
         return;
     }
 
     /* Close context if still open */
     if (g_context) {
-        DEBUG_VERBOSE("  Closing context %p\n", g_context);
         grSstWinClose(g_context);
         g_context = NULL;
     }
 
     /* Destroy voodoo emulator state */
     if (g_voodoo) {
-        DEBUG_VERBOSE("  Destroying g_voodoo %p (fbi.ram=%p)\n", g_voodoo, g_voodoo->fbi.ram);
         voodoo_destroy(g_voodoo);
         g_voodoo = NULL;
     }
 
     g_initialized = 0;
-    DEBUG_VERBOSE("  Shutdown complete\n");
 }
 
 /*
@@ -137,6 +120,5 @@ void __stdcall grGlideShutdown(void)
  */
 void __stdcall grGlideGetVersion(char version[80])
 {
-    DEBUG_VERBOSE("grGlideGetVersion: called\n");
     strcpy(version, "Glide3x Software 1.0 (DOSBox-Staging derived)");
 }

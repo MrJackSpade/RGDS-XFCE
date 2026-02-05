@@ -1,16 +1,33 @@
 # Makefile for software Glide3x DLL
 #
-# Cross-compile for i386-windows using MinGW
+# Cross-compile for Windows using MinGW
+# Usage: make ARCH=i686 (default) or make ARCH=aarch64
 
-CC = i686-w64-mingw32-gcc
-CXX = i686-w64-mingw32-g++
-WINDRES = i686-w64-mingw32-windres
+# Architecture selection (i686 or aarch64)
+ARCH ?= i686
 
-CFLAGS = -O2 -Wall -Wextra -msse2
+ifeq ($(ARCH),aarch64)
+    # ARM64 build using llvm-mingw
+    CC = aarch64-w64-mingw32-gcc
+    CXX = aarch64-w64-mingw32-g++
+    WINDRES = aarch64-w64-mingw32-windres
+    ARCH_CFLAGS =
+    # ARM64 uses different stdcall handling (no stdcall on ARM64)
+    ARCH_LDFLAGS = -shared
+else
+    # Default: i686 (x86 32-bit)
+    CC = i686-w64-mingw32-gcc
+    CXX = i686-w64-mingw32-g++
+    WINDRES = i686-w64-mingw32-windres
+    ARCH_CFLAGS = -msse2
+    ARCH_LDFLAGS = -shared -Wl,--enable-stdcall-fixup
+endif
+
+CFLAGS = -O2 -Wall -Wextra $(ARCH_CFLAGS)
 CFLAGS += -I./src -I./simde/simde
 CFLAGS += -DWIN32 -D_WIN32 -DNDEBUG -DGLIDE3X_EXPORTS
 
-LDFLAGS = -shared -Wl,--enable-stdcall-fixup
+LDFLAGS = $(ARCH_LDFLAGS)
 LDFLAGS += -static-libgcc -static-libstdc++
 LIBS = -lgdi32 -lddraw -ldxguid -Wl,-Bstatic -lpthread -Wl,-Bdynamic
 
@@ -38,12 +55,22 @@ SRCS = src/glide3x_state.c \
 # Output
 BUILD_DIR = build
 TARGET = $(BUILD_DIR)/glide3x.dll
-DEFFILE = src/glide3x.def
+ifeq ($(ARCH),aarch64)
+    DEFFILE = src/glide3x_arm64.def
+else
+    DEFFILE = src/glide3x.def
+endif
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 
 .PHONY: all clean install test test-lfb tests
 
+# Skip tests for ARM64 (they won't run anyway - this is just to test DLL loading)
+ifeq ($(ARCH),aarch64)
+all: $(TARGET)
+	@echo "ARM64 build complete. Tests skipped (x86 game cannot run ARM64 tests)."
+else
 all: $(TARGET) tests
+endif
 
 $(TARGET): $(OBJS) $(DEFFILE)
 	@mkdir -p $(dir $@)

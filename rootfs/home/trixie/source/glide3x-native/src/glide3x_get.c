@@ -69,21 +69,12 @@
  * Returns:
  *   Number of bytes written to params, or 0 on error.
  */
-static int g_grget_count = 0;
-
 FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
 {
-    g_grget_count++;
-
     if (!params || plength < 4) {
-        DEBUG_VERBOSE("grGet #%d: pname=0x%X FAILED (params=%p, plength=%d)\n",
-                      g_grget_count, pname, params, plength);
-        DEBUG_VERBOSE("grGet: returning 0\n");
         return 0;
     }
 
-    /* ALWAYS log grGet calls - critical for debugging what the game checks */
-    int should_log = 1;
 
     switch (pname) {
     /*
@@ -92,15 +83,11 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
     case GR_NUM_BOARDS:
         /* Number of Glide-compatible boards installed */
         *params = 1;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_NUM_BOARDS -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     case GR_NUM_FB:
         /* Number of color buffers - D2GL returns 1 */
         *params = 1;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_NUM_FB -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     case GR_NUM_TMU:
@@ -108,8 +95,6 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
          * Voodoo 1: 1 TMU, Voodoo 2: 2 TMUs
          * We report 3 for D2GL compatibility */
         *params = 3;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_NUM_TMU -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     /*
@@ -118,23 +103,17 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
     case GR_MEMORY_FB:
         /* Framebuffer memory in bytes (4MB) */
         *params = 4 * 1024 * 1024;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_MEMORY_FB -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     case GR_MEMORY_TMU:
         /* Texture memory per TMU in bytes - D2GL uses 16MB */
         *params = 16 * 1024 * 1024;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_MEMORY_TMU -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     case GR_MEMORY_UMA:
         /* Unified Memory Architecture (Banshee+)
          * 0 = separate FB/texture memory (Voodoo 1/2) */
         *params = 0;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_MEMORY_UMA -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     /*
@@ -143,7 +122,6 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
     case GR_NUM_SWAP_HISTORY_BUFFER:
         /* Number of swap buffers in history (for timing) */
         *params = 0;
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     /*
@@ -152,7 +130,6 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
     case GR_BITS_DEPTH:
         /* Depth buffer bits (16-bit) */
         *params = 16;
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     /*
@@ -165,10 +142,8 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
             params[1] = 6;  /* Green bits */
             params[2] = 5;  /* Blue bits */
             params[3] = 0;  /* Alpha bits (none in 565) */
-            DEBUG_VERBOSE("grGet: returning 16\n");
             return 16;
         }
-        DEBUG_VERBOSE("grGet: returning 0\n");
         return 0;
 
     /*
@@ -177,22 +152,16 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
     case GR_MAX_TEXTURE_SIZE:
         /* Maximum texture dimension (256x256) */
         *params = 256;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_MAX_TEXTURE_SIZE -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     case GR_MAX_TEXTURE_ASPECT_RATIO:
         /* Maximum aspect ratio (8:1) as log2 */
         *params = 3;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_MAX_TEXTURE_ASPECT_RATIO -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     case GR_TEXTURE_ALIGN:
         /* Texture alignment requirement in bytes */
         *params = 256;
-        if (should_log) DEBUG_VERBOSE("grGet #%d: GR_TEXTURE_ALIGN -> %d\n", g_grget_count, *params);
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     /*
@@ -201,19 +170,15 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
     case GR_GAMMA_TABLE_ENTRIES:
         /* Number of gamma table entries */
         *params = 256;
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     case GR_BITS_GAMMA:
         /* Bits per gamma entry */
         *params = 8;
-        DEBUG_VERBOSE("grGet: returning 4\n");
         return 4;
 
     default:
         *params = 0;
-        DEBUG_VERBOSE("grGet #%d: UNKNOWN pname=0x%X -> 0\n", g_grget_count, pname);
-        DEBUG_VERBOSE("grGet: returning 0\n");
         return 4;
     }
 }
@@ -231,11 +196,8 @@ FxU32 __stdcall grGet(FxU32 pname, FxU32 plength, FxI32 *params)
  * Returns:
  *   Pointer to static string, or empty string if unknown.
  */
-static int g_grgetstring_count = 0;
-
 const char* __stdcall grGetString(FxU32 pname)
 {
-    g_grgetstring_count++;
     const char *result;
 
     switch (pname) {
@@ -270,10 +232,6 @@ const char* __stdcall grGetString(FxU32 pname)
         break;
     }
 
-    DEBUG_VERBOSE("grGetString #%d: pname=0x%X -> \"%s\"\n",
-                  g_grgetstring_count, pname, result);
-
-    DEBUG_VERBOSE("grGetString: returning \"%s\"\n", result);
     return result;
 }
 
@@ -387,32 +345,18 @@ static struct {
  *
  * This allows extensions and optional features to be discovered at runtime.
  */
-static int g_grgetprocaddress_count = 0;
-
 GrProc __stdcall grGetProcAddress(char *procName)
 {
-    g_grgetprocaddress_count++;
-
     if (!procName) {
-        DEBUG_VERBOSE("grGetProcAddress #%d: NULL name\n", g_grgetprocaddress_count);
-        DEBUG_VERBOSE("grGetProcAddress: returning NULL\n");
         return NULL;
     }
 
-    /* ALWAYS log every lookup attempt - this is critical for debugging */
     for (int i = 0; g_proc_table[i].name != NULL; i++) {
         if (strcmp(g_proc_table[i].name, procName) == 0) {
-            DEBUG_VERBOSE("grGetProcAddress #%d: \"%s\" -> FOUND (%p)\n",
-                          g_grgetprocaddress_count, procName, g_proc_table[i].proc);
-            DEBUG_VERBOSE("grGetProcAddress: returning %p\n", g_proc_table[i].proc);
             return g_proc_table[i].proc;
         }
     }
 
-    /* Always log NOT FOUND - this could be why the game skips rendering */
-    DEBUG_VERBOSE("grGetProcAddress #%d: \"%s\" -> *** NOT FOUND ***\n",
-                  g_grgetprocaddress_count, procName);
-    DEBUG_VERBOSE("grGetProcAddress: returning NULL\n");
     return NULL;
 }
 
@@ -433,16 +377,13 @@ GrProc __stdcall grGetProcAddress(char *procName)
  */
 FxBool __stdcall grSstQueryHardware(GrHwConfiguration *hwconfig)
 {
-    DEBUG_VERBOSE("grSstQueryHardware: called\n");
     if (!hwconfig) {
-        DEBUG_VERBOSE("grSstQueryHardware: returning FXFALSE (null ptr)\n");
         return FXFALSE;
     }
 
     hwconfig->hwVersion = 0x0200;  /* Voodoo 2 */
     hwconfig->isV2 = FXTRUE;
 
-    DEBUG_VERBOSE("grSstQueryHardware: returning FXTRUE\n");
     return FXTRUE;
 }
 
@@ -454,12 +395,10 @@ FxBool __stdcall grSstQueryHardware(GrHwConfiguration *hwconfig)
  */
 FxU32 __stdcall grSstQueryBoards(GrHwConfiguration *hwconfig)
 {
-    DEBUG_VERBOSE("grSstQueryBoards: called\n");
     if (hwconfig) {
         grSstQueryHardware(hwconfig);
     }
 
-    DEBUG_VERBOSE("grSstQueryBoards: returning 1\n");
     return 1;
 }
 
@@ -471,8 +410,5 @@ FxU32 __stdcall grSstQueryBoards(GrHwConfiguration *hwconfig)
  */
 void __stdcall grSstSelect(int which_sst)
 {
-    DEBUG_VERBOSE("grSstSelect: which_sst=%d\n", which_sst);
-    
     (void)which_sst;
-    DEBUG_VERBOSE("grSstSelect: returning VOID\n");
 }

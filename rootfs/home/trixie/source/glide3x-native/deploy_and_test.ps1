@@ -2,10 +2,21 @@ param(
     [string]$Test,          # Test to run: "lfb", "texture", "texmem", "glide" (or empty for Diablo 2)
     [switch]$DeployOnly,    # Only build and deploy, don't run anything
     [switch]$NoBuild,       # Skip build step (use existing binaries)
-    [int]$Timeout = 90      # Wait time in seconds (default 90)
+    [int]$Timeout = 90,     # Wait time in seconds (default 90)
+    [ValidateSet("i686", "aarch64")]
+    [string]$Arch = "i686"  # Target architecture: i686 (default) or aarch64
 )
 
 $ErrorActionPreference = "Stop"
+
+# Warn if using experimental aarch64 build
+if ($Arch -eq "aarch64") {
+    Write-Host ""
+    Write-Host "*** EXPERIMENTAL: Building ARM64 DLL ***" -ForegroundColor Yellow
+    Write-Host "*** This is to test Gemini's claim that Wine thunks x86->ARM64 ***" -ForegroundColor Yellow
+    Write-Host "*** Expected result: DLL will fail to load ***" -ForegroundColor Yellow
+    Write-Host ""
+}
 
 # Configuration
 $RemoteUser = "trixie"
@@ -34,8 +45,8 @@ if (Test-Path $LocalTexturesPath) { Remove-Item $LocalTexturesPath -Recurse -For
 & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "rm -rf '${RemoteTexturesPath}'"
 
 if (-not $NoBuild) {
-    Write-Host "Building project (including tests)..."
-    wsl make clean all
+    Write-Host "Building project for $Arch (including tests)..."
+    wsl make clean all ARCH=$Arch
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Build failed!"
     }
@@ -45,8 +56,16 @@ if (-not $NoBuild) {
 Write-Host "Creating test directory on remote..."
 & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "mkdir -p '${RemoteTestPath}'"
 
-# Deploy DLL and test executables
-$SftpScript = @"
+# Deploy DLL and test executables (skip tests for ARM64 - they aren't built)
+if ($Arch -eq "aarch64") {
+    $SftpScript = @"
+cd "${RemotePath}"
+put $LocalDll
+bye
+"@
+    Write-Host "Deploying ARM64 DLL only (no tests)..."
+} else {
+    $SftpScript = @"
 cd "${RemotePath}"
 put $LocalDll
 cd "${RemoteTestPath}"
@@ -61,27 +80,36 @@ put $LocalTestAlpha
 put $LocalTestDualTmuAlpha
 bye
 "@
-Write-Host "Deploying DLL and test executables..."
+    Write-Host "Deploying DLL and test executables..."
+}
 $SftpScript | & "C:\Windows\System32\OpenSSH\sftp.exe" "${RemoteUser}@${RemoteHost}"
 
 Write-Host ""
-Write-Host "=== Deployment complete ==="
+Write-Host "=== Deployment complete ($Arch) ==="
 Write-Host "DLL deployed to: ${RemotePath}"
 Write-Host "Tests deployed to: ${RemoteTestPath}"
 Write-Host ""
 
 if ($DeployOnly) {
-    Write-Host "Deploy-only mode. To run tests manually:"
+    Write-Host "Deploy-only mode ($Arch). To run tests manually:"
     Write-Host "  ssh ${RemoteUser}@${RemoteHost}"
     Write-Host "  cd '${RemoteTestPath}'"
     Write-Host "  DISPLAY=:0 WINEPREFIX=~/.wine-hangover wine test_texture.exe"
     Write-Host ""
     Write-Host "Available tests: -Test lfb, -Test texture, -Test texmem, -Test alpha, -Test glide"
+    if ($Arch -eq "aarch64") {
+        Write-Host ""
+        Write-Host "NOTE: ARM64 DLL deployed. Expect load failure if Gemini was wrong." -ForegroundColor Yellow
+    }
     exit 0
 }
 
 # Run a specific test if requested
 if ($Test) {
+    if ($Arch -eq "aarch64") {
+        Write-Error "Cannot run tests with ARM64 build - tests are x86 only. Use default Diablo 2 launch to test DLL loading."
+        exit 1
+    }
     $TestExe = switch ($Test.ToLower()) {
         "lfb" { "test_lfb_stride.exe" }
         "texture" { "test_texture.exe" }
