@@ -14,6 +14,11 @@
 #include <limits.h>
 #include <stdatomic.h>
 #include <pthread.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 #include "voodoo_state.h"
 #include "voodoo_pipeline.h"
 #include "glide3x.h"
@@ -338,6 +343,38 @@ static void init_dither_tables(void)
 }
 
 /*************************************
+ * Thread count configuration
+ *************************************/
+
+static int get_cpu_count(void)
+{
+#ifdef _WIN32
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return (int)si.dwNumberOfProcessors;
+#else
+    long cores = sysconf(_SC_NPROCESSORS_ONLN);
+    return (cores > 0) ? (int)cores : 1;
+#endif
+}
+
+static int get_num_threads(void)
+{
+    const char *env = getenv("GLIDE3X_THREADS");
+    if (env) {
+        int n = atoi(env);
+        if (n >= 0 && n <= TRIANGLE_WORKER_MAX_THREADS)
+            return n;
+    }
+    /* Default: cores - 1 (leave one core for game/Wine/FEX) */
+    int cores = get_cpu_count();
+    int threads = (cores > 1) ? cores - 1 : 0;
+    if (threads > TRIANGLE_WORKER_MAX_THREADS)
+        threads = TRIANGLE_WORKER_MAX_THREADS;
+    return threads;
+}
+
+/*************************************
  * State creation/destruction
  *************************************/
 
@@ -345,8 +382,8 @@ voodoo_state* voodoo_create(void)
 {
     /* DOSBox: v = new voodoo_state(num_additional_threads)
        where num_additional_threads = get_num_total_threads() - 1
-       We use 0 for single-threaded operation by default */
-    const int num_threads = 0;
+       Thread count configurable via GLIDE3X_THREADS env var */
+    const int num_threads = get_num_threads();
 
     voodoo_state *vs = (voodoo_state*)calloc(1, sizeof(voodoo_state));
     if (!vs) return NULL;
