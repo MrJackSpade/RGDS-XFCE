@@ -260,9 +260,25 @@ static void compute_gradients(
  */
 void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVertex *c)
 {
-    if (!g_voodoo || !g_voodoo->active) return;
+    if (!g_voodoo || !g_voodoo->active) {
+        /* Log skipped triangles for debugging */
+        DEBUG_VERBOSE("grDrawTriangle: SKIPPED (voodoo=%p, active=%d)\n",
+                      g_voodoo, g_voodoo ? g_voodoo->active : 0);
+        DEBUG_VERBOSE("grDrawTriangle: returning VOID\n");
+        return;
+    }
 
     g_triangle_count++;
+
+    /* ALWAYS log - critical for debugging rendering issues */
+    DEBUG_VERBOSE("grDrawTriangle #%d: render_buffer=%d, tex_enable=%d\n",
+                  g_triangle_count, g_render_buffer,
+                  FBZCP_TEXTURE_ENABLE(g_voodoo->reg[fbzColorPath].u));
+
+    /* Log detailed info for debugging black screen */
+    DEBUG_VERBOSE("  clip: left=%d, right=%d, top=%d, bottom=%d\n",
+                  g_voodoo->clip_left, g_voodoo->clip_right,
+                  g_voodoo->clip_top, g_voodoo->clip_bottom);
 
     fbi_state *fbi = &g_voodoo->fbi;
 
@@ -303,11 +319,23 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
     float cx = vc.x + (float)g_voodoo->vp_x;
     float cy = vc.y + (float)g_voodoo->vp_y;
 
+    /* Log vertex positions and colors */
+    DEBUG_VERBOSE("  verts: A(%.1f,%.1f) B(%.1f,%.1f) C(%.1f,%.1f)\n",
+                  ax, ay, bx, by, cx, cy);
+    DEBUG_VERBOSE("  colors: A(%.0f,%.0f,%.0f,%.0f) B(%.0f,%.0f,%.0f,%.0f)\n",
+                  va.r, va.g, va.b, va.a, vb.r, vb.g, vb.b, vb.a);
+
     /* Culling check */
     if (g_voodoo->cull_mode != GR_CULL_DISABLE) {
         float area = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay);
-        if (g_voodoo->cull_mode == GR_CULL_POSITIVE && area > 0) return;
-        if (g_voodoo->cull_mode == GR_CULL_NEGATIVE && area < 0) return;
+        if (g_voodoo->cull_mode == GR_CULL_POSITIVE && area > 0) {
+            DEBUG_VERBOSE("grDrawTriangle: returning VOID (culled positive)\n");
+            return;
+        }
+        if (g_voodoo->cull_mode == GR_CULL_NEGATIVE && area < 0) {
+            DEBUG_VERBOSE("grDrawTriangle: returning VOID (culled negative)\n");
+            return;
+        }
     }
 
     /* Convert to 12.4 fixed point for rasterizer */
@@ -398,6 +426,7 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
 
     /* Call the software rasterizer */
     voodoo_triangle(g_voodoo);
+    DEBUG_VERBOSE("grDrawTriangle: returning VOID\n");
 }
 
 /*
@@ -415,14 +444,21 @@ void __stdcall grDrawTriangle(const GrVertex *a, const GrVertex *b, const GrVert
  * This is more flexible than grDrawVertexArrayContiguous() because
  * vertices can be scattered in memory.
  */
+static int g_vertexarray_count = 0;
+
 void __stdcall grDrawVertexArray(FxU32 mode, FxU32 count, void *pointers)
 {
     GrVertex **verts = (GrVertex **)pointers;
     FxU32 i;
 
     g_draw_call_count++;
+    g_vertexarray_count++;
+    DEBUG_VERBOSE("grDrawVertexArray #%d: mode=%d, count=%d\n", g_vertexarray_count, mode, count);
 
-    if (count < 3) return;
+    if (count < 3) {
+        DEBUG_VERBOSE("grDrawVertexArray: returning VOID (count < 3)\n");
+        return;
+    }
 
     switch (mode) {
     case GR_TRIANGLES:
@@ -444,14 +480,20 @@ void __stdcall grDrawVertexArray(FxU32 mode, FxU32 count, void *pointers)
 
     case GR_TRIANGLE_FAN:
     case GR_TRIANGLE_FAN_CONTINUE:
+        DEBUG_VERBOSE("  TRIANGLE_FAN: count=%d, will draw %d triangles\n", count, count - 2);
         for (i = 1; i + 1 < count; i++) {
+            DEBUG_VERBOSE("  FAN tri %d: verts[0]=%p, verts[%d]=%p, verts[%d]=%p\n",
+                          i, verts[0], i, verts[i], i+1, verts[i + 1]);
             grDrawTriangle(verts[0], verts[i], verts[i + 1]);
+            DEBUG_VERBOSE("  FAN tri %d DONE\n", i);
         }
+        DEBUG_VERBOSE("  TRIANGLE_FAN complete\n");
         break;
 
     default:
         break;
     }
+    DEBUG_VERBOSE("grDrawVertexArray: returning VOID\n");
 }
 
 /*
@@ -470,14 +512,22 @@ void __stdcall grDrawVertexArray(FxU32 mode, FxU32 count, void *pointers)
  * More efficient than pointer array when vertices are packed together.
  * The stride parameter allows for interleaved vertex attributes.
  */
+static int g_vertexarraycontiguous_count = 0;
+
 void __stdcall grDrawVertexArrayContiguous(FxU32 mode, FxU32 count, void *vertices, FxU32 stride)
 {
     uint8_t *vdata = (uint8_t *)vertices;
     FxU32 i;
 
     g_draw_call_count++;
+    g_vertexarraycontiguous_count++;
+    DEBUG_VERBOSE("grDrawVertexArrayContiguous #%d: mode=%d, count=%d, stride=%d\n",
+                  g_vertexarraycontiguous_count, mode, count, stride);
 
-    if (count < 3 || stride == 0) return;
+    if (count < 3 || stride == 0) {
+        DEBUG_VERBOSE("grDrawVertexArrayContiguous: returning VOID (invalid args)\n");
+        return;
+    }
 
     switch (mode) {
     case GR_TRIANGLES:
@@ -523,6 +573,7 @@ void __stdcall grDrawVertexArrayContiguous(FxU32 mode, FxU32 count, void *vertic
     default:
         break;
     }
+    DEBUG_VERBOSE("grDrawVertexArrayContiguous: returning VOID\n");
 }
 
 /*
@@ -531,11 +582,18 @@ void __stdcall grDrawVertexArrayContiguous(FxU32 mode, FxU32 count, void *vertic
  * Glide didn't have native point rendering, but some wrappers add it.
  * We emulate by drawing a tiny triangle.
  */
+static int g_drawpoint_count = 0;
+
 void __stdcall grDrawPoint(const void *pt)
 {
-    
+    g_drawpoint_count++;
+    DEBUG_VERBOSE("grDrawPoint #%d\n", g_drawpoint_count);
+
     const GrVertex *v = (const GrVertex*)pt;
-    if (!v) return;
+    if (!v) {
+        DEBUG_VERBOSE("grDrawPoint: returning VOID (null ptr)\n");
+        return;
+    }
 
     GrVertex v1 = *v;
     GrVertex v2 = *v;
@@ -545,6 +603,7 @@ void __stdcall grDrawPoint(const void *pt)
     v3.y += 1.0f;
 
     grDrawTriangle(&v1, &v2, &v3);
+    DEBUG_VERBOSE("grDrawPoint: returning VOID\n");
 }
 
 /*
@@ -552,13 +611,20 @@ void __stdcall grDrawPoint(const void *pt)
  *
  * Emulated by drawing a thin triangle.
  */
+static int g_drawline_count = 0;
+
 void __stdcall grDrawLine(const void *v1_in, const void *v2_in)
 {
+    g_drawline_count++;
+    DEBUG_VERBOSE("grDrawLine #%d\n", g_drawline_count);
     
     const GrVertex *v1 = (const GrVertex*)v1_in;
     const GrVertex *v2 = (const GrVertex*)v2_in;
 
-    if (!v1 || !v2) return;
+    if (!v1 || !v2) {
+        DEBUG_VERBOSE("grDrawLine: returning VOID (null ptr)\n");
+        return;
+    }
 
     GrVertex a = *v1;
     GrVertex b = *v2;
@@ -568,6 +634,7 @@ void __stdcall grDrawLine(const void *v1_in, const void *v2_in)
     c.y += 0.5f;
 
     grDrawTriangle(&a, &b, &c);
+    DEBUG_VERBOSE("grDrawLine: returning VOID\n");
 }
 
 /*
@@ -579,11 +646,13 @@ void __stdcall grDrawLine(const void *v1_in, const void *v2_in)
 void __stdcall grAADrawTriangle(const void *a, const void *b, const void *c,
                       FxBool ab_antialias, FxBool bc_antialias, FxBool ca_antialias)
 {
+    DEBUG_VERBOSE("grAADrawTriangle: delegating to grDrawTriangle\n");
     
     (void)ab_antialias;
     (void)bc_antialias;
     (void)ca_antialias;
     grDrawTriangle(a, b, c);
+    DEBUG_VERBOSE("grAADrawTriangle: returning VOID\n");
 }
 
 /*
@@ -598,8 +667,26 @@ void __stdcall grAADrawTriangle(const void *a, const void *b, const void *c,
  *          GR_CULL_NEGATIVE: Cull clockwise (negative area) triangles
  *          GR_CULL_POSITIVE: Cull counter-clockwise (positive area)
  */
+static int g_cullmode_count = 0;
+
 void __stdcall grCullMode(GrCullMode_t mode)
 {
-    if (!g_voodoo) return;
+    g_cullmode_count++;
+
+    const char *mode_name = "UNKNOWN";
+    switch (mode) {
+    case GR_CULL_DISABLE: mode_name = "DISABLE"; break;
+    case GR_CULL_NEGATIVE: mode_name = "NEGATIVE"; break;
+    case GR_CULL_POSITIVE: mode_name = "POSITIVE"; break;
+    }
+
+    DEBUG_VERBOSE("grCullMode #%d: mode=%d (%s)\n",
+                  g_cullmode_count, mode, mode_name);
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grCullMode: returning VOID\n");
+        return;
+    }
     g_voodoo->cull_mode = mode;
+    DEBUG_VERBOSE("grCullMode: returning VOID\n");
 }

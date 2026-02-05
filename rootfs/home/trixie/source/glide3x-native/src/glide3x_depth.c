@@ -112,9 +112,28 @@
  * Note: This function affects both depth testing and depth writes.
  * For finer control, use grDepthMask() after setting the mode.
  */
+static int g_depthbuffermode_count = 0;
+
 void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
 {
-    if (!g_voodoo) return;
+    g_depthbuffermode_count++;
+
+    const char *mode_name = "UNKNOWN";
+    switch (mode) {
+    case GR_DEPTHBUFFER_DISABLE: mode_name = "DISABLE"; break;
+    case GR_DEPTHBUFFER_ZBUFFER: mode_name = "ZBUFFER"; break;
+    case GR_DEPTHBUFFER_WBUFFER: mode_name = "WBUFFER"; break;
+    case GR_DEPTHBUFFER_ZBUFFER_COMPARE_TO_BIAS: mode_name = "ZBUFFER_COMPARE_TO_BIAS"; break;
+    case GR_DEPTHBUFFER_WBUFFER_COMPARE_TO_BIAS: mode_name = "WBUFFER_COMPARE_TO_BIAS"; break;
+    }
+
+    DEBUG_VERBOSE("grDepthBufferMode #%d: mode=%d (%s)\n",
+                  g_depthbuffermode_count, mode, mode_name);
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grDepthBufferMode: returning VOID\n");
+        return;
+    }
 
     /*
      * fbzMode register depth-related bits:
@@ -146,6 +165,7 @@ void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
     }
 
     g_voodoo->reg[fbzMode].u = val;
+    DEBUG_VERBOSE("grDepthBufferMode: returning VOID\n");
 }
 
 /*
@@ -177,9 +197,31 @@ void __stdcall grDepthBufferMode(GrDepthBufferMode_t mode)
  *   - Works with multi-pass rendering
  *   - Prevents flickering on coplanar surfaces
  */
+static int g_depthbufferfunction_count = 0;
+
 void __stdcall grDepthBufferFunction(GrCmpFnc_t func)
 {
-    if (!g_voodoo) return;
+    g_depthbufferfunction_count++;
+
+    const char *func_name = "UNKNOWN";
+    switch (func) {
+    case GR_CMP_NEVER: func_name = "NEVER"; break;
+    case GR_CMP_LESS: func_name = "LESS"; break;
+    case GR_CMP_EQUAL: func_name = "EQUAL"; break;
+    case GR_CMP_LEQUAL: func_name = "LEQUAL"; break;
+    case GR_CMP_GREATER: func_name = "GREATER"; break;
+    case GR_CMP_NOTEQUAL: func_name = "NOTEQUAL"; break;
+    case GR_CMP_GEQUAL: func_name = "GEQUAL"; break;
+    case GR_CMP_ALWAYS: func_name = "ALWAYS"; break;
+    }
+
+    DEBUG_VERBOSE("grDepthBufferFunction #%d: func=%d (%s)\n",
+                  g_depthbufferfunction_count, func, func_name);
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grDepthBufferFunction: returning VOID\n");
+        return;
+    }
 
     /*
      * fbzMode register:
@@ -193,6 +235,7 @@ void __stdcall grDepthBufferFunction(GrCmpFnc_t func)
     val |= ((func & 0x7) << FBZMODE_DEPTH_FUNCTION_SHIFT);
 
     g_voodoo->reg[fbzMode].u = val;
+    DEBUG_VERBOSE("grDepthBufferFunction: returning VOID\n");
 }
 
 /*
@@ -230,9 +273,18 @@ void __stdcall grDepthBufferFunction(GrCmpFnc_t func)
  *    grColorMask(FXFALSE, FXFALSE);  // No color writes
  *    Draw occluders to build depth buffer...
  */
+static int g_depthmask_count = 0;
+
 void __stdcall grDepthMask(FxBool mask)
 {
-    if (!g_voodoo) return;
+    g_depthmask_count++;
+    DEBUG_VERBOSE("grDepthMask #%d: mask=%d (%s)\n",
+                  g_depthmask_count, mask, mask ? "ENABLED" : "DISABLED");
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grDepthMask: returning VOID\n");
+        return;
+    }
 
     /* Update shadow state for tracking */
     g_voodoo->depth_mask = mask;
@@ -255,6 +307,7 @@ void __stdcall grDepthMask(FxBool mask)
     }
 
     g_voodoo->reg[fbzMode].u = val;
+    DEBUG_VERBOSE("grDepthMask: returning VOID\n");
 }
 
 /*
@@ -288,10 +341,13 @@ void __stdcall grDepthMask(FxBool mask)
  * Too little bias doesn't fully prevent Z-fighting.
  * The optimal value is the minimum that eliminates fighting.
  */
+static int g_depthbiaslevel_count = 0;
+
 void __stdcall grDepthBiasLevel(FxI32 level)
 {
-    
-    if (!g_voodoo) return;
+    g_depthbiaslevel_count++;
+    DEBUG_VERBOSE("grDepthBiasLevel #%d: level=%d\n", g_depthbiaslevel_count, level);
+
 
     /*
      * zaColor register layout:
@@ -301,4 +357,5 @@ void __stdcall grDepthBiasLevel(FxI32 level)
      * We preserve the alpha portion while updating bias.
      */
     g_voodoo->reg[zaColor].u = (g_voodoo->reg[zaColor].u & 0xFFFF0000) | (level & 0xFFFF);
+    DEBUG_VERBOSE("grDepthBiasLevel: returning VOID\n");
 }

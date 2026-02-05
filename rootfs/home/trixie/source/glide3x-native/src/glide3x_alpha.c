@@ -113,9 +113,31 @@
  * Note: Alpha test uses the alpha from the alpha combine unit output,
  * after texture lookup and combine operations but before blending.
  */
+static int g_alphatestfunction_count = 0;
+
 void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
 {
-    if (!g_voodoo) return;
+    g_alphatestfunction_count++;
+
+    const char *func_name = "UNKNOWN";
+    switch (function) {
+    case GR_CMP_NEVER: func_name = "NEVER"; break;
+    case GR_CMP_LESS: func_name = "LESS"; break;
+    case GR_CMP_EQUAL: func_name = "EQUAL"; break;
+    case GR_CMP_LEQUAL: func_name = "LEQUAL"; break;
+    case GR_CMP_GREATER: func_name = "GREATER"; break;
+    case GR_CMP_NOTEQUAL: func_name = "NOTEQUAL"; break;
+    case GR_CMP_GEQUAL: func_name = "GEQUAL"; break;
+    case GR_CMP_ALWAYS: func_name = "ALWAYS"; break;
+    }
+
+    DEBUG_VERBOSE("grAlphaTestFunction #%d: func=%d (%s)\n",
+                  g_alphatestfunction_count, function, func_name);
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grAlphaTestFunction: returning VOID\n");
+        return;
+    }
 
     /*
      * alphaMode register layout:
@@ -143,6 +165,7 @@ void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
     }
 
     g_voodoo->reg[alphaMode].u = val;
+    DEBUG_VERBOSE("grAlphaTestFunction: returning VOID\n");
 }
 
 /*
@@ -177,7 +200,12 @@ void __stdcall grAlphaTestFunction(GrCmpFnc_t function)
  */
 void __stdcall grAlphaTestReferenceValue(GrAlpha_t value)
 {
-    if (!g_voodoo) return;
+    DEBUG_VERBOSE("grAlphaTestReferenceValue: value=%d\n", value);
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grAlphaTestReferenceValue: returning VOID\n");
+        return;
+    }
 
     uint32_t val = g_voodoo->reg[alphaMode].u;
 
@@ -186,6 +214,7 @@ void __stdcall grAlphaTestReferenceValue(GrAlpha_t value)
     val |= ((value & 0xFF) << ALPHAMODE_ALPHAREF_SHIFT);
 
     g_voodoo->reg[alphaMode].u = val;
+    DEBUG_VERBOSE("grAlphaTestReferenceValue: returning VOID\n");
 }
 
 /*
@@ -231,9 +260,18 @@ void __stdcall grAlphaTestReferenceValue(GrAlpha_t value)
  * the auxiliary buffer (depth/alpha). We track both masks and only
  * disable aux writes when both are false.
  */
+static int g_colormask_count = 0;
+
 void __stdcall grColorMask(FxBool rgb, FxBool alpha)
 {
-    if (!g_voodoo) return;
+    g_colormask_count++;
+    DEBUG_VERBOSE("grColorMask #%d: rgb=%d, alpha=%d\n",
+                  g_colormask_count, rgb, alpha);
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grColorMask: returning VOID\n");
+        return;
+    }
 
     /* Update shadow state for tracking */
     g_voodoo->alpha_mask = alpha;
@@ -272,4 +310,5 @@ void __stdcall grColorMask(FxBool rgb, FxBool alpha)
     }
 
     g_voodoo->reg[fbzMode].u = val;
+    DEBUG_VERBOSE("grColorMask: returning VOID\n");
 }

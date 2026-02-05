@@ -81,6 +81,12 @@ GrContext_t __stdcall grSstWinOpen(
 {
     char dbg[128];
 
+    DEBUG_VERBOSE("=== grSstWinOpen CALLED ===\n");
+    DEBUG_VERBOSE("  hwnd=%p, resolution=%d, refresh=%d\n", (void*)(uintptr_t)hwnd, resolution, refresh);
+    DEBUG_VERBOSE("  colorFormat=%d, origin=%d\n", colorFormat, origin);
+    DEBUG_VERBOSE("  numColorBuffers=%d, numAuxBuffers=%d\n", numColorBuffers, numAuxBuffers);
+    DEBUG_VERBOSE("  g_context=%p, g_initialized=%d\n", g_context, g_initialized);
+
     /* Suppress unused parameter warnings */
     (void)refresh;
     (void)numColorBuffers;
@@ -91,16 +97,29 @@ GrContext_t __stdcall grSstWinOpen(
 
     /* Auto-initialize if app forgot to call grGlideInit */
     if (!g_initialized) {
+        DEBUG_VERBOSE("  Auto-initializing Glide (was not initialized)\n");
         grGlideInit();
     }
 
     /* Return existing context if already open */
     if (g_context) {
+        DEBUG_VERBOSE("  Returning existing context %p\n", g_context);
+        DEBUG_VERBOSE("grSstWinOpen: returning %p\n", g_context);
         return g_context;
     }
 
     /* Get resolution dimensions */
     get_resolution(resolution, &g_screen_width, &g_screen_height);
+
+    /* Track 640x480 switches - enable logging after second switch */
+    if (g_screen_width == 640 && g_screen_height == 480) {
+        g_640x480_switch_count++;
+        if (g_640x480_switch_count >= 2 && !g_logging_enabled) {
+            g_logging_enabled = 1;
+        }
+    }
+
+    DEBUG_VERBOSE("  Resolved to %dx%d\n", g_screen_width, g_screen_height);
 
     /*
      * Initialize FBI (Frame Buffer Interface)
@@ -125,8 +144,13 @@ GrContext_t __stdcall grSstWinOpen(
                                g_voodoo->fbi.width == g_screen_width &&
                                g_voodoo->fbi.height == g_screen_height);
 
+    DEBUG_VERBOSE("  FBI state: ram=%p, width=%d, height=%d\n",
+                  g_voodoo->fbi.ram, g_voodoo->fbi.width, g_voodoo->fbi.height);
+    DEBUG_VERBOSE("  FBI preservation check: %s\n", fbi_was_initialized ? "PRESERVING" : "REINITIALIZING");
+
     if (fbi_was_initialized) {
         /* Skip reinitialization to preserve framebuffer content */
+        DEBUG_VERBOSE("  Skipping FBI reinit (same dimensions)\n");
     } else {
         voodoo_init_fbi(&g_voodoo->fbi, 4 * 1024 * 1024);
         g_voodoo->fbi.width = g_screen_width;
@@ -213,6 +237,7 @@ GrContext_t __stdcall grSstWinOpen(
 
     /* Initialize display output */
     if (!display_init(g_screen_width, g_screen_height, (HWND)hwnd)) {
+        DEBUG_VERBOSE("grSstWinOpen: returning NULL (display_init failed)\n");
         return NULL;
     }
 
@@ -244,17 +269,39 @@ GrContext_t __stdcall grSstWinOpen(
 
     /*
      * Initialize fbzMode with correct default state:
+     *   Enable clipping = enabled (required for Y clipping in rasterizer)
      *   RGB buffer mask = enabled (writes enabled)
      *   Aux buffer mask = enabled (writes enabled, since depth_mask = true)
      *   Draw buffer = 1 (back buffer)
+     *
+     * Note: FBZMODE_ENABLE_CLIPPING_BIT corresponds to SST_ENRECTCLIP in the
+     * 3dfx SDK, which is enabled by default during grSstWinOpen(). Without this,
+     * triangles with negative Y coordinates cause buffer underruns.
      */
-    g_voodoo->reg[fbzMode].u |= FBZMODE_RGB_BUFFER_MASK_BIT |
+    g_voodoo->reg[fbzMode].u |= FBZMODE_ENABLE_CLIPPING_BIT |
+                                FBZMODE_RGB_BUFFER_MASK_BIT |
                                 FBZMODE_AUX_BUFFER_MASK_BIT |
                                 (1 << FBZMODE_DRAW_BUFFER_SHIFT);
+
+    /*
+     * Initialize clip rectangle to full screen.
+     * The SDK calls grClipWindow(0, 0, width, height) during grSstWinOpen().
+     * Without this, clipping is enabled but the clip rect is 0,0 -> 0,0,
+     * causing all pixels to be clipped (black screen).
+     */
+    g_voodoo->reg[clipLeftRight].u = (0 << 16) | g_voodoo->fbi.width;
+    g_voodoo->reg[clipLowYHighY].u = (0 << 16) | g_voodoo->fbi.height;
 
     g_voodoo->active = true;
     g_context = (GrContext_t)g_voodoo;
 
+    DEBUG_VERBOSE("=== grSstWinOpen SUCCESS ===\n");
+    DEBUG_VERBOSE("  Returning context %p, active=%d\n", g_context, g_voodoo->active);
+    DEBUG_VERBOSE("  FBI: frontbuf=%d, backbuf=%d\n", g_voodoo->fbi.frontbuf, g_voodoo->fbi.backbuf);
+    DEBUG_VERBOSE("  Offsets: rgb[0]=%d, rgb[1]=%d, aux=%d\n",
+                  g_voodoo->fbi.rgboffs[0], g_voodoo->fbi.rgboffs[1], g_voodoo->fbi.auxoffs);
+
+    DEBUG_VERBOSE("grSstWinOpen: returning %p\n", g_context);
     return g_context;
 }
 
@@ -278,14 +325,18 @@ GrContext_t __stdcall grSstWinOpen(
  */
 FxBool __stdcall grSstWinClose(GrContext_t context)
 {
-    
+    DEBUG_VERBOSE("=== grSstWinClose CALLED ===\n");
+    DEBUG_VERBOSE("  context=%p, g_context=%p\n", context, g_context);
 
     if (context != g_context) {
+        DEBUG_VERBOSE("  ERROR: context mismatch, returning FXFALSE\n");
         return FXFALSE;
     }
 
+    DEBUG_VERBOSE("  Calling display_shutdown()\n");
     display_shutdown();
     g_context = NULL;
+    DEBUG_VERBOSE("  g_context set to NULL, returning FXTRUE\n");
 
     return FXTRUE;
 }
@@ -307,13 +358,17 @@ FxBool __stdcall grSstWinClose(GrContext_t context)
  * might render to multiple Voodoo cards. Since we only support one
  * context, this is essentially a validation check.
  */
+static int g_selectcontext_count = 0;
+
 FxBool __stdcall grSelectContext(GrContext_t context)
 {
-    
+    g_selectcontext_count++;
 
-    if (context == g_context) {
-        return FXTRUE;
-    }
+    FxBool result = (context == g_context) ? FXTRUE : FXFALSE;
 
-    return FXFALSE;
+    /* ALWAYS log - critical for debugging rendering issues */
+    DEBUG_VERBOSE("grSelectContext #%d: context=%p, g_context=%p, result=%d\n",
+                  g_selectcontext_count, context, g_context, result);
+
+    return result;
 }

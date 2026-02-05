@@ -1504,8 +1504,13 @@ void voodoo_triangle(voodoo_state* vs)
     const int32_t v1y = round_coordinate(v1->y);
     const int32_t v3y = round_coordinate(v3->y);
 
+    DEBUG_VERBOSE("voodoo_triangle: v1(%f,%f) v2(%f,%f) v3(%f,%f)\n",
+                  v1->x, v1->y, v2->x, v2->y, v3->x, v3->y);
+    DEBUG_VERBOSE("  v1y=%d, v3y=%d, height=%d\n", v1y, v3y, v3y - v1y);
+
     /* clip coordinates */
     if (v3y <= v1y) {
+        DEBUG_VERBOSE("  SKIPPED: v3y <= v1y\n");
         return;
     }
 
@@ -1557,6 +1562,9 @@ static void sum_statistics(stats_block *dest, const stats_block *src)
 static void triangle_worker_work(const triangle_worker *tworker,
     const int32_t work_start, const int32_t work_end)
 {
+    DEBUG_VERBOSE("triangle_worker_work: v1y=%d, v3y=%d, work_start=%d, work_end=%d, totalpix=%d\n",
+                  tworker->v1y, tworker->v3y, work_start, work_end, tworker->totalpix);
+
     /* determine the number of TMUs involved */
     uint32_t tmus = 0;
     uint32_t texmode0 = 0;
@@ -1602,6 +1610,10 @@ static void triangle_worker_work(const triangle_worker *tworker,
     const int32_t from = tworker->totalpix * work_start / num_work_units;
     const int32_t to = tworker->totalpix * work_end / num_work_units;
 
+    DEBUG_VERBOSE("  from=%d, to=%d, num_work_units=%d\n", from, to, num_work_units);
+    DEBUG_VERBOSE("  entering scanline loop: v1y=%d, v3y=%d, iterations=%d\n",
+                  tworker->v1y, tworker->v3y, tworker->v3y - tworker->v1y);
+
     int32_t curscan, scanend, sumpix, lastsum;
     for (curscan = tworker->v1y, scanend = tworker->v3y, sumpix = 0, lastsum = 0;
         curscan != scanend && lastsum < to;
@@ -1646,6 +1658,7 @@ static void triangle_worker_work(const triangle_worker *tworker,
 
         raster_generic(v, tmus, texmode0, texmode1, tworker->drawbuf, curscan, &extent, &my_stats);
     }
+    DEBUG_VERBOSE("  scanline loop done: curscan=%d, scanend=%d, lastsum=%d\n", curscan, scanend, lastsum);
     sum_statistics(&v->thread_stats[work_start], &my_stats);
 }
 
@@ -1710,10 +1723,15 @@ static void triangle_worker_shutdown(triangle_worker *tworker)
 
 static void triangle_worker_run(triangle_worker *tworker)
 {
+    DEBUG_VERBOSE("triangle_worker_run: v1y=%d, v3y=%d, num_threads=%d, num_work_units=%d\n",
+                  tworker->v1y, tworker->v3y, tworker->num_threads, tworker->num_work_units);
+
     if (!tworker->num_threads) {
         /* do not use threaded calculation */
+        DEBUG_VERBOSE("  non-threaded path, calling triangle_worker_work\n");
         tworker->totalpix = 0xFFFFFFF;
         triangle_worker_work(tworker, 0, tworker->num_work_units);
+        DEBUG_VERBOSE("  triangle_worker_work returned\n");
         return;
     }
 

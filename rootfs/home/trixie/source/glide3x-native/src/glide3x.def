@@ -70,6 +70,9 @@ EXPORTS
     _grErrorSetCallback@4 = grErrorSetCallback@4
     _grLoadGammaTable@16 = grLoadGammaTable@16
     _guGammaCorrectionRGB@12 = guGammaCorrectionRGB@12
+    _grSstIdle@0 = grSstIdle@0
+    _grSstStatus@0 = grSstStatus@0
+    _grBufferNumPending@0 = grBufferNumPending@0
     ; Debug/diagnostic functions for testing (export with and without underscore)
     _grDebugReadTexMemory@16 = grDebugReadTexMemory@16
     grDebugReadTexMemory@16 = grDebugReadTexMemory@16

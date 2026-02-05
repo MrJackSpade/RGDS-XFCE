@@ -138,7 +138,14 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
 {
     g_lfb_lock_count++;
 
-    if (!g_voodoo || !info) return FXFALSE;
+    /* Log LFB locks - these are important for tracking LFB vs 3D rendering transitions */
+    DEBUG_VERBOSE("grLfbLock #%d: type=%d, buffer=%d, writeMode=%d, origin=%d\n",
+                  g_lfb_lock_count, type, buffer, writeMode, origin);
+
+    if (!g_voodoo || !info) {
+        DEBUG_VERBOSE("grLfbLock: returning FXFALSE (null ptr)\n");
+        return FXFALSE;
+    }
 
     /* Track which buffer is being locked for writes */
     if (type == GR_LFB_WRITE_ONLY || type == (GR_LFB_READ_ONLY + 1)) {
@@ -170,6 +177,7 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
             g_lfb_shadow_buffer = (uint8_t*)malloc(needed_size);
             if (!g_lfb_shadow_buffer) {
                 g_lfb_shadow_buffer_size = 0;
+                DEBUG_VERBOSE("grLfbLock: returning FXFALSE (malloc failed)\n");
                 return FXFALSE;
             }
             g_lfb_shadow_buffer_size = needed_size;
@@ -213,6 +221,7 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
             bufptr = g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs;
             break;
         default:
+            DEBUG_VERBOSE("grLfbLock: returning FXFALSE (bad buffer)\n");
             return FXFALSE;
         }
 
@@ -226,6 +235,7 @@ FxBool __stdcall grLfbLock(GrLock_t type, GrBuffer_t buffer, GrLfbWriteMode_t wr
         info->origin = origin;
     }
 
+    DEBUG_VERBOSE("grLfbLock: returning FXTRUE\n");
     return FXTRUE;
 }
 
@@ -354,7 +364,14 @@ FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
 {
     g_lfb_unlock_count++;
 
-    if (!g_voodoo) return FXFALSE;
+    /* Log LFB unlocks to match lock logging */
+    DEBUG_VERBOSE("grLfbUnlock #%d: type=%d, buffer=%d\n",
+                  g_lfb_unlock_count, type, buffer);
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grLfbUnlock: returning FXFALSE (null ptr)\n");
+        return FXFALSE;
+    }
 
     /* If shadow buffer was used, convert it to framebuffer */
     if (type == GR_LFB_WRITE_ONLY && g_lfb_shadow_target == buffer && g_lfb_shadow_buffer) {
@@ -370,6 +387,7 @@ FxBool __stdcall grLfbUnlock(GrLock_t type, GrBuffer_t buffer)
         display_present(frontbuf, g_voodoo->fbi.width, g_voodoo->fbi.height);
     }
 
+    DEBUG_VERBOSE("grLfbUnlock: returning FXTRUE\n");
     return FXTRUE;
 }
 
@@ -417,8 +435,13 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
                          FxBool pixelPipeline, FxI32 src_stride, void *src_data)
 {
     g_lfb_write_count++;
+    DEBUG_VERBOSE("grLfbWriteRegion #%d: dst_buffer=%d, pos=(%d,%d), size=%dx%d\n",
+                  g_lfb_write_count, dst_buffer, dst_x, dst_y, src_width, src_height);
 
-    if (!g_voodoo || !src_data) return FXFALSE;
+    if (!g_voodoo || !src_data) {
+        DEBUG_VERBOSE("grLfbWriteRegion: returning FXFALSE (null ptr)\n");
+        return FXFALSE;
+    }
 
     (void)pixelPipeline;   /* We don't support pipeline mode */
 
@@ -438,6 +461,7 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
         dest = (uint16_t*)(g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs);
         break;
     default:
+        DEBUG_VERBOSE("grLfbWriteRegion: returning FXFALSE (bad buffer)\n");
         return FXFALSE;
     }
 
@@ -517,6 +541,7 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
         }
     }
 
+    DEBUG_VERBOSE("grLfbWriteRegion: returning FXTRUE\n");
     return FXTRUE;
 }
 
@@ -556,13 +581,21 @@ FxBool __stdcall grLfbWriteRegion(GrBuffer_t dst_buffer, FxU32 dst_x, FxU32 dst_
  * Our software implementation doesn't have these issues, but the API
  * semantics are preserved.
  */
+static int g_lfb_read_count = 0;
+
 FxBool __stdcall grLfbReadRegion(GrBuffer_t src_buffer, FxU32 src_x, FxU32 src_y,
                         FxU32 src_width, FxU32 src_height,
                         FxU32 dst_stride, void *dst_data)
 {
-    
+    g_lfb_read_count++;
+    DEBUG_VERBOSE("grLfbReadRegion #%d: src_buffer=%d, pos=(%d,%d), size=%dx%d\n",
+                  g_lfb_read_count, src_buffer, src_x, src_y, src_width, src_height);
 
-    if (!g_voodoo || !dst_data) return FXFALSE;
+
+    if (!g_voodoo || !dst_data) {
+        DEBUG_VERBOSE("grLfbReadRegion: returning FXFALSE (null ptr)\n");
+        return FXFALSE;
+    }
 
     /* Get source buffer */
     uint16_t *src;
@@ -580,6 +613,7 @@ FxBool __stdcall grLfbReadRegion(GrBuffer_t src_buffer, FxU32 src_x, FxU32 src_y
         src = (uint16_t*)(g_voodoo->fbi.ram + g_voodoo->fbi.auxoffs);
         break;
     default:
+        DEBUG_VERBOSE("grLfbReadRegion: returning FXFALSE (bad buffer)\n");
         return FXFALSE;
     }
 
@@ -591,5 +625,6 @@ FxBool __stdcall grLfbReadRegion(GrBuffer_t src_buffer, FxU32 src_x, FxU32 src_y
                src_width * 2);
     }
 
+    DEBUG_VERBOSE("grLfbReadRegion: returning FXTRUE\n");
     return FXTRUE;
 }

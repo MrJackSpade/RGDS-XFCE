@@ -1,7 +1,8 @@
 param(
     [string]$Test,          # Test to run: "lfb", "texture", "texmem", "glide" (or empty for Diablo 2)
     [switch]$DeployOnly,    # Only build and deploy, don't run anything
-    [switch]$NoBuild        # Skip build step (use existing binaries)
+    [switch]$NoBuild,       # Skip build step (use existing binaries)
+    [int]$Timeout = 90      # Wait time in seconds (default 90)
 )
 
 $ErrorActionPreference = "Stop"
@@ -166,8 +167,8 @@ $Job = Start-Job -ScriptBlock {
     & "C:\Windows\System32\OpenSSH\ssh.exe" "${User}@${RemoteHostAddr}" $Cmd
 } -ArgumentList $RemoteUser, $RemoteHost, $RunCmd
 
-Write-Host "Game started. Waiting 30 seconds..."
-Start-Sleep -Seconds 90
+Write-Host "Game started. Waiting $Timeout seconds..."
+Start-Sleep -Seconds $Timeout
 
 Write-Host "Killing Diablo II..."
 & "C:\Windows\System32\OpenSSH\ssh.exe" "${RemoteUser}@${RemoteHost}" "pkill -f iabl"

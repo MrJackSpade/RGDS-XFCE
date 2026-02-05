@@ -3,7 +3,12 @@
     "allow": [
       "Bash(make:*)",
       "Bash(powershell.exe -File deploy_and_test.ps1 -Test texsimple -NoBuild)",
-      "Bash(powershell.exe:*)"
+      "Bash(powershell.exe:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -28,23 +28,43 @@
 
 static FILE *g_debug_log = NULL;
 static int g_debug_log_first_access = 1;
+static LARGE_INTEGER g_debug_log_start_time;
+static LARGE_INTEGER g_debug_log_freq;
+
+/* Track 640x480 mode switches - only log after second switch */
+int g_640x480_switch_count = 0;
+int g_logging_enabled = 0;
 
 /*
  * debug_log - Write a formatted message to the debug log file
  *
  * Creates/truncates the log file on first call. All output is flushed
  * immediately to ensure logs are captured even if the application crashes.
+ * Each line is prefixed with a millisecond timestamp relative to first log call.
  */
 void debug_log(const char *fmt, ...)
 {
+    /* Only log after second 640x480 switch to focus on the problem area */
+    if (!g_logging_enabled) return;
+
     if (!g_debug_log) {
         if (g_debug_log_first_access) {
             DeleteFileA("C:\\glide3x_debug.log");
+            QueryPerformanceFrequency(&g_debug_log_freq);
+            QueryPerformanceCounter(&g_debug_log_start_time);
             g_debug_log_first_access = 0;
         }
         g_debug_log = fopen("C:\\glide3x_debug.log", "a");
     }
     if (g_debug_log) {
+        /* Get elapsed time in milliseconds */
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+        double elapsed_ms = (double)(now.QuadPart - g_debug_log_start_time.QuadPart) * 1000.0 / (double)g_debug_log_freq.QuadPart;
+
+        /* Print timestamp prefix */
+        fprintf(g_debug_log, "[%10.3f] ", elapsed_ms);
+
         va_list args;
         va_start(args, fmt);
         vfprintf(g_debug_log, fmt, args);

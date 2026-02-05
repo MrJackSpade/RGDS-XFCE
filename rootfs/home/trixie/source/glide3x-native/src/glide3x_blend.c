@@ -132,10 +132,21 @@
  *   grAlphaBlendFunction(GR_BLEND_ONE, GR_BLEND_ZERO,
  *                        GR_BLEND_ONE, GR_BLEND_ZERO);
  */
+static int g_alphablendfunction_count = 0;
+
 void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t rgb_df,
                           GrAlphaBlendFnc_t alpha_sf, GrAlphaBlendFnc_t alpha_df)
 {
-    if (!g_voodoo) return;
+    g_alphablendfunction_count++;
+
+    /* ALWAYS log - critical for debugging rendering issues */
+    DEBUG_VERBOSE("grAlphaBlendFunction #%d: rgb_sf=%d, rgb_df=%d, alpha_sf=%d, alpha_df=%d\n",
+                  g_alphablendfunction_count, rgb_sf, rgb_df, alpha_sf, alpha_df);
+
+    if (!g_voodoo) {
+        DEBUG_VERBOSE("grAlphaBlendFunction: returning VOID\n");
+        return;
+    }
 
     /*
      * alphaMode register layout:
@@ -168,4 +179,5 @@ void __stdcall grAlphaBlendFunction(GrAlphaBlendFnc_t rgb_sf, GrAlphaBlendFnc_t 
     val |= ALPHAMODE_ALPHABLEND_BIT;
 
     g_voodoo->reg[alphaMode].u = val;
+    DEBUG_VERBOSE("grAlphaBlendFunction: returning VOID\n");
 }
