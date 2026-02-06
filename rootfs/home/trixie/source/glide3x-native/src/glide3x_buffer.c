@@ -223,9 +223,12 @@ void __stdcall grBufferSwap(FxU32 swap_interval)
                            / (double)g_fps_freq.QuadPart;
 
         if (elapsed_sec >= 1.0) {
+            /* Calculate fractional FPS */
+            double fps = (double)g_fps_frame_count / elapsed_sec;
+
             /* Log FPS with current resolution */
-            debug_log("FPS: %d (resolution: %dx%d)\n",
-                      g_fps_frame_count,
+            debug_log("FPS: %.2f (resolution: %dx%d)\n",
+                      fps,
                       g_screen_width,
                       g_screen_height);
 

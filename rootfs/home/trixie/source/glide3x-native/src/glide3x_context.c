@@ -184,14 +184,14 @@ GrContext_t __stdcall grSstWinOpen(
         voodoo_init_tmu(g_voodoo,
                         &g_voodoo->tmu[0],
                         &g_voodoo->reg[TMU0_REG_BASE],
-                        2 * 1024 * 1024);
+                        4 * 1024 * 1024);  /* Voodoo 2: 4MB per TMU */
         /* Enable TMU0 in chipmask per DOSBox voodoo.cpp line 7253 */
         g_voodoo->chipmask |= 0x02;
 
         voodoo_init_tmu(g_voodoo,
                         &g_voodoo->tmu[1],
                         &g_voodoo->reg[TMU1_REG_BASE],
-                        2 * 1024 * 1024);
+                        4 * 1024 * 1024);  /* Voodoo 2: 4MB per TMU */
         /* Enable TMU1 in chipmask per DOSBox voodoo.cpp line 7257 */
         g_voodoo->chipmask |= 0x04;
     } else {

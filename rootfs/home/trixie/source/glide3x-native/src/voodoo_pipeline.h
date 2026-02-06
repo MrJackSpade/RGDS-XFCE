@@ -890,7 +890,21 @@ while (0)
 /*************************************
  * TEXTURE_PIPELINE - fetches and combines texel with color
  *************************************/
- /* VALIDATED */
+
+/*
+ * Helper macro: Check if texture format uses pre-converted ARGB32 data
+ *
+ * Formats that CANNOT be pre-converted (need runtime lookup):
+ *   1: YIQ_422 (NCC table)
+ *   6: P_8 with alpha (palettea) - rarely used
+ *   9: AYIQ_8422 (NCC with alpha)
+ *   14: AP_88 (alpha + palette)
+ *
+ * P_8 (format 5) IS pre-converted and reconverted on palette change.
+ * All other formats (0, 2, 3, 4, 5, 8, 10, 11, 12, 13) are pre-converted.
+ */
+#define TEXMODE_USE_PRECONVERTED(fmt) \
+    ((fmt) != 1 && (fmt) != 6 && (fmt) != 9 && (fmt) != 14)
 
 #define TEXTURE_PIPELINE(TT, XX, DITHER4, TEXMODE, COTHER, LOOKUP, LODBASE, ITERS, ITERT, ITERW, RESULT) \
 do																				\
@@ -968,17 +982,27 @@ do																				\
 		/* fetch texel data */													\
 		if (TEXMODE_FORMAT(TEXMODE) < 8)										\
 		{																		\
-			texel0 = (TT)->ram[(texbase + t + s) & (TT)->mask];					\
-			c_local.u = (LOOKUP)[texel0];										\
+			uint32_t addr = (texbase + t + s) & (TT)->mask;						\
+			if (TEXMODE_USE_PRECONVERTED(TEXMODE_FORMAT(TEXMODE)) && (TT)->argb32_ram) \
+				c_local.u = (TT)->argb32_ram[addr];								\
+			else {																\
+				texel0 = (TT)->ram[addr];										\
+				c_local.u = (LOOKUP)[texel0];									\
+			}																	\
 		}																		\
 		else																	\
 		{																		\
-			texel0 = *(uint16_t *)&(TT)->ram[(texbase + 2*(t + s)) & (TT)->mask];	\
-			if (TEXMODE_FORMAT(TEXMODE) >= 10 && TEXMODE_FORMAT(TEXMODE) <= 12)	\
-				c_local.u = (LOOKUP)[texel0];									\
-			else																\
-				c_local.u = ((LOOKUP)[texel0 & 0xff] & 0xffffff) |				\
-							((texel0 & 0xff00) << 16);							\
+			uint32_t addr = (texbase + 2*(t + s)) & (TT)->mask;					\
+			if (TEXMODE_USE_PRECONVERTED(TEXMODE_FORMAT(TEXMODE)) && (TT)->argb32_ram) \
+				c_local.u = (TT)->argb32_ram[addr];								\
+			else {																\
+				texel0 = *(uint16_t *)&(TT)->ram[addr];							\
+				if (TEXMODE_FORMAT(TEXMODE) >= 10 && TEXMODE_FORMAT(TEXMODE) <= 12) \
+					c_local.u = (LOOKUP)[texel0];								\
+				else															\
+					c_local.u = ((LOOKUP)[texel0 & 0xff] & 0xffffff) |			\
+								((texel0 & 0xff00) << 16);						\
+			}																	\
 		}																		\
 	}																			\
 	else																		\
@@ -1029,38 +1053,53 @@ do																				\
 		/* fetch texel data */													\
 		if (TEXMODE_FORMAT(TEXMODE) < 8)										\
 		{																		\
-			texel0 = (TT)->ram[(texbase + t + s) & (TT)->mask];					\
-			texel1 = (TT)->ram[(texbase + t + s1) & (TT)->mask];				\
-			texel2 = (TT)->ram[(texbase + t1 + s) & (TT)->mask];				\
-			texel3 = (TT)->ram[(texbase + t1 + s1) & (TT)->mask];				\
-			texel0 = (LOOKUP)[texel0];											\
-			texel1 = (LOOKUP)[texel1];											\
-			texel2 = (LOOKUP)[texel2];											\
-			texel3 = (LOOKUP)[texel3];											\
+			uint32_t addr0 = (texbase + t + s) & (TT)->mask;					\
+			uint32_t addr1 = (texbase + t + s1) & (TT)->mask;					\
+			uint32_t addr2 = (texbase + t1 + s) & (TT)->mask;					\
+			uint32_t addr3 = (texbase + t1 + s1) & (TT)->mask;					\
+			if (TEXMODE_USE_PRECONVERTED(TEXMODE_FORMAT(TEXMODE)) && (TT)->argb32_ram) { \
+				texel0 = (TT)->argb32_ram[addr0];								\
+				texel1 = (TT)->argb32_ram[addr1];								\
+				texel2 = (TT)->argb32_ram[addr2];								\
+				texel3 = (TT)->argb32_ram[addr3];								\
+			} else {															\
+				texel0 = (LOOKUP)[(TT)->ram[addr0]];								\
+				texel1 = (LOOKUP)[(TT)->ram[addr1]];								\
+				texel2 = (LOOKUP)[(TT)->ram[addr2]];								\
+				texel3 = (LOOKUP)[(TT)->ram[addr3]];								\
+			}																	\
 		}																		\
 		else																	\
 		{																		\
-			texel0 = *(uint16_t *)&(TT)->ram[(texbase + 2*(t + s)) & (TT)->mask];	\
-			texel1 = *(uint16_t *)&(TT)->ram[(texbase + 2*(t + s1)) & (TT)->mask];\
-			texel2 = *(uint16_t *)&(TT)->ram[(texbase + 2*(t1 + s)) & (TT)->mask];\
-			texel3 = *(uint16_t *)&(TT)->ram[(texbase + 2*(t1 + s1)) & (TT)->mask];\
-			if (TEXMODE_FORMAT(TEXMODE) >= 10 && TEXMODE_FORMAT(TEXMODE) <= 12)	\
-			{																	\
-				texel0 = (LOOKUP)[texel0];										\
-				texel1 = (LOOKUP)[texel1];										\
-				texel2 = (LOOKUP)[texel2];										\
-				texel3 = (LOOKUP)[texel3];										\
-			}																	\
-			else																\
-			{																	\
-				texel0 = ((LOOKUP)[texel0 & 0xff] & 0xffffff) | 				\
-							((texel0 & 0xff00) << 16);							\
-				texel1 = ((LOOKUP)[texel1 & 0xff] & 0xffffff) | 				\
-							((texel1 & 0xff00) << 16);							\
-				texel2 = ((LOOKUP)[texel2 & 0xff] & 0xffffff) | 				\
-							((texel2 & 0xff00) << 16);							\
-				texel3 = ((LOOKUP)[texel3 & 0xff] & 0xffffff) | 				\
-							((texel3 & 0xff00) << 16);							\
+			uint32_t addr0 = (texbase + 2*(t + s)) & (TT)->mask;					\
+			uint32_t addr1 = (texbase + 2*(t + s1)) & (TT)->mask;				\
+			uint32_t addr2 = (texbase + 2*(t1 + s)) & (TT)->mask;				\
+			uint32_t addr3 = (texbase + 2*(t1 + s1)) & (TT)->mask;				\
+			if (TEXMODE_USE_PRECONVERTED(TEXMODE_FORMAT(TEXMODE)) && (TT)->argb32_ram) { \
+				texel0 = (TT)->argb32_ram[addr0];								\
+				texel1 = (TT)->argb32_ram[addr1];								\
+				texel2 = (TT)->argb32_ram[addr2];								\
+				texel3 = (TT)->argb32_ram[addr3];								\
+			} else {															\
+				texel0 = *(uint16_t *)&(TT)->ram[addr0];							\
+				texel1 = *(uint16_t *)&(TT)->ram[addr1];							\
+				texel2 = *(uint16_t *)&(TT)->ram[addr2];							\
+				texel3 = *(uint16_t *)&(TT)->ram[addr3];							\
+				if (TEXMODE_FORMAT(TEXMODE) >= 10 && TEXMODE_FORMAT(TEXMODE) <= 12) { \
+					texel0 = (LOOKUP)[texel0];									\
+					texel1 = (LOOKUP)[texel1];									\
+					texel2 = (LOOKUP)[texel2];									\
+					texel3 = (LOOKUP)[texel3];									\
+				} else {														\
+					texel0 = ((LOOKUP)[texel0 & 0xff] & 0xffffff) |				\
+								((texel0 & 0xff00) << 16);						\
+					texel1 = ((LOOKUP)[texel1 & 0xff] & 0xffffff) |				\
+								((texel1 & 0xff00) << 16);						\
+					texel2 = ((LOOKUP)[texel2 & 0xff] & 0xffffff) |				\
+								((texel2 & 0xff00) << 16);						\
+					texel3 = ((LOOKUP)[texel3 & 0xff] & 0xffffff) |				\
+								((texel3 & 0xff00) << 16);						\
+				}																\
 			}																	\
 		}																		\
 																				\

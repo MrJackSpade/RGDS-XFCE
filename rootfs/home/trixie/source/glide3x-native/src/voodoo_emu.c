@@ -456,11 +456,15 @@ void voodoo_destroy(voodoo_state *vs)
         vs->fbi.ram = NULL;
     }
 
-    /* Free TMU RAM */
+    /* Free TMU RAM and ARGB32 shadow buffers */
     for (int i = 0; i < MAX_TMU; i++) {
         if (vs->tmu[i].ram) {
             free(vs->tmu[i].ram);
             vs->tmu[i].ram = NULL;
+        }
+        if (vs->tmu[i].argb32_ram) {
+            free(vs->tmu[i].argb32_ram);
+            vs->tmu[i].argb32_ram = NULL;
         }
     }
 
@@ -527,6 +531,18 @@ void voodoo_init_tmu(voodoo_state* vs, tmu_state* t, voodoo_reg* reg, int tmem)
     /* Align to 8-byte boundary */
     while ((uintptr_t)t->ram & 7) {
         t->ram++;
+    }
+
+    /* Allocate pre-converted ARGB32 shadow buffer
+     * This is indexed by byte address (same as ram), with each entry being 4 bytes.
+     * For 8-bit textures: every entry used
+     * For 16-bit textures: even entries used (one uint32_t per texel)
+     */
+    t->argb32_ram = (uint32_t*)calloc(tmem, sizeof(uint32_t));
+    if (!t->argb32_ram) {
+        free(t->ram);
+        t->ram = NULL;
+        return;
     }
 
     t->mask = (uint32_t)(tmem - 1);

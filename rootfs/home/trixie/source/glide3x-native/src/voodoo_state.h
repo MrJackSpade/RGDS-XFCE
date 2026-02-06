@@ -70,11 +70,23 @@ typedef struct {
 } ncc_table;
 
 /*************************************
+ * P_8 texture region tracking for palette reconversion
+ *************************************/
+
+#define MAX_P8_REGIONS 256
+
+typedef struct {
+    uint32_t    start_addr;       /* byte address in TMU RAM */
+    uint32_t    num_texels;       /* number of texels */
+} p8_region;
+
+/*************************************
  * TMU (Texture Mapping Unit) state
  *************************************/
 
 typedef struct {
-    uint8_t    *ram;              /* texture RAM */
+    uint8_t    *ram;              /* texture RAM (original format) */
+    uint32_t   *argb32_ram;       /* pre-converted ARGB32 texture data */
     uint32_t    mask;             /* address mask */
     voodoo_reg *reg;              /* TMU registers */
     bool        regdirty;         /* registers changed? */
@@ -117,6 +129,10 @@ typedef struct {
     /* Palettes */
     rgb_t       palette[256];
     rgb_t       palettea[256];
+
+    /* P_8 texture region tracking for palette reconversion */
+    p8_region   p8_regions[MAX_P8_REGIONS];
+    int         p8_region_count;
 } tmu_state;
 
 /*************************************
@@ -132,6 +148,14 @@ typedef struct {
     rgb_t argb1555[65536];    /* ARGB 1-5-5-5 lookup */
     rgb_t argb4444[65536];    /* ARGB 4-4-4-4 lookup */
 } tmu_shared_state;
+
+/*************************************
+ * Helper macro for ARGB construction
+ *************************************/
+
+#ifndef MAKE_ARGB
+#define MAKE_ARGB(a, r, g, b) (((uint32_t)(a) << 24) | ((uint32_t)(r) << 16) | ((uint32_t)(g) << 8) | (uint32_t)(b))
+#endif
 
 /*************************************
  * Setup vertex (for triangle setup)

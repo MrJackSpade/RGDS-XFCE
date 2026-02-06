@@ -166,6 +166,212 @@ static int get_voodoo_format(GrTextureFormat_t format)
 }
 
 /*
+ * Helper: Check if format can be pre-converted to ARGB32
+ *
+ * YIQ_422 (NCC) and AP_88 formats are not pre-converted due to complexity.
+ * P_8 (palettized) IS pre-converted and tracked for reconversion on palette change.
+ */
+static int can_preconvert(GrTextureFormat_t format)
+{
+    switch (format) {
+    case GR_TEXFMT_YIQ_422:  /* NCC table - too complex to track */
+    case GR_TEXFMT_AP_88:    /* Alpha + palette index - rarely used */
+        return 0;
+    default:
+        return 1;
+    }
+}
+
+/*
+ * Helper: Track a P_8 texture region for palette reconversion
+ *
+ * When the palette changes, all tracked P_8 regions will be reconverted.
+ */
+static void track_p8_region(tmu_state *ts, uint32_t dest_addr, int num_texels)
+{
+    /* Check if this region overlaps with an existing one - if so, update it */
+    for (int i = 0; i < ts->p8_region_count; i++) {
+        uint32_t existing_start = ts->p8_regions[i].start_addr;
+        uint32_t existing_end = existing_start + ts->p8_regions[i].num_texels;
+        uint32_t new_end = dest_addr + num_texels;
+
+        /* Check for overlap */
+        if (dest_addr < existing_end && new_end > existing_start) {
+            /* Merge: expand to cover both regions */
+            uint32_t merged_start = (dest_addr < existing_start) ? dest_addr : existing_start;
+            uint32_t merged_end = (new_end > existing_end) ? new_end : existing_end;
+            ts->p8_regions[i].start_addr = merged_start;
+            ts->p8_regions[i].num_texels = merged_end - merged_start;
+            return;
+        }
+    }
+
+    /* No overlap - add new region if space available */
+    if (ts->p8_region_count < MAX_P8_REGIONS) {
+        ts->p8_regions[ts->p8_region_count].start_addr = dest_addr;
+        ts->p8_regions[ts->p8_region_count].num_texels = num_texels;
+        ts->p8_region_count++;
+    }
+}
+
+/*
+ * Helper: Remove P_8 tracking for a region (when overwritten by non-P_8 texture)
+ */
+static void untrack_p8_region(tmu_state *ts, uint32_t dest_addr, int num_texels)
+{
+    uint32_t new_end = dest_addr + num_texels;
+
+    for (int i = 0; i < ts->p8_region_count; ) {
+        uint32_t existing_start = ts->p8_regions[i].start_addr;
+        uint32_t existing_end = existing_start + ts->p8_regions[i].num_texels;
+
+        /* Check for overlap */
+        if (dest_addr < existing_end && new_end > existing_start) {
+            /* Remove this entry by swapping with last */
+            ts->p8_regions[i] = ts->p8_regions[ts->p8_region_count - 1];
+            ts->p8_region_count--;
+            /* Don't increment i - check the swapped entry */
+        } else {
+            i++;
+        }
+    }
+}
+
+/*
+ * Helper: Pre-convert texture data to ARGB32 shadow buffer
+ *
+ * Uses the existing lookup tables from tmushare to convert texels.
+ * This eliminates lookup table indirection during texture sampling.
+ *
+ * Parameters:
+ *   ts         - TMU state (destination)
+ *   dest_addr  - Byte address in TMU RAM where texture is stored
+ *   data       - Source texture data (NULL to reconvert from ts->ram)
+ *   format     - Texture format
+ *   num_texels - Number of texels to convert
+ */
+static void preconvert_texture_data(tmu_state *ts, uint32_t dest_addr,
+                                    const void *data, GrTextureFormat_t format,
+                                    int num_texels)
+{
+    (void)data;  /* Used only for distinguishing fresh uploads in debug builds */
+
+    if (!ts->argb32_ram || !can_preconvert(format)) {
+        return;
+    }
+
+    /* For P_8 textures, track the region for palette reconversion */
+    if (format == GR_TEXFMT_P_8) {
+        track_p8_region(ts, dest_addr, num_texels);
+    } else {
+        /* Non-P_8 texture may overwrite a P_8 region */
+        untrack_p8_region(ts, dest_addr, num_texels);
+    }
+
+    /* Use provided data, or read from TMU RAM (for reconversion) */
+    const uint8_t *src8 = data ? (const uint8_t *)data : &ts->ram[dest_addr];
+    const uint16_t *src16 = (const uint16_t *)src8;
+    uint32_t *dst = ts->argb32_ram;
+    tmu_shared_state *share = &g_voodoo->tmushare;
+
+    switch (format) {
+    case GR_TEXFMT_8BIT:  /* RGB 3-3-2 */
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i) & ts->mask;
+            dst[addr] = share->rgb332[src8[i]];
+        }
+        break;
+
+    case GR_TEXFMT_ALPHA_8:
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i) & ts->mask;
+            dst[addr] = share->alpha8[src8[i]];
+        }
+        break;
+
+    case GR_TEXFMT_INTENSITY_8:
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i) & ts->mask;
+            dst[addr] = share->int8[src8[i]];
+        }
+        break;
+
+    case GR_TEXFMT_ALPHA_INTENSITY_44:
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i) & ts->mask;
+            dst[addr] = share->ai44[src8[i]];
+        }
+        break;
+
+    case GR_TEXFMT_P_8:  /* Palettized - use current palette */
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i) & ts->mask;
+            dst[addr] = ts->palette[src8[i]];
+        }
+        break;
+
+    case GR_TEXFMT_RGB_565:
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i * 2) & ts->mask;
+            dst[addr] = share->rgb565[src16[i]];
+        }
+        break;
+
+    case GR_TEXFMT_ARGB_1555:
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i * 2) & ts->mask;
+            dst[addr] = share->argb1555[src16[i]];
+        }
+        break;
+
+    case GR_TEXFMT_ARGB_4444:
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i * 2) & ts->mask;
+            dst[addr] = share->argb4444[src16[i]];
+        }
+        break;
+
+    case GR_TEXFMT_ALPHA_INTENSITY_88:
+        /* AI88: high byte = alpha, low byte = intensity (grayscale) */
+        for (int i = 0; i < num_texels; i++) {
+            uint32_t addr = (dest_addr + i * 2) & ts->mask;
+            uint16_t val = src16[i];
+            int a = (val >> 8) & 0xFF;
+            int intensity = val & 0xFF;
+            dst[addr] = ((uint32_t)a << 24) | ((uint32_t)intensity << 16) |
+                        ((uint32_t)intensity << 8) | (uint32_t)intensity;
+        }
+        break;
+
+    default:
+        /* Format not supported for pre-conversion */
+        break;
+    }
+}
+
+/*
+ * Helper: Reconvert all P_8 texture regions after palette change
+ */
+static void reconvert_p8_textures(tmu_state *ts)
+{
+    if (!ts->argb32_ram) return;
+
+    for (int i = 0; i < ts->p8_region_count; i++) {
+        uint32_t addr = ts->p8_regions[i].start_addr;
+        int num_texels = ts->p8_regions[i].num_texels;
+
+        /* Reconvert from TMU RAM using new palette */
+        const uint8_t *src = &ts->ram[addr];
+        uint32_t *dst = ts->argb32_ram;
+
+        for (int j = 0; j < num_texels; j++) {
+            uint32_t texel_addr = (addr + j) & ts->mask;
+            dst[texel_addr] = ts->palette[src[j]];
+        }
+    }
+}
+
+/*
  * Helper: Get texture dimension from LOD
  *
  * Glide 3.x LOD = log2(size), so size = 2^LOD = 1 << LOD
@@ -641,6 +847,10 @@ void __stdcall grTexDownloadMipMap(GrChipID_t tmu, FxU32 startAddress, FxU32 eve
 
     if (dest_addr + total_size <= ts->mask + 1) {
         memcpy(&ts->ram[dest_addr], info->data, total_size);
+
+        /* Pre-convert to ARGB32 shadow buffer for faster sampling */
+        int num_texels = total_size / bpp;
+        preconvert_texture_data(ts, dest_addr, info->data, info->format, num_texels);
     }
 
     ts->regdirty = 1;
@@ -685,6 +895,10 @@ void __stdcall grTexDownloadMipMapLevel(GrChipID_t tmu, FxU32 startAddress, GrLO
     uint32_t dest_addr = startAddress & ts->mask;
     if (dest_addr + tex_size <= ts->mask + 1) {
         memcpy(&ts->ram[dest_addr], data, tex_size);
+
+        /* Pre-convert to ARGB32 shadow buffer for faster sampling */
+        int num_texels = tex_width * tex_height;
+        preconvert_texture_data(ts, dest_addr, data, format, num_texels);
     }
 
     ts->regdirty = 1;
@@ -734,6 +948,10 @@ void __stdcall grTexDownloadMipMapLevelPartial(GrChipID_t tmu, FxU32 startAddres
 
     if (dest_addr + copy_size <= ts->mask + 1) {
         memcpy(&ts->ram[dest_addr], data, copy_size);
+
+        /* Pre-convert to ARGB32 shadow buffer for faster sampling */
+        int num_texels = num_rows * tex_width;
+        preconvert_texture_data(ts, dest_addr, data, format, num_texels);
     }
 
     ts->regdirty = 1;
@@ -996,6 +1214,13 @@ void __stdcall grTexDownloadTable(GrTexTable_t type, void *data)
                      */
                     ts->palette[i] = pal[i];
                 }
+
+                /* Reconvert all P_8 textures with the new palette */
+                if (ts->p8_region_count > 0) {
+                    debug_log("Palette change: reconverting %d P_8 texture regions on TMU%d\n",
+                              ts->p8_region_count, t);
+                }
+                reconvert_p8_textures(ts);
             }
             break;
 
